@@ -1,4 +1,4 @@
-QCopterMain.ino
+<b>QCopterMain.ino </b>
 ===============
 
 Authors     : Brandon Riches, Andrew Coulthard, Patrick Fairbanks <br />
@@ -17,5 +17,12 @@ math.h <br />
 [LiquidCrystal.h](https://github.com/briches/Quadcopter/tree/master/LiquidCrystal) <br />
             
 
-What the code does:
+What the code does so far:
 -------------------
+ 
+- Initializes sensors
+    + Writes to various registers of each sensor to set data modes, etc
+    + 
+- Fetches raw data outputs from each of the sensors
+- Takes a small running average to smooth the raw data, and sets data to zero if below thresholds
+- 
