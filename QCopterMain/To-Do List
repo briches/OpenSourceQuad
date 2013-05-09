@@ -1,0 +1,12 @@
+QCopterMain.ino To-Do List
+
+This list contains important tasks that are required to complete the code.
+Feel free to add/complete tasks, if I can give people permissions to edit these files I will.
+
+
+
+To-Do:
+
+1) Write code that integrates data to find current position, velocity, angle, rate of rotation
+
+2)Pending actual construction, write code that converts knowledge of state into control sequences (!!HARD I THINK!!)
