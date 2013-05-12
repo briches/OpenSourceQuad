@@ -3,7 +3,8 @@ Authors : Brandon Riches, Patrick Fairbanks, Andrew Coulthard
 Date	: May 7th, 2013
 Version : 0.1
 Notes	: Arduino Library for use with the Osepp MPU3000/MPU3050 gyro via I2C 	
-	  interfacing. Format of the library sourced from Noah Shibley, Michael 	  Grant, NoMi Design Ltd. http://n0m1.com
+	  interfacing. Format of the library sourced from Noah Shibley, Michael
+	  Grant, NoMi Design Ltd. http://n0m1.com
 
 
 
