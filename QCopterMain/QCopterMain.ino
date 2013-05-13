@@ -32,12 +32,13 @@ OseppGyro gyro;
  /*=========================================================================
     Device settings
     -----------------------------------------------------------------------*/
-const int dScaleRange = 2000; // Degrees/sec maximum on gyro sensor
-const int DLPF = 6; // DLPF settings on gyro
+int d_ScaleRange = 2000; // Degrees/sec maximum on gyro sensor
+int DLPF = 6; // DLPF settings on gyro
+int g_ScaleRange = 2; // +- acceleration maximum on accelerometer
+const bool HighDef = true; //Accelerometer readings are high definition
 float g_threshold = 1.00; //Upper threshold for data deletion from accel
 float d_threshold = 2.00; //Upper threshold for data deletion from gyro
-const int gScaleRange = 2; // +- acceleration maximum on accelerometer
-const bool HighDef = true; //Accelerometer readings are high definition
+
 
  /*=========================================================================
     Data arrays (global for convenience)
@@ -119,19 +120,17 @@ void get_baseline() {
     Performs main tasks involved in control
     -----------------------------------------------------------------------*/
 void _100HzTask(int count) {
-  // Set the elapsed time to zero
-  // Divides the "total" arrays to achieve an average
-  divide_100HzCount(count);
-  // Removes the 0g offset, removes the 0d/s offset
-  remove_offset(acceldata, gyrodata, init_offset);
 
+  divide_100HzCount(count);
+
+  remove_offset(acceldata, gyrodata, init_offset);
   //Removes oscillatory noise from signal
   remove_noise(acceldata, gyrodata, noise_threshold);
 
-  //Updates the sensor_buffer[192] which stores previous data in circular format
+  //Converts the data to SI units
+  // SI_convert();
   update_sensor_buffer();
 
-  //Detects motion from
   // Sets acceldata,gyrodata,accel_total,gyro_total to 0
   zero_my_arrays();
 
@@ -145,10 +144,11 @@ void _100HzTask(int count) {
     -----------------------------------------------------------------------*/
 void update_sensors() {
 
-  accel.update(); //Serial.println("1"); // Debug
+  accel.update();
   raw_acceldata[0] = accel.x(); //Update the raw_accel array
   raw_acceldata[1] = accel.y();
   raw_acceldata[2] = accel.z();
+  Serial.println(accel.x()); // CURRENT DEBUG
   gyro.update();
   raw_gyrodata[0] = gyro.x(); // Update the raw_gyro array
   raw_gyrodata[1] = gyro.y();
@@ -171,24 +171,71 @@ void update_sensor_buffer(){
   sensor_buffer[i+4] = gyrodata[1]; //4 //10
   sensor_buffer[i+5] = gyrodata[2]; //5 //11 .... //191
   sensor_buffer_counter = sensor_buffer_counter+6;
-  Serial.println(sensor_buffer[i+5]);
 //  Rollover
   if( i == 96 ){
     sensor_buffer_counter =0;
-    Serial.println("Buffer update");
   }
 }
 
- /*=========================================================================
-    void divide_100HzCount(int _100HzCounter)
+/*=========================================================================
+    void SI_convert()
     -----------------------------------------------------------------------*/
-void divide_100HzCount(int _100HzCounter){
-  acceldata[0] = accel_total[0]/_100HzCounter; // Take the 10ms average of the data
-  acceldata[1] = accel_total[1]/_100HzCounter;
-  acceldata[2] = accel_total[2]/_100HzCounter;
-  gyrodata[0] = gyro_total[0]/_100HzCounter;
-  gyrodata[1] = gyro_total[1]/_100HzCounter;
-  gyrodata[2] = gyro_total[2]/_100HzCounter;
+void SI_convert(){
+    //Convert accelerometer readouts to CM/s
+    switch(g_ScaleRange) {
+        case FULL_SCALE_RANGE_2g:
+            for (int i = 0; i <= 2, i++;) {
+                acceldata[i] = acceldata[i] * SI_CONVERT_2g*100; // readouts in CM/s
+            }
+            Serial.println(acceldata[0]);
+            break;
+        case FULL_SCALE_RANGE_4g:
+            for (int i = 0; i <= 2, i++;){
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
+            }
+            break;
+        case FULL_SCALE_RANGE_8g:
+            for (int i = 0; i <= 2, i++;){
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
+            }
+            break;
+    }
+    // Convert gyro readouts to degrees/s
+    switch(d_ScaleRange) {
+
+        case FULL_SCALE_RANGE_250:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_250; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_500:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_500; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_1000:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_1000; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_2000:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_2000; // readouts in deg/s
+            }
+            break;
+    }
+}
+
+ /*=========================================================================
+    void divide_100HzCount(int mycount)
+    -----------------------------------------------------------------------*/
+void divide_100HzCount(int mycount){
+  acceldata[0] = accel_total[0]/mycount; // Take the 10ms average of the data
+  acceldata[1] = accel_total[1]/mycount;
+  acceldata[2] = accel_total[2]/mycount;
+  gyrodata[0] = gyro_total[0]/mycount;
+  gyrodata[1] = gyro_total[1]/mycount;
+  gyrodata[2] = gyro_total[2]/mycount;
 }
 
 
@@ -230,7 +277,7 @@ void setup() {
   Serial.println(" ");
 
   Serial.print("  - Setting gyro data mode... ");
-  gyro.dataMode(dScaleRange, DLPF);
+  gyro.dataMode(d_ScaleRange, DLPF);
   Serial.println("   Gyro data mode set!");
   Serial.println(" ");
 
@@ -256,7 +303,7 @@ void setup() {
   Serial.println("   Accel I2C addr set!");
   Serial.println(" ");
   Serial.print("  - Setting accel data mode... ");
-  accel.dataMode(HighDef,gScaleRange); //
+  accel.dataMode(true,2); //
   Serial.println("   Accel data mode set!");
   Serial.println(" ");
   Serial.println("Accel initialization complete!");
@@ -265,6 +312,9 @@ void setup() {
   /******************* End Accel initialization ************************/
 
 
+/*=========================================================================
+    Housekeeping business
+    -----------------------------------------------------------------------*/
   get_baseline(); // Sets the offset registers in both sensors to accomodate the starting point
   // MAKE SURE IT STARTS LEVEL =O
   time = micros();
@@ -272,6 +322,21 @@ void setup() {
   noise_threshold[0] = g_threshold; // Threshold for noise on accel
   noise_threshold[1] = d_threshold; // Threshold for noise on gyro
 
+
+ /*=========================================================================
+    Normalize g_ScaleRange and d_ScaleRange to useable value
+    -----------------------------------------------------------------------*/
+  if( g_ScaleRange <= 3){ g_ScaleRange = 0x0; } //0-3 = 2g
+  else if( g_ScaleRange <= 5){ g_ScaleRange = 0x1; } //4-5 = 4g
+  else if( g_ScaleRange <= 8){ g_ScaleRange = 0x2; }// 6-8 = 8g
+  else if( g_ScaleRange > 8) { g_ScaleRange = 0x3; } //boundary
+  Serial.print("g_ScaleRange set to:"); Serial.println(g_ScaleRange);
+
+  if( d_ScaleRange <= 375){ d_ScaleRange = 0x0; } //0-375 = 250d/s
+  else if( d_ScaleRange <= 750){ d_ScaleRange = 0x1; } //375 - 750 = 500d/s
+  else if( d_ScaleRange <= 1500){ d_ScaleRange = 0x2; }// 750-1500 = 1000d/s
+  else if( d_ScaleRange > 1500) { d_ScaleRange = 0x3; } //boundary
+  Serial.print("d_ScaleRange set to:"); Serial.println(d_ScaleRange);
 }
 
  /*=========================================================================
@@ -285,7 +350,7 @@ void loop() {
   update_sensors();
 
 
-  if(elapsed_time >= 10000){
+  if(elapsed_time >= 10000){ // 100 Hz
 
      _100HzTask(_100HzCounter); // After noise reduction and processing of sensors, do functions
     elapsed_time = 0;
@@ -293,7 +358,7 @@ void loop() {
 
   }
   else {
-    _100HzCounter = get_total(accel_total, gyro_total, raw_acceldata, raw_gyrodata, elapsed_time,_100HzCounter);
+    _100HzCounter = get_total(accel_total, gyro_total, raw_acceldata, raw_gyrodata,_100HzCounter);
     // Carries a running total
   }
 }

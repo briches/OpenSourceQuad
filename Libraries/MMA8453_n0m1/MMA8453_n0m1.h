@@ -1,29 +1,29 @@
 /************************************************************************************
- * 	
- * 	Name    : MMA8453_n0m1 Library                         
- * 	Author  : Noah Shibley, Michael Grant, NoMi Design Ltd. http://n0m1.com                       
- * 	Date    : Feb 10th 2012                                    
- * 	Version : 0.1                                              
- * 	Notes   : Arduino Library for use with the Freescale MMA8453Q via i2c. 
+ *
+ * 	Name    : MMA8453_n0m1 Library
+ * 	Author  : Noah Shibley, Michael Grant, NoMi Design Ltd. http://n0m1.com
+ * 	Date    : Feb 10th 2012
+ * 	Version : 0.1
+ * 	Notes   : Arduino Library for use with the Freescale MMA8453Q via i2c.
               Some of the lib source from Kerry D. Wong
 			  http://www.kerrywong.com/2012/01/09/interfacing-mma8453q-with-arduino/
- * 
- * 
+ *
+ *
  * 	This file is part of MMA8453_n0m1.
- * 
+ *
  * 		    MMA8453_n0m1 is free software: you can redistribute it and/or modify
  * 		    it under the terms of the GNU General Public License as published by
  * 		    the Free Software Foundation, either version 3 of the License, or
  * 		    (at your option) any later version.
- * 
+ *
  * 		    AtTouch is distributed in the hope that it will be useful,
  * 		    but WITHOUT ANY WARRANTY; without even the implied warranty of
  * 		    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * 		    GNU General Public License for more details.
- * 
+ *
  * 		    You should have received a copy of the GNU General Public License
  * 		    along with MMA8453_n0m1.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  ***********************************************************************************/
 
 
@@ -36,7 +36,7 @@
 //#define PINCHANGE_INT
 
 #if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"    
+#include "Arduino.h"
 #else
 #include "WProgram.h"
 #endif
@@ -95,148 +95,150 @@ const byte FULL_SCALE_RANGE_2g = 0x0;
 const byte FULL_SCALE_RANGE_4g = 0x1;
 const byte FULL_SCALE_RANGE_8g = 0x2;
 
+const float SI_CONVERT_2g = 0.03832;
+const float SI_CONVERT_4g = 0.076641;
+const float SI_CONVERT_8g = 0.153281;
 
-
-extern "C" void accelISR(void) __attribute__ ((signal)); 
+extern "C" void accelISR(void) __attribute__ ((signal));
 
 
 class MMA8453_n0m1 {
 
 public:
-  friend void accelISR(void); //make friend so bttnPressISR can access private var keyhit	
- 
+  friend void accelISR(void); //make friend so bttnPressISR can access private var keyhit
+
   MMA8453_n0m1();
 
 /***********************************************************
- * 
+ *
  * setI2CAddr
  *
  * set the i2c address of the MMA8453 to a new value, such as 0x1D
- *   
+ *
  ***********************************************************/
 void setI2CAddr(int address);
 
 /***********************************************************
- * 
+ *
  * dataMode
  *
  * set the device to return raw data values
- *   
- ***********************************************************/  
+ *
+ ***********************************************************/
 void dataMode(boolean highRes, int gScaleRange);
 
 /***********************************************************
- * 
+ *
  * x
  *
  * returns the x axis value
- *   
+ *
  ***********************************************************/
 int x(){ return x_; }
 
 /***********************************************************
- * 
+ *
  * y
  *
  * returns the y axis value
- *   
+ *
  ***********************************************************/
 int y() { return y_; }
 
 /***********************************************************
- * 
+ *
  * z
  *
  * returns the z axis value
- *   
+ *
  ***********************************************************/
 int z(){ return z_; }
 
 /***********************************************************
- * 
+ *
  * shakeMode
  *
  *  set to transient detection mode
- *   
+ *
  ***********************************************************/
 void shakeMode(int threshold, boolean enableX, boolean enableY, boolean enableZ, boolean enableINT2,int arduinoINTPin);
 
 /***********************************************************
- * 
+ *
  * shake
  *
  * returns true if there is shaking (high pass filtered motion)
- *   
+ *
  ***********************************************************/
 boolean shake() { boolean shakeOut = shake_; shake_ = false; return shakeOut; }
 
 /***********************************************************
- * 
+ *
  * shakeAxisX
  *
  * returns true if there is shake on the x axis
- *   
+ *
  ***********************************************************/
 boolean shakeAxisX() { boolean shakeAxisOut = shakeAxisX_; shakeAxisX_ = false; return shakeAxisOut; }
 
 /***********************************************************
- * 
+ *
  * shakeAxisY
  *
  * returns true if there is shake on the y axis
- *   
+ *
  ***********************************************************/
 boolean shakeAxisY() { boolean shakeAxisOut = shakeAxisY_; shakeAxisY_ = false; return shakeAxisOut; }
 
 /***********************************************************
- * 
+ *
  * shakeAxisZ
  *
  * returns true if there is shake on the z axis
- *   
+ *
  ***********************************************************/
 boolean shakeAxisZ() { boolean shakeAxisOut = shakeAxisZ_; shakeAxisZ_ = false; return shakeAxisOut; }
 
 /***********************************************************
- * 
+ *
  * motionMode
  *
  * set to motion detection mode
- *   
+ *
  ***********************************************************/
 void motionMode(int threshold, boolean enableX, boolean enableY, boolean enableZ, boolean enableINT2,int arduinoINTPin);
 
 /***********************************************************
- * 
+ *
  * motion
  *
  * returns true if there is motion
- *   
+ *
  ***********************************************************/
 boolean motion() { boolean motionOut = motion_; motion_ = false; return motionOut; }
 
 /***********************************************************
- * 
+ *
  * update
  *
  * update data values, or clear interrupts. Use at start of loop()
- *   
+ *
  ***********************************************************/
   void update();
 
 /***********************************************************
- * 
+ *
  * regRead
  *
- *   
+ *
  ***********************************************************/
   void regRead(byte reg, byte *buf, byte count = 1);
 
 /***********************************************************
- * 
+ *
  * regWrite
  *
- *   
+ *
  ***********************************************************/
   void regWrite(byte reg, byte val);
 
@@ -253,20 +255,20 @@ void readAccel(int *x, int *y, int *z) { xyz(*x,*y,*z); }
 
 
 private:
-	
+
 	void xyz(int& x,int& y, int& z);
 	void clearInterrupt();
-	
+
 	int x_,y_,z_;
-	
-	byte I2CAddr; 
-	
+
+	byte I2CAddr;
+
 	boolean highRes_;
 	int gScaleRange_;
 	boolean dataMode_;
 	boolean shakeMode_;
 	boolean motionMode_;
-	
+
 	boolean motion_;
 	boolean shake_;
 	boolean shakeAxisX_;
@@ -275,7 +277,7 @@ private:
 
 	volatile boolean ISRFlag;
 	static MMA8453_n0m1* pMMA8453_n0m1; //ptr to MMA8453_n0m1 class for the ISR
- 
+
 };
 
 #endif
