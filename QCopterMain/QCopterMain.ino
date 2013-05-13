@@ -124,6 +124,7 @@ void _100HzTask(int count) {
   divide_100HzCount(count);
   // Removes the 0g offset, removes the 0d/s offset
   remove_offset(acceldata, gyrodata, init_offset);
+
   //Removes oscillatory noise from signal
   remove_noise(acceldata, gyrodata, noise_threshold);
 
@@ -170,7 +171,7 @@ void update_sensor_buffer(){
   sensor_buffer[i+4] = gyrodata[1]; //4 //10
   sensor_buffer[i+5] = gyrodata[2]; //5 //11 .... //191
   sensor_buffer_counter = sensor_buffer_counter+6;
-  Serial.println(sensor_buffer[i]);
+  Serial.println(sensor_buffer[i+5]);
 //  Rollover
   if( i == 96 ){
     sensor_buffer_counter =0;
@@ -211,7 +212,9 @@ void zero_my_arrays() {
 }
 
 
-/***************************************MAIN INITIALIZATION ********************************/
+ /*=========================================================================
+    Main Initialization
+    -----------------------------------------------------------------------*/
 void setup() {
   Serial.begin(9600);
 
@@ -270,17 +273,24 @@ void setup() {
   noise_threshold[1] = d_threshold; // Threshold for noise on gyro
 
 }
-/*********************************END MAIN INITIALIZATION *********************************/
 
+ /*=========================================================================
+    Main Algorithm
+    -----------------------------------------------------------------------*/
 void loop() {
 
   time = micros(); /* Updates the time, in microseconds */
   elapsed_time = time - current_time;
 
   update_sensors();
+
+
   if(elapsed_time >= 10000){
+
      _100HzTask(_100HzCounter); // After noise reduction and processing of sensors, do functions
     elapsed_time = 0;
+    _100HzCounter = 0;
+
   }
   else {
     _100HzCounter = get_total(accel_total, gyro_total, raw_acceldata, raw_gyrodata, elapsed_time,_100HzCounter);
