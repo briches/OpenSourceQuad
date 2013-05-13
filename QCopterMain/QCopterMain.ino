@@ -13,7 +13,6 @@ Date: May 2013
 
 
 
-
     -----------------------------------------------------------------------*/
 
 
@@ -60,6 +59,7 @@ unsigned long time; //Measures time since the program started (micros). importan
 unsigned long current_time; //Time last run _100HzTask
 unsigned long elapsed_time; //Time since last run _100HzTask
 int sensor_buffer_counter = 0; // Position in sensor_buffer
+int _100HzCounter = 0;
 
  /*=========================================================================
     void get_baseline()
@@ -172,7 +172,7 @@ void update_sensor_buffer(){
   sensor_buffer_counter = sensor_buffer_counter+6;
   Serial.println(sensor_buffer[i]);
 //  Rollover
-  if( i == 95 ){
+  if( i == 96 ){
     sensor_buffer_counter =0;
     Serial.println("Buffer update");
   }
@@ -213,7 +213,7 @@ void zero_my_arrays() {
 
 /***************************************MAIN INITIALIZATION ********************************/
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   /************************ Gyro initialization ************************/
   Serial.println(" ");
@@ -279,7 +279,7 @@ void loop() {
 
   update_sensors();
   if(elapsed_time >= 10000){
-     _100HzTask(); // After noise reduction and processing of sensors, do functions
+     _100HzTask(_100HzCounter); // After noise reduction and processing of sensors, do functions
     elapsed_time = 0;
   }
   else {
