@@ -36,7 +36,7 @@ int d_ScaleRange = 2000; // Degrees/sec maximum on gyro sensor
 int DLPF = 6; // DLPF settings on gyro
 int g_ScaleRange = 2; // +- acceleration maximum on accelerometer
 const bool HighDef = true; //Accelerometer readings are high definition
-float g_threshold = 1.00; //Upper threshold for data deletion from accel
+float g_threshold = 2.00; //Upper threshold for data deletion from accel
 float d_threshold = 2.00; //Upper threshold for data deletion from gyro
 
 
@@ -44,10 +44,10 @@ float d_threshold = 2.00; //Upper threshold for data deletion from gyro
     Data arrays (global for convenience)
     -----------------------------------------------------------------------*/
 float init_offset[6]= {0,0,0,0,0,0}; // Stores the base offsets due to board mounting on both devices
+float raw_acceldata[3]; // Stores the procesed accel data (after noise reduction)
+float raw_gyrodata[3]; // Stores the processed gyro data (after noise reduction)
 float acceldata[3]; // Stores the procesed accel data (after noise reduction)
 float gyrodata[3]; // Stores the processed gyro data (after noise reduction)
-float raw_acceldata[3]; // Stores the raw acceleration data as read from the accelerometer
-float raw_gyrodata[3]; // Stores the raw rotation data as read from the gyro
 float accel_total[3]; //Used in the moving average of accel xyz data
 float gyro_total[3]; //Used in the moving average of gyro wx wy wz data
 float sensor_buffer[96]; //Used to store previous data from both sensors
@@ -76,19 +76,19 @@ void get_baseline() {
   while(counter <= offset_counter)
   {
     accel.update();  // Updates the accelerometer registers
-    raw_acceldata[0] = accel.x();
-    raw_acceldata[1] = accel.y();
-    raw_acceldata[2] = accel.z();
+    acceldata[0] = accel.x();
+    acceldata[1] = accel.y();
+    acceldata[2] = accel.z();
     gyro.update();   // Updates the gyro output registers
-    raw_gyrodata[0] = gyro.x();
-    raw_gyrodata[1] = gyro.y();
-    raw_gyrodata[2] = gyro.z();
-    init_offset[0] = (init_offset[0] + raw_acceldata[0] ); // Sum
-    init_offset[1] = (init_offset[1] + raw_acceldata[1] );
-    init_offset[2] = (init_offset[2] + raw_acceldata[2] );
-    init_offset[3] = (init_offset[3] + raw_gyrodata[0] );
-    init_offset[4] = (init_offset[4] + raw_gyrodata[1] );
-    init_offset[5] = (init_offset[5] + raw_gyrodata[2] );
+    gyrodata[0] = gyro.x();
+    gyrodata[1] = gyro.y();
+    gyrodata[2] = gyro.z();
+    init_offset[0] = (init_offset[0] + acceldata[0] ); // Sum
+    init_offset[1] = (init_offset[1] + acceldata[1] );
+    init_offset[2] = (init_offset[2] + acceldata[2] );
+    init_offset[3] = (init_offset[3] + gyrodata[0] );
+    init_offset[4] = (init_offset[4] + gyrodata[1] );
+    init_offset[5] = (init_offset[5] + gyrodata[2] );
     counter = counter + 1 ;
     delayMicroseconds(10);
   }
@@ -120,13 +120,16 @@ void get_baseline() {
     Performs main tasks involved in control
     -----------------------------------------------------------------------*/
 void _100HzTask(int count) {
-
+  // Set the elapsed time to zero
+  // Divides the "total" arrays to achieve an average
   divide_100HzCount(count);
 
+  // Removes the 0g offset, removes the 0d/s offset
   remove_offset(acceldata, gyrodata, init_offset);
+
   //Removes oscillatory noise from signal
   remove_noise(acceldata, gyrodata, noise_threshold);
-
+  Serial.println(acceldata[0]);
   //Converts the data to SI units
   // SI_convert();
   update_sensor_buffer();
@@ -144,11 +147,10 @@ void _100HzTask(int count) {
     -----------------------------------------------------------------------*/
 void update_sensors() {
 
-  accel.update();
+  accel.update(); //Serial.println("1"); // Debug
   raw_acceldata[0] = accel.x(); //Update the raw_accel array
   raw_acceldata[1] = accel.y();
   raw_acceldata[2] = accel.z();
-  Serial.println(accel.x()); // CURRENT DEBUG
   gyro.update();
   raw_gyrodata[0] = gyro.x(); // Update the raw_gyro array
   raw_gyrodata[1] = gyro.y();
@@ -184,17 +186,20 @@ void SI_convert(){
     //Convert accelerometer readouts to CM/s
     switch(g_ScaleRange) {
         case FULL_SCALE_RANGE_2g:
+            Serial.println(acceldata[0]);
             for (int i = 0; i <= 2, i++;) {
                 acceldata[i] = acceldata[i] * SI_CONVERT_2g*100; // readouts in CM/s
             }
             Serial.println(acceldata[0]);
             break;
         case FULL_SCALE_RANGE_4g:
+        Serial.println("Case 2");
             for (int i = 0; i <= 2, i++;){
                 acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
             }
             break;
         case FULL_SCALE_RANGE_8g:
+        Serial.println("Case 3");
             for (int i = 0; i <= 2, i++;){
                 acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
             }
@@ -303,7 +308,7 @@ void setup() {
   Serial.println("   Accel I2C addr set!");
   Serial.println(" ");
   Serial.print("  - Setting accel data mode... ");
-  accel.dataMode(true,2); //
+  accel.dataMode(HighDef,g_ScaleRange); //
   Serial.println("   Accel data mode set!");
   Serial.println(" ");
   Serial.println("Accel initialization complete!");
@@ -358,7 +363,7 @@ void loop() {
 
   }
   else {
-    _100HzCounter = get_total(accel_total, gyro_total, raw_acceldata, raw_gyrodata,_100HzCounter);
+    _100HzCounter = get_total(accel_total, gyro_total,raw_acceldata,raw_gyrodata,_100HzCounter);
     // Carries a running total
   }
 }

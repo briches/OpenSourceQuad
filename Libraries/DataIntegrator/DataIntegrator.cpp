@@ -30,6 +30,7 @@ int get_total(float accel_total[], float gyro_total[], float raw_acceldata[],flo
     gyro_total[2] = gyro_total[2] + raw_gyrodata[2];
 
     sum ++;
+
     return sum;
 }
 
@@ -58,12 +59,12 @@ void remove_offset(float acceldata[],float gyrodata[],float init_offset[]) {
 
 
 void remove_noise(float acceldata[], float gyrodata[], float noise_threshold[]) {
-    if(fabs(acceldata[0])<= noise_threshold[0]){acceldata[0] = 0;}
-    if(fabs(acceldata[1])<= noise_threshold[0]){acceldata[1] = 0;}
-    if(fabs(acceldata[2])<= noise_threshold[0]){acceldata[2] = 0;}
-    if(fabs(gyrodata[0]) <= noise_threshold[1]){gyrodata[0] = 0;}
-    if(fabs(gyrodata[1]) <= noise_threshold[1]){gyrodata[1] = 0;}
-    if(fabs(gyrodata[2]) <= noise_threshold[1]){gyrodata[2] = 0;}
+    if(fabs(acceldata[0])<= noise_threshold[0]) {acceldata[0] = 0;}
+    if(fabs(acceldata[1])<= noise_threshold[0]) {acceldata[1] = 0;}
+    if(fabs(acceldata[2])<= noise_threshold[0]) {acceldata[2] = 0;}
+    if(fabs(gyrodata[0]) <= noise_threshold[1]) {gyrodata[0] = 0;}
+    if(fabs(gyrodata[1]) <= noise_threshold[1]) {gyrodata[1] = 0;}
+    if(fabs(gyrodata[2]) <= noise_threshold[1]) {gyrodata[2] = 0;}
 }
 
 
