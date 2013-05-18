@@ -22,8 +22,13 @@ Changelog:
             void remove_offset
             void remove_noise
 **********************************************************************************************/
+void array3_zero(float array[]);
+
+void zero_my_arrays(float accel_total[],float gyro_total[],float acceldata[],float gyrodata[]);
 
 void remove_offset(float acceldata[],float gyrodata[],float init_offset[]);
+
+void SI_convert();
 
 void remove_noise(float acceldata[], float gyrodata[], float noise_threshold[]);
 

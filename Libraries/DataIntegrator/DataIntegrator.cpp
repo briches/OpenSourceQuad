@@ -20,6 +20,114 @@ Changelog:
 #include <DataIntegrator.h>
 #include <math.h>
 
+
+ /*=========================================================================
+    void array3_zero(float array[])
+    -----------------------------------------------------------------------*/
+void array3_zero(float array[]) {
+  for(int i = 0;i <= 2;i++){
+    array[i] = 0;
+  }
+}
+
+ /*=========================================================================
+    void zero_my_arrays() {
+    -----------------------------------------------------------------------*/
+void zero_my_arrays(float accel_total[],float gyro_total[],float acceldata[],float gyrodata[]) {
+  array3_zero(accel_total);
+  array3_zero(gyro_total);
+  array3_zero(acceldata);
+  array3_zero(gyrodata);
+}
+
+/*=========================================================================
+    void SI_convert()
+    -----------------------------------------------------------------------*/
+void SI_convert(){
+    //Convert accelerometer readouts to CM/s^2
+    switch(g_ScaleRange) {
+        case FULL_SCALE_RANGE_2g:
+        Serial.println("Case 1");
+            for (int i = 0; i <= 2, i++;) {
+                acceldata[i] = acceldata[i] * (SI_CONVERT_2g)*100; // readouts in CM/s
+            }
+            break;
+        case FULL_SCALE_RANGE_4g:
+        Serial.println("Case 2");
+            for (int i = 0; i <= 2, i++;){
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
+            }
+            break;
+        case FULL_SCALE_RANGE_8g:
+        Serial.println("Case 3");
+            for (int i = 0; i <= 2, i++;){
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s
+            }
+            break;
+    }
+    // Convert gyro readouts to degrees/s
+    switch(d_ScaleRange) {
+
+        case FULL_SCALE_RANGE_250:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_250; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_500:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_500; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_1000:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_1000; // readouts in deg/s
+            }
+            break;
+        case FULL_SCALE_RANGE_2000:
+            for (int i = 0; i <= 2, i++;){
+                gyrodata[i] = gyrodata[i]*SI_CONVERT_2000; // readouts in deg/s
+            }
+            break;
+    }
+}
+
+
+ /*=========================================================================
+    void divide_100HzCount(int mycount)
+    -----------------------------------------------------------------------*/
+void divide_100HzCount(float acceldata[],float gyrodata[],float accel_total[],float gyro_total[],int count){
+  acceldata[0] = accel_total[0]/mycount; // Take the 10ms average of the data
+  acceldata[1] = accel_total[1]/mycount;
+  acceldata[2] = accel_total[2]/mycount;
+  gyrodata[0] = gyro_total[0]/mycount;
+  gyrodata[1] = gyro_total[1]/mycount;
+  gyrodata[2] = gyro_total[2]/mycount;
+}
+
+ /*=========================================================================
+    void update_sensor_buffer()
+    Adds data to the circular sensor buffer (used in calculations)
+    -----------------------------------------------------------------------*/
+int update_sensor_buffer(float acceldata[], float gyrodata[],float sensor_buffer[],int sensor_buffer_counter){
+
+//  Regular addition to the buffer, no rollover
+  int i = sensor_buffer_counter;
+  //Each data set is 6 pieces of info
+  sensor_buffer[i] = acceldata[0]; // 0  //6
+  sensor_buffer[i+1] = acceldata[1]; // 1 //7
+  sensor_buffer[i+2] = acceldata[2]; // 2 //8
+  sensor_buffer[i+3] = gyrodata[0]; // 3 //9
+  sensor_buffer[i+4] = gyrodata[1]; //4 //10
+  sensor_buffer[i+5] = gyrodata[2]; //5 //11 .... //191
+  sensor_buffer_counter = sensor_buffer_counter+6;
+//  Rollover
+  if( i == 96 ){
+    sensor_buffer_counter =0;
+  }
+  return sensor_buffer_counter;
+}
+
+
 int get_total(float accel_total[], float gyro_total[], float raw_acceldata[],float raw_gyrodata[],int sum){
 
     accel_total[0] = accel_total[0] + raw_acceldata[0];

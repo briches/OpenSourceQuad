@@ -46,7 +46,7 @@
 	#include <PinChangeIntConfig.h>
 #endif
 
-#include <I2C.h>
+#include <I2c.h>
 
 const byte REG_STATUS = 0x00; //(R) Real time status
 const byte REG_OUT_X_MSB = 0x01; //(R) [7:0] are 8 MSBs of 10-bit sample
