@@ -2,17 +2,6 @@
 Name: QCopterMain.ino
 Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
 Date: May 2013
-
-  Dependancies:
-    #include <I2C.h>
-    #include <MMA8453_n0m1.h>
-    #include <OseppGyro.h>
-    #include <DataIntegrator.h>
-    #include <LiquidCrystal.h>
-
-
-
-
     -----------------------------------------------------------------------*/
 
 #include <MMA8453_n0m1.h>
@@ -31,6 +20,7 @@ OseppGyro gyro;
 unsigned long time = 0;
 unsigned long current_time = 0;
 unsigned long elapsed_time = 0;
+float pi = 3.14159;
 
  /*=========================================================================
     Device settings (Options for sensors)
@@ -48,12 +38,12 @@ int d_threshold = 5;
 float init_offset[6] = {0,0,0,0,0,0};
 float acceldata[3] = {0,0,0};
 float gyrodata[3] = {0,0,0};
-float totaldata[6] = {0,0,0,0,0,0};
 float maincount = 0;
 
  /*=========================================================================
     Function declarations
     -----------------------------------------------------------------------*/
+void MainTask(); // Operates the basic 
 void get_baseline(); // Gets the baseline offsets for the two sensors
 void update_sensors(); // Updates the accel/gyro data arrays
 void SI_convert(); // Converts into workable SI units
@@ -111,7 +101,6 @@ void setup()
       -----------------------------------------------------------------------*/
   get_baseline(); // Sets the offset registers in both sensors to accomodate the starting point
   // MAKE SURE IT STARTS LEVEL =O
-  current_time = millis();
   Serial.println(" Did this! ");
 
 }
@@ -119,43 +108,47 @@ void setup()
 
 void loop() 
 {
-  time = millis();
-  elapsed_time = time - current_time;
+  update_sensors();
+  SI_convert();
   
-  if (elapsed_time >= 100){
-    
-    
-    
-    update_sensors();
-    SI_convert();
-    MainTask();
-    
-    
-    elapsed_time = 0;
-    current_time = millis();
-    time = current_time;
-    
-  }
+  current_time = micros();
+  elapsed_time = current_time - time;
+  
+  //Fix axis orientations
+  acceldata[2] = -acceldata[2]; // z' = -z
+  float wx = gyrodata[0];
+  float wy = gyrodata[1];
+  float wz = gyrodata[2];
+  
+  gyrodata[0] = wy;
+  gyrodata[1] = -wx;
   
   
+  MainTask(elapsed_time);
 }
 
  /*=========================================================================
     void MainTask();
     -----------------------------------------------------------------------*/
 
-void MainTask() 
+void MainTask(unsigned long timestep) 
 {
-  Serial.println(maincount);
-  Serial.print("ax: "); Serial.print(acceldata[0]);
-  Serial.print(" ay: "); Serial.print(acceldata[1]);
-  Serial.print(" az: "); Serial.print(acceldata[2]);
+  float ax = acceldata[0];
+  float ay = acceldata[1];
+  float az = acceldata[2];
   
-  Serial.print(" wx: "); Serial.print(gyrodata[0]);
-  Serial.print(" wy: "); Serial.print(gyrodata[1]);
-  Serial.print(" wz: "); Serial.println(gyrodata[2]);
+  float wx = gyrodata[0];
+  float wy = gyrodata[1];
+  float wz = gyrodata[2];
   
-   // for(int i = 0;i<=5;i++) {total_data[i] = 0;}
+  
+  float alpha = atan2(ax,az)*(180/ pi);
+  float beta = atan2(ay,az)*(180/pi);
+  
+  Serial.print(" a: "); Serial.print(alpha);
+  Serial.print(" b: "); Serial.println(beta);
+  
+  time = micros();
 }
 
  /*=========================================================================
@@ -237,8 +230,8 @@ void update_sensors()
     void get_baseline()
     Finds the baseline offsets for all sensors
     -----------------------------------------------------------------------*/
-void get_baseline() {
-
+void get_baseline() 
+{
   int offset_counter = 100;
   float counter = 1;
 
