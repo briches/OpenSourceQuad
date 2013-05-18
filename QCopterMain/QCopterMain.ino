@@ -1,4 +1,19 @@
+ /*=========================================================================
+Name: QCopterMain.ino
+Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
+Date: May 2013
 
+  Dependancies:
+    #include <I2C.h>
+    #include <MMA8453_n0m1.h>
+    #include <OseppGyro.h>
+    #include <DataIntegrator.h>
+    #include <LiquidCrystal.h>
+
+
+
+
+    -----------------------------------------------------------------------*/
 
 #include <MMA8453_n0m1.h>
 #include <OseppGyro.h>
@@ -33,6 +48,7 @@ int d_threshold = 5;
 float init_offset[6] = {0,0,0,0,0,0};
 float acceldata[3] = {0,0,0};
 float gyrodata[3] = {0,0,0};
+float totaldata[6] = {0,0,0,0,0,0};
 float maincount = 0;
 
  /*=========================================================================
