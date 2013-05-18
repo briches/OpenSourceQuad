@@ -20,7 +20,8 @@ OseppGyro gyro;
 unsigned long time = 0;
 unsigned long current_time = 0;
 unsigned long elapsed_time = 0;
-float pi = 3.14159;
+double pi = 3.14159;
+double heading;
 
  /*=========================================================================
     Device settings (Options for sensors)
@@ -35,10 +36,12 @@ int d_threshold = 5;
  /*=========================================================================
     Data arrays
     -----------------------------------------------------------------------*/
-float init_offset[6] = {0,0,0,0,0,0};
-float acceldata[3] = {0,0,0};
-float gyrodata[3] = {0,0,0};
-float maincount = 0;
+double init_offset[6] = {0,0,0,0,0,0};
+double acceldata[3] = {0,0,0};
+double gyrodata[3] = {0,0,0};
+double maincount = 0;
+
+
 
  /*=========================================================================
     Function declarations
@@ -111,19 +114,19 @@ void loop()
   update_sensors();
   SI_convert();
   
-  current_time = micros();
-  elapsed_time = current_time - time;
+  
+  
   
   //Fix axis orientations
   acceldata[2] = -acceldata[2]; // z' = -z
-  float wx = gyrodata[0];
-  float wy = gyrodata[1];
-  float wz = gyrodata[2];
+  double wx = gyrodata[0];
+  double wy = gyrodata[1];
+  double wz = gyrodata[2];
   
   gyrodata[0] = wy;
   gyrodata[1] = -wx;
-  
-  
+  current_time = micros();
+  elapsed_time = current_time - time;
   MainTask(elapsed_time);
 }
 
@@ -133,20 +136,24 @@ void loop()
 
 void MainTask(unsigned long timestep) 
 {
-  float ax = acceldata[0];
-  float ay = acceldata[1];
-  float az = acceldata[2];
+  double uc = pow(10,6);
+  double ax = acceldata[0];
+  double ay = acceldata[1];
+  double az = acceldata[2];
   
-  float wx = gyrodata[0];
-  float wy = gyrodata[1];
-  float wz = gyrodata[2];
+  double wx = gyrodata[0];
+  double wy = gyrodata[1];
+  double wz = gyrodata[2];
   
   
-  float alpha = atan2(ax,az)*(180/ pi);
-  float beta = atan2(ay,az)*(180/pi);
-  
+  double alpha = atan2(ax,az)*(180/ pi);
+  double beta = atan2(ay,az)*(180/pi);
   Serial.print(" a: "); Serial.print(alpha);
-  Serial.print(" b: "); Serial.println(beta);
+  Serial.print(" b: "); Serial.print(beta);
+  
+  Serial.print(" ts: "); Serial.print(timestep);
+  heading = heading + wz*(timestep/uc);
+  Serial.print("   heading: "); Serial.println(heading,10);
   
   time = micros();
 }
@@ -233,7 +240,7 @@ void update_sensors()
 void get_baseline() 
 {
   int offset_counter = 100;
-  float counter = 1;
+  int counter = 1;
 
   Serial.println("Getting baseline offsets...");
 
