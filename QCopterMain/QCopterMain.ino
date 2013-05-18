@@ -13,6 +13,9 @@ MMA8453_n0m1 accel;
 OseppGyro gyro;
 
 
+unsigned long time = 0;
+unsigned long current_time = 0;
+unsigned long elapsed_time = 0;
 
  /*=========================================================================
     Device settings (Options for sensors)
@@ -92,6 +95,7 @@ void setup()
       -----------------------------------------------------------------------*/
   get_baseline(); // Sets the offset registers in both sensors to accomodate the starting point
   // MAKE SURE IT STARTS LEVEL =O
+  current_time = millis();
   Serial.println(" Did this! ");
 
 }
@@ -99,10 +103,24 @@ void setup()
 
 void loop() 
 {
-
-  update_sensors();
-  SI_convert();
-  MainTask();
+  time = millis();
+  elapsed_time = time - current_time;
+  
+  if (elapsed_time >= 100){
+    
+    
+    
+    update_sensors();
+    SI_convert();
+    MainTask();
+    
+    
+    elapsed_time = 0;
+    current_time = millis();
+    time = current_time;
+    
+  }
+  
   
 }
 
@@ -121,6 +139,7 @@ void MainTask()
   Serial.print(" wy: "); Serial.print(gyrodata[1]);
   Serial.print(" wz: "); Serial.println(gyrodata[2]);
   
+   // for(int i = 0;i<=5;i++) {total_data[i] = 0;}
 }
 
  /*=========================================================================
@@ -239,7 +258,7 @@ void get_baseline() {
   init_offset[1] = (init_offset[1])/offset_counter;
   Serial.print("accelerometer y-offset: ");
   Serial.println(init_offset[1]);
-  init_offset[2] = ((init_offset[2])/offset_counter)+256;
+  init_offset[2] = ((init_offset[2])/offset_counter) + 256;
   Serial.print("accelerometer z-offset: ");
   Serial.println(init_offset[2]);
   init_offset[3] = (init_offset[3])/offset_counter;
