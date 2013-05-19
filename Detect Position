@@ -1,0 +1,101 @@
+#include <LiquidCrystal.h> // idk if these actually work, haven't been able to test any code either // 
+#include <print.h>
+// dummy array //
+int sensor_buffer[95];
+
+// for dummy array and offset arrays//
+int counter = 0;
+
+//distances that can be compared to change in position of quadcopter for a certain response. These are unusused as of yet//
+int extra_small;
+int small;
+int medium;
+int large;
+int extra_large;
+
+// time between data sets//
+int timer = 0.01;
+
+//offsets. Possibly make an array that keeps track of these distances. //
+float accel_offset_x[31];
+float accel_offset_y[31];
+float accel_offset_z[31];
+float gyro_offset_x[31];
+float gyro_offset_y[31];
+float gyro_offset_z[31];
+
+//i and n for counters//
+int i = 0;
+int n = 6;
+
+
+
+void setup()  {
+ Serial.begin(9600); 
+  
+}
+
+void loop() {
+  for (i = 6; i < 96; i++) {
+   sensor_buffer[i] = counter;
+   counter++;
+  } 
+  for (i = 6; i < 96; i=i+6) {                                //find all x offsets//
+      n = i-6;
+      accel_offset_x[counter] = find_accel(i,n);
+      counter++;
+      n=n+6;
+  }
+  for (i = 7; i < 96; i=i+6) {                                // find all y offsets //
+      n = i-6;
+      accel_offset_y[counter] = find_accel(i,n);
+      counter++;
+      n=n+6;
+  }
+  for (i = 8; i < 96; i=i+6) {                                // find all z offsets //
+      n = i-6;
+      accel_offset_z[counter] = find_accel(i,n);  
+      counter++;
+      n=n+6;
+    }
+  for (i = 9; i < 96; i=i+6) {                                // find all x offsets //
+      n = i-6;
+      gyro_offset_x[counter] = find_gyro(i,n);
+      counter++;
+      n=n+6;
+  }
+  for (i = 10; i < 96; i=i+6) {                                // find all y offsets //
+      n = i-6;
+      gyro_offset_y[counter] = find_gyro(i,n);
+      counter++;
+      n=n+6;
+    }
+  for (i = 11; i < 96; i=i+6) {                                // find all z offsets //
+      n = i-6;
+      gyro_offset_z[counter] = find_gyro(i,n);
+      counter++;
+      n=n+6;
+  }
+}
+
+
+// offset finding functions //
+
+
+float find_accel(int i, int n)  {
+  float difference;
+  float offset;
+  difference = sensor_buffer[i] - sensor_buffer[n];          // difference between last two accelerations //
+  offset = difference * (timer^2);                           // calculate offset (cm) //
+  return(offset);
+}
+
+float find_gyro(int i, int n)  {
+  float difference;                                          // difference between last two angular velocities ((deg / s)?) //
+  float offset;
+  difference = sensor_buffer[i] - sensor_buffer[n];
+  offset = difference * timer;
+  return(offset);
+  
+}
+  
