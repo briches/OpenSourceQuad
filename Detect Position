@@ -24,7 +24,7 @@ float gyro_offset_x[31];
 float gyro_offset_y[31];
 float gyro_offset_z[31];
 
-//i and n for counters//
+//i and n for arrays//
 int i = 0;
 int n = 6;
 
@@ -36,46 +36,53 @@ void setup()  {
 }
 
 void loop() {
+  counter = 0;                                               // resets counter every loop //
   for (i = 6; i < 96; i++) {
    sensor_buffer[i] = counter;
    counter++;
-  } 
-  for (i = 6; i < 96; i=i+6) {                                //find all x offsets//
+    }
+  counter = 0;
+  for (i = 6; i < 96; i+=6) {                                //find all x offsets//
       n = i-6;
       accel_offset_x[counter] = find_accel(i,n);
       counter++;
-      n=n+6;
-  }
-  for (i = 7; i < 96; i=i+6) {                                // find all y offsets //
+      n+=6;
+    }
+  counter = 0;
+  for (i = 7; i < 96; i+=6) {                                // find all y offsets //
       n = i-6;
       accel_offset_y[counter] = find_accel(i,n);
       counter++;
-      n=n+6;
-  }
-  for (i = 8; i < 96; i=i+6) {                                // find all z offsets //
+      n+=6;
+    }
+  counter = 0;
+  for (i = 8; i < 96; i+=6) {                                // find all z offsets //
       n = i-6;
       accel_offset_z[counter] = find_accel(i,n);  
       counter++;
-      n=n+6;
+      n+=6;
     }
-  for (i = 9; i < 96; i=i+6) {                                // find all x offsets //
+  counter = 0;
+  for (i = 9; i < 96; i+=6) {                                // find all x offsets //
       n = i-6;
       gyro_offset_x[counter] = find_gyro(i,n);
       counter++;
-      n=n+6;
-  }
-  for (i = 10; i < 96; i=i+6) {                                // find all y offsets //
+      n+=6;
+    }
+  counter = 0;
+  for (i = 10; i < 96; i+=6) {                                // find all y offsets //
       n = i-6;
       gyro_offset_y[counter] = find_gyro(i,n);
       counter++;
-      n=n+6;
+      n+=6;
     }
-  for (i = 11; i < 96; i=i+6) {                                // find all z offsets //
+  counter = 0;
+  for (i = 11; i < 96; i+=6) {                                // find all z offsets //
       n = i-6;
       gyro_offset_z[counter] = find_gyro(i,n);
       counter++;
-      n=n+6;
-  }
+      n+=6;
+    }
 }
 
 
