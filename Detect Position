@@ -37,7 +37,7 @@ void setup()  {
 
 void loop() {
   counter = 0;                                               // resets counter every loop //
-  for (i = 6; i < 96; i++) {
+  for (i = 0; i < 96; i++) {
    sensor_buffer[i] = counter;
    counter++;
     }
