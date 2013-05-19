@@ -46,42 +46,36 @@ void loop() {
       n = i-6;
       accel_offset_x[counter] = find_accel(i,n);
       counter++;
-      n+=6;
     }
   counter = 0;
   for (i = 7; i < 96; i+=6) {                                // find all y offsets //
       n = i-6;
       accel_offset_y[counter] = find_accel(i,n);
       counter++;
-      n+=6;
     }
   counter = 0;
   for (i = 8; i < 96; i+=6) {                                // find all z offsets //
       n = i-6;
       accel_offset_z[counter] = find_accel(i,n);  
       counter++;
-      n+=6;
     }
   counter = 0;
   for (i = 9; i < 96; i+=6) {                                // find all x offsets //
       n = i-6;
       gyro_offset_x[counter] = find_gyro(i,n);
       counter++;
-      n+=6;
     }
   counter = 0;
   for (i = 10; i < 96; i+=6) {                                // find all y offsets //
       n = i-6;
       gyro_offset_y[counter] = find_gyro(i,n);
       counter++;
-      n+=6;
     }
   counter = 0;
   for (i = 11; i < 96; i+=6) {                                // find all z offsets //
       n = i-6;
       gyro_offset_z[counter] = find_gyro(i,n);
       counter++;
-      n+=6;
     }
 }
 
