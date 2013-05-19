@@ -9,6 +9,9 @@ Date: May 2013
 #include <I2C.h>
 #include <math.h>
 
+unsigned long initial_time = 0;
+unsigned long final_time = 0;
+double pi = 3.14159;
 
  /*=========================================================================
     Class instances
@@ -17,11 +20,17 @@ MMA8453_n0m1 accel;
 OseppGyro gyro;
 
 
+ /*=========================================================================
+    State variables
+    -----------------------------------------------------------------------*/
+double heading = 0;
+double sx = 0;
+double sy = 0;
+double sz = 0;
+double vx = 0;
+double vy = 0;
+double vz = 0;
 
-unsigned long initial_time = 0;
-unsigned long final_time = 0;
-double pi = 3.14159;
-double heading;
 
  /*=========================================================================
     Device settings (Options for sensors)
@@ -30,8 +39,9 @@ int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
 int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
 int HighDef = true;
-int g_threshold = 5; //Upper threshold for set zero from accel data 
+int g_threshold = 10; //Upper threshold for set zero from accel data 
 int d_threshold = 10;
+
 
  /*=========================================================================
     Data arrays
@@ -51,10 +61,10 @@ void get_baseline(); // Gets the baseline offsets for the two sensors
 void update_sensors(); // Updates the accel/gyro data arrays
 void SI_convert(); // Converts into workable SI units
 
+
  /*=========================================================================
     Main Initialization
     -----------------------------------------------------------------------*/
-    
 void setup()
 {
   //Start the serial port for output
@@ -136,6 +146,7 @@ void loop()
 void MainTask() 
 {
   double uc = pow(10,6);
+  
   double ax = acceldata[0];
   double ay = acceldata[1];
   double az = acceldata[2];
@@ -150,12 +161,24 @@ void MainTask()
 
   
   final_time = micros();
-  heading = heading + wz*((final_time-initial_time)/uc);
+  double time = ((double)final_time-(double)initial_time)/uc;
+  // Integration
+  heading = heading + wz*time;
+  
+  vx = vx + ax*time;
+  vy = vy + ay*time;
+  vz = vz + (az-9.81)*time; // Doesn't Work!!!!
+  
+  sx = sx + vx*time;
+  sy = sy + vy*time;
+  sz = sz + vz*time;
+  
   initial_time = micros();
   
   Serial.print(" a: "); Serial.print(alpha);
   Serial.print(" b: "); Serial.print(beta);
-  Serial.print(" hdg: "); Serial.println(heading);
+  Serial.print(" hdg: "); Serial.print(heading);
+  Serial.print(" sz: "); Serial.println(sz);
 }
 
  /*=========================================================================
@@ -163,21 +186,21 @@ void MainTask()
     -----------------------------------------------------------------------*/
 void SI_convert() 
 {
-  //Convert accelerometer readouts to CM/s^2
+  //Convert accelerometer readouts to m/s^2
     switch(g_ScaleRange) {
         case FULL_SCALE_RANGE_2g:
             for (int i = 0; i <= 2; i++) {
-                acceldata[i] = acceldata[i] *SI_CONVERT_2g *100; // readouts in CM/s^2
+                acceldata[i] = acceldata[i] *SI_CONVERT_2g; // readouts in m/s^2
             }
             break;
         case FULL_SCALE_RANGE_4g:
             for (int i = 0; i <= 2; i++){
-                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s^2
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g; // readouts in m/s^2
             }
             break;
         case FULL_SCALE_RANGE_8g:
             for (int i = 0; i <= 2; i++){
-                acceldata[i] = acceldata[i]*SI_CONVERT_4g*100; // readouts in CM/s^2
+                acceldata[i] = acceldata[i]*SI_CONVERT_4g; // readouts in m/s^2
             }
             break;
     }
