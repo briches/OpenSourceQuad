@@ -17,9 +17,9 @@ MMA8453_n0m1 accel;
 OseppGyro gyro;
 
 
-unsigned long time = 0;
-unsigned long current_time = 0;
-unsigned long elapsed_time = 0;
+
+unsigned long initial_time = 0;
+unsigned long final_time = 0;
 double pi = 3.14159;
 double heading;
 
@@ -31,7 +31,7 @@ int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
 int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
 int HighDef = true;
 int g_threshold = 5; //Upper threshold for set zero from accel data 
-int d_threshold = 5;
+int d_threshold = 10;
 
  /*=========================================================================
     Data arrays
@@ -125,16 +125,15 @@ void loop()
   
   gyrodata[0] = wy;
   gyrodata[1] = -wx;
-  current_time = micros();
-  elapsed_time = current_time - time;
-  MainTask(elapsed_time);
+  gyrodata[2] = -wz;
+  MainTask();
 }
 
  /*=========================================================================
     void MainTask();
     -----------------------------------------------------------------------*/
 
-void MainTask(unsigned long timestep) 
+void MainTask() 
 {
   double uc = pow(10,6);
   double ax = acceldata[0];
@@ -148,14 +147,15 @@ void MainTask(unsigned long timestep)
   
   double alpha = atan2(ax,az)*(180/ pi);
   double beta = atan2(ay,az)*(180/pi);
+
+  
+  final_time = micros();
+  heading = heading + wz*((final_time-initial_time)/uc);
+  initial_time = micros();
+  
   Serial.print(" a: "); Serial.print(alpha);
   Serial.print(" b: "); Serial.print(beta);
-  
-  Serial.print(" ts: "); Serial.print(timestep);
-  heading = heading + wz*(timestep/uc);
-  Serial.print("   heading: "); Serial.println(heading,10);
-  
-  time = micros();
+  Serial.print(" hdg: "); Serial.println(heading);
 }
 
  /*=========================================================================
