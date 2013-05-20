@@ -11,7 +11,7 @@ Date: May 2013
 
 unsigned long initial_time = 0;
 unsigned long final_time = 0;
-double pi = 3.14159;
+const double pi = 3.14159;
 
  /*=========================================================================
     Class instances
@@ -24,23 +24,18 @@ OseppGyro gyro;
     State variables
     -----------------------------------------------------------------------*/
 double heading = 0;
-double sx = 0;
-double sy = 0;
-double sz = 0;
-double vx = 0;
-double vy = 0;
-double vz = 0;
+double altitude = 0;
 
 
  /*=========================================================================
     Device settings (Options for sensors)
     -----------------------------------------------------------------------*/
-int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
-int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
-int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
-int HighDef = true;
-int g_threshold = 10; //Upper threshold for set zero from accel data 
-int d_threshold = 10;
+const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
+const int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
+const int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
+const bool HighDef = true;
+const int g_threshold = 10; //Upper threshold for set zero from accel data 
+const int d_threshold = 10;
 
 
  /*=========================================================================
@@ -124,7 +119,7 @@ void loop()
   update_sensors();
   SI_convert();
   
-  
+  altitude = analogRead(0); // 
   
   
   //Fix axis orientations
@@ -165,20 +160,12 @@ void MainTask()
   // Integration
   heading = heading + wz*time;
   
-  vx = vx + ax*time;
-  vy = vy + ay*time;
-  vz = vz + (az-9.81)*time; // Doesn't Work!!!!
-  
-  sx = sx + vx*time;
-  sy = sy + vy*time;
-  sz = sz + vz*time;
   
   initial_time = micros();
   
   Serial.print(" a: "); Serial.print(alpha);
   Serial.print(" b: "); Serial.print(beta);
   Serial.print(" hdg: "); Serial.print(heading);
-  Serial.print(" sz: "); Serial.println(sz);
 }
 
  /*=========================================================================
