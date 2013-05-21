@@ -14,7 +14,9 @@ Accel+Compass and the Osepp MPU3000/MPU3050 gyro. <br />
 
 Under development currently:
 
-1) Sensor noise reduction
+1) Sensor noise reduction - DONE, unless we find out later it's still too noisy.
 
 2) Smooth motor control
+
+3) Assembly with all 4 motors
 
