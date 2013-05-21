@@ -22,7 +22,7 @@ void setup()
  delay(1000);
  // Start the serial port for output
  Serial.begin(9600);
- gyro.setI2CAddr(0x68);
+ gyro.setI2CAddr(0x69);
  gyro.dataMode(ScaleRange,DLPF); 
  
  
