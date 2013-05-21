@@ -87,7 +87,7 @@ void setup()
   Serial.println("   Gryo 3rd party accel enabled!"); Serial.println(" ");
   
   Serial.println("Gyro initialization complete!"); Serial.println(" ");
-  delay(1000);
+  delay(10);
   
   /******************** End Gyro initialization ************************/
   
@@ -101,7 +101,7 @@ void setup()
   accel.dataMode(HighDef,g_ScaleRange); //
   Serial.println("   Accel data mode set!"); Serial.println(" ");
   Serial.println("Accel initialization complete!"); Serial.println(" ");
-  delay(1000);
+  delay(10);
   /******************* End Accel initialization ************************/
   
   /*=========================================================================
@@ -165,7 +165,7 @@ void MainTask()
   
   Serial.print(" a: "); Serial.print(alpha);
   Serial.print(" b: "); Serial.print(beta);
-  Serial.print(" hdg: "); Serial.print(heading);
+  Serial.print(" hdg: "); Serial.println(heading);
 }
 
  /*=========================================================================
@@ -249,7 +249,7 @@ void update_sensors()
     -----------------------------------------------------------------------*/
 void get_baseline() 
 {
-  int offset_counter = 100;
+  int offset_counter = 10;
   int counter = 1;
 
   Serial.println("Getting baseline offsets...");
@@ -272,7 +272,6 @@ void get_baseline()
     init_offset[5] = (init_offset[5] + gyrodata[2] );
     counter = counter + 1 ;
     
-    Serial.println(acceldata[1]);
     
     delayMicroseconds(10);
   }
