@@ -11,7 +11,7 @@ Date: May 2013
 
 unsigned long initial_time = 0;
 unsigned long final_time = 0;
-const double pi = 3.14159;
+#define pi = 3.14159F;
 
  /*=========================================================================
     Class instances
