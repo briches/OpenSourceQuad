@@ -4,6 +4,7 @@ state of quadcopter
 
 *Intructions to use*
 1) Call initSensor() in setup().
+2) Call get_Initial_Offsets
 
 
 ******************************************************/
@@ -46,9 +47,6 @@ bool control::initSensor()
 {
     getSettings();
 
-    MMA8453_n0m1 accel;  // ANDREW LOOK HERE. NUMBER 1
-    OseppGyro gyro;
-
     Serial.println("Intializing gyro: ");
     gyro.setI2CAddr(Gyro_Address);
     gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);
@@ -72,10 +70,69 @@ bool control::initSensor()
 
 /**************************************************************************/
 /*!
+    @brief Gets the initial offsets in both sensors to accomodate starting
+*/
+/**************************************************************************/
+void control:get_Initial_Offsets()
+{
+    int offset_counter = 10;
+    int counter = 1;
+    float acceldata[3];
+    float gyrodata[3];
+
+    Serial.println("Getting baseline offsets...");
+
+    while(counter <= offset_counter)
+    {
+        accel.update();  // Updates the accelerometer registers
+        acceldata[0] = accel.x();
+        acceldata[1] = accel.y();
+        acceldata[2] = accel.z();
+        gyro.update();   // Updates the gyro output registers
+        gyrodata[0] = gyro.x();
+        gyrodata[1] = gyro.y();
+        gyrodata[2] = gyro.z();
+        Offsets.ax = (Offsets.ax + acceldata[0] ); // Sum
+        Offsets.ay = (Offsets.ay + acceldata[1] );
+        Offsets.az = (Offsets.az + acceldata[2] );
+        Offsets.wx = (Offsets.wx + gyrodata[0] );
+        Offsets.wy = (Offsets.wy + gyrodata[1] );
+        Offsets.wz = (Offsets.wz + gyrodata[2] );
+        counter = counter + 1 ;
+
+        delayMicroseconds(10);
+    }
+
+    Serial.println(" ");
+    Offsets.ax = (Offsets.ax)/offset_counter;
+    Serial.print("accelerometer x-offset: ");
+    Serial.println(Offsets.ax);
+    Offsets.ay = (Offsets.ay)/offset_counter;
+    Serial.print("accelerometer y-offset: ");
+    Serial.println(Offsets.ay);
+    Offsets.az = ((Offsets.az)/offset_counter) + 256;
+    Serial.print("accelerometer z-offset: ");
+    Serial.println(Offsets.az);
+    Offsets.wx = (Offsets.wx)/offset_counter;
+    Serial.print("gyro x-offset: ");
+    Serial.println(Offsets.wx);
+    Offsets.wy = (Offsets.wy)/offset_counter;
+    Serial.print("gyro y-offset: ");
+    Serial.println(Offsets.wy);
+    Offsets.wz = (Offsets.wz)/offset_counter;
+    Serial.print("gyro z-offset: ");
+    Serial.println(Offsets.wz);
+    Serial.println(" ");
+}
+
+
+
+/**************************************************************************/
+/*!
     @brief Reads data from sensors
 */
 /**************************************************************************/
 void control::updateData_State()
 {
-    // ANDREW LOOK HERE. NUMBER 2
+
 }
