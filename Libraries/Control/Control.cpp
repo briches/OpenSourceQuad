@@ -46,7 +46,7 @@ bool control::initSensor()
 {
     getSettings();
 
-    MMA8453_n0m1 accel;
+    MMA8453_n0m1 accel;  // ANDREW LOOK HERE. NUMBER 1
     OseppGyro gyro;
 
     Serial.println("Intializing gyro: ");
@@ -68,4 +68,14 @@ bool control::initSensor()
     delayMicroseconds(10);
 
     return true;
+}
+
+/**************************************************************************/
+/*!
+    @brief Reads data from sensors
+*/
+/**************************************************************************/
+void control::updateData_State()
+{
+    // ANDREW LOOK HERE. NUMBER 2
 }

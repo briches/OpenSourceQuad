@@ -25,6 +25,17 @@ state of quadcopter
 #define Gyro_Address    (0x69)
 
 
+ /*=========================================================================
+    Device settings (Options for sensors)
+    -----------------------------------------------------------------------*/
+const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
+const int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
+const int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
+const bool HighDef = true;
+const int g_threshold = 10; //Upper threshold for set zero from accel data
+const int d_threshold = 10;
+
+
 /*=========================================================================
     INTERNAL ACCELERATION DATA TYPE
     -----------------------------------------------------------------------*/
@@ -46,7 +57,7 @@ typedef struct Quadcopter_Data_State_s
 } Quadcopter_Data_State;
 
 /*=========================================================================
-    DEVICE SETTINGS
+    DEVICE SETTINGS STRUCTURE
     -----------------------------------------------------------------------*/
 typedef struct Device_Settings_s
 {
@@ -68,14 +79,14 @@ class control
     public:
 
         control();                          // Constructor
-        void getSettings(void)
         bool initSensor();              // Initializes the two sensors
-        void updataData_State();            // Updates the structure
+        void updateData_State();            // Updates the structure
 
 
     private:
 
         Quadcopter_Data_State   Data_State; // Creates the structure
         Device_Settings         Settings;   // Creates the structure
+        void getSettings(void)
 }
 #endif // CONTROL_H_INCLUDED
