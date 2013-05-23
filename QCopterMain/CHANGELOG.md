@@ -2,6 +2,10 @@ Version History
 =========
 Please update this if you add something, it helps others see whats new.
 
+V0.3 <br />
+	- Biggest change yet, changed to work with the Control library
+	- Is now simple! Yay!
+
 V0.21 <br />
 	- Added angle calculation, heading calculation
 

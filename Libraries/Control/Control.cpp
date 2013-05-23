@@ -25,6 +25,7 @@ Date    : May 2013
 #include <MMA8453_n0m1.h>
 #include <OseppGyro.h>
 #include <I2C.h>
+#include <math.h>
 
 
 /***************************************************************************
@@ -58,8 +59,8 @@ void Control::get_Initial_Offsets()
 {
     int offset_counter = 10;
     int counter = 1;
-    float acceldata[3];
-    float gyrodata[3];
+    double acceldata[3];
+    double gyrodata[3];
 
     Serial.println("Getting baseline offsets...");
 
@@ -216,10 +217,18 @@ void Control::updateData_State()
     Data_State.ax = accel.x() - Offsets.ax;          // Store Raw values
     Data_State.ay = accel.y() - Offsets.ay;
     Data_State.az = accel.z() - Offsets.az;
-
     Data_State.wx = gyro.x() - Offsets.wx;
     Data_State.wy = gyro.y() - Offsets.wy;
     Data_State.wz = gyro.z() - Offsets.wz;
+
+    Data_State.t_previous = Data_State.t_current;                // Update the timestamps
+    Data_State.t_current = micros();
+    double time = (Data_State.t_current - Data_State.t_previous) / (1000000);
+
+    Data_State.alpha = atan2(Data_State.ax, Data_State.az) *180/Pi ;
+    Data_State.beta = atan2(Data_State.ay, Data_State.az) *180/Pi;
+
+    Data_State.heading = Data_State.heading + Data_State.wz * (time);
 
     SI_convert();                                    // Convert to SI units
 

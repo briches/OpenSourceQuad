@@ -26,6 +26,9 @@ Date    : May 2013
 #include <MMA8453_n0m1.h>
 #include <OseppGyro.h>
 #include <I2C.h>
+#include <math.h>
+
+const double Pi = 3.14159;
 
 /*=========================================================================
     I2C Addresses
@@ -51,18 +54,18 @@ const int d_threshold = 10;
 typedef struct Quadcopter_Data_State_s
 {
 
-    float ax;
-    float ay;
-    float az;
-    float wx;
-    float wy;
-    float wz;
-    float t_current;
-    float t_previous;
-    float alpha;
-    float beta;
-    float heading;
-    float altitude;
+    double ax;
+    double ay;
+    double az;
+    double wx;
+    double wy;
+    double wz;
+    double t_current;
+    double t_previous;
+    double alpha;
+    double beta;
+    double heading;
+    double altitude;
 
 } Quadcopter_Data_State;
 
@@ -85,12 +88,12 @@ typedef struct Device_Settings_s
     -----------------------------------------------------------------------*/
 typedef struct Initial_Offsets_s
 {
-    float ax;
-    float ay;
-    float az;
-    float wx;
-    float wy;
-    float wz;
+    double ax;
+    double ay;
+    double az;
+    double wx;
+    double wy;
+    double wz;
 
 } Initial_Offsets;
 
@@ -102,12 +105,12 @@ class Control
 {
     public:
 
-        Control();                          // Constructor
         bool initSensor();                  // Initializes the two sensors
         void updateData_State();            // Updates the structure
         Quadcopter_Data_State   Data_State; // Creates the structure
 
     private:
+
         Device_Settings         Settings;   // Creates the structure
         Initial_Offsets         Offsets;    // Creates the structure
 
