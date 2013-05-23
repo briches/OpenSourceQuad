@@ -47,14 +47,14 @@ void Control::getSettings()
     Settings.HighDef = HighDef;
     Settings.g_threshold = g_threshold;
     Settings.d_threshold = d_threshold;
-}
+};
 
 /**************************************************************************/
 /*!
     @brief Gets the initial offsets in both sensors to accomodate starting
 */
 /**************************************************************************/
-void Control:get_Initial_Offsets()
+void Control::get_Initial_Offsets()
 {
     int offset_counter = 10;
     int counter = 1;
@@ -104,7 +104,7 @@ void Control:get_Initial_Offsets()
     Serial.print("gyro z-offset: ");
     Serial.println(Offsets.wz);
     Serial.println(" ");
-}
+};
 
 /**************************************************************************/
 /*!
@@ -161,7 +161,7 @@ void Control::SI_convert()
             Data_State.wz = Data_State.wz * SI_CONVERT_2000;
             break;
     }
-}
+};
 
 
 /***************************************************************************
@@ -189,19 +189,19 @@ bool Control::initSensor()
         gyro.regRead(USER_CTRL,&x);
         gyro.regWrite(USER_CTRL,B00100000);
     }
-    Serial.println("Gyro init complete!")
+    Serial.println("Gyro init complete!");
     delayMicroseconds(10);
 
     Serial.println("Initializing accel: ");
     accel.setI2CAddr(Accel_Address);
-    accel.dataMode(Settings.HighDef, Settings.gScaleRange);
-    Serial.println("Accel init complete!")
+    accel.dataMode(Settings.HighDef, Settings.g_ScaleRange);
+    Serial.println("Accel init complete!");
     delayMicroseconds(10);
 
     get_Initial_Offsets();                              // Initial offsets
 
     return true;
-}
+};
 
 /**************************************************************************/
 /*!
@@ -223,4 +223,4 @@ void Control::updateData_State()
 
     SI_convert();                                    // Convert to SI units
 
-}
+};

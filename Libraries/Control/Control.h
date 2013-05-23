@@ -107,7 +107,6 @@ class Control
         void updateData_State();            // Updates the structure
         Quadcopter_Data_State   Data_State; // Creates the structure
 
-
     private:
         Device_Settings         Settings;   // Creates the structure
         Initial_Offsets         Offsets;    // Creates the structure
@@ -115,10 +114,10 @@ class Control
         MMA8453_n0m1            accel;      // Constructs an instance
         OseppGyro               gyro;       // Constructs an instance
 
-        void getSettings();                 // Fill settings struct
-        void SI_convert();                  // Convert to SI
-        void get_Initial_Offsets();         // Gets the initial Offsets
+        void getSettings(void);                 // Fill settings struct
+        void SI_convert(void);                  // Convert to SI
+        void get_Initial_Offsets(void);         // Gets the initial Offsets
 
 
-}
+};
 #endif // CONTROL_H_INCLUDED
