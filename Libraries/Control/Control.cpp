@@ -2,9 +2,14 @@
 Library designed to manage, update, and control the
 state of quadcopter
 
-*Intructions to use*
-1) Call initSensor() in setup().
-2) Call get_Initial_Offsets
+Author  : Brandon Riches
+Date    : May 2013
+
+
+    *Intructions to use*
+    1) Call initSensor() in setup().
+    2) Call get_Initial_Offsets in setup().
+    3) At least, call updateData_State() in loop().
 
 
 ******************************************************/
@@ -22,12 +27,19 @@ state of quadcopter
 #include <I2C.h>
 
 
+/***************************************************************************
+ CONTROL
+ ***************************************************************************/
+/***************************************************************************
+ *! @PRIVATE FUNCTIONS
+ ***************************************************************************/
+
 /**************************************************************************/
 /*!
     @brief Reads the settings into the structure. Private!
 */
 /**************************************************************************/
-void control::getSettings()
+void Control::getSettings()
 {
     Settings.d_ScaleRange = d_ScaleRange;
     Settings.g_ScaleRange = g_ScaleRange;
@@ -37,43 +49,12 @@ void control::getSettings()
     Settings.d_threshold = d_threshold;
 }
 
-
-/**************************************************************************/
-/*!
-    @brief Initializes the sensors, much like in the original setup
-*/
-/**************************************************************************/
-bool control::initSensor()
-{
-    getSettings();
-
-    Serial.println("Intializing gyro: ");
-    gyro.setI2CAddr(Gyro_Address);
-    gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);
-    byte x=0x0;
-    while(x != B100000)
-    {
-        gyro.regRead(USER_CTRL,&x);
-        gyro.regWrite(USER_CTRL,B00100000);
-    }
-    Serial.println("Gyro init complete!")
-    delayMicroseconds(10);
-
-    Serial.println("Initializing accel: ");
-    accel.setI2CAddr(Accel_Address);
-    accel.dataMode(Settings.HighDef, Settings.gScaleRange);
-    Serial.println("Accel init complete!")
-    delayMicroseconds(10);
-
-    return true;
-}
-
 /**************************************************************************/
 /*!
     @brief Gets the initial offsets in both sensors to accomodate starting
 */
 /**************************************************************************/
-void control:get_Initial_Offsets()
+void Control:get_Initial_Offsets()
 {
     int offset_counter = 10;
     int counter = 1;
@@ -125,14 +106,121 @@ void control:get_Initial_Offsets()
     Serial.println(" ");
 }
 
+/**************************************************************************/
+/*!
+    @brief Converts the raw data from sensors to SI units
+*/
+/**************************************************************************/
+void Control::SI_convert()
+{
+  //Convert accelerometer readouts to m/s^2
+    switch(g_ScaleRange) {
 
+        case FULL_SCALE_RANGE_2g:
+            Data_State.ax = Data_State.ax * SI_CONVERT_2g;
+            Data_State.ay = Data_State.ay * SI_CONVERT_2g;
+            Data_State.az = Data_State.az * SI_CONVERT_2g;
+            break;
+
+        case FULL_SCALE_RANGE_4g:
+            Data_State.ax = Data_State.ax * SI_CONVERT_4g;
+            Data_State.ay = Data_State.ay * SI_CONVERT_4g;
+            Data_State.az = Data_State.az * SI_CONVERT_4g;
+            break;
+
+        case FULL_SCALE_RANGE_8g:
+            Data_State.ax = Data_State.ax * SI_CONVERT_8g;
+            Data_State.ay = Data_State.ay * SI_CONVERT_8g;
+            Data_State.az = Data_State.az * SI_CONVERT_8g;
+            break;
+    }
+    // Convert gyro readouts to degrees/s
+    switch(d_ScaleRange) {
+
+        case FULL_SCALE_RANGE_250:
+            Data_State.wx = Data_State.wx * SI_CONVERT_250;
+            Data_State.wy = Data_State.wy * SI_CONVERT_250;
+            Data_State.wz = Data_State.wz * SI_CONVERT_250;
+            break;
+
+        case FULL_SCALE_RANGE_500:
+            Data_State.wx = Data_State.wx * SI_CONVERT_500;
+            Data_State.wy = Data_State.wy * SI_CONVERT_500;
+            Data_State.wz = Data_State.wz * SI_CONVERT_500;
+            break;
+
+        case FULL_SCALE_RANGE_1000:
+            Data_State.wx = Data_State.wx * SI_CONVERT_1000;
+            Data_State.wy = Data_State.wy * SI_CONVERT_1000;
+            Data_State.wz = Data_State.wz * SI_CONVERT_1000;
+            break;
+
+        case FULL_SCALE_RANGE_2000:
+            Data_State.wx = Data_State.wx * SI_CONVERT_2000;
+            Data_State.wy = Data_State.wy * SI_CONVERT_2000;
+            Data_State.wz = Data_State.wz * SI_CONVERT_2000;
+            break;
+    }
+}
+
+
+/***************************************************************************
+ CONTROL
+ ***************************************************************************/
+/***************************************************************************
+ *! @PUBLIC FUNCTIONS
+ ***************************************************************************/
+
+/**************************************************************************/
+/*!
+    @brief Initializes the sensors, much like in the original setup
+*/
+/**************************************************************************/
+bool Control::initSensor()
+{
+    getSettings();                                      // Settings struct
+
+    Serial.println("Intializing gyro: ");
+    gyro.setI2CAddr(Gyro_Address);
+    gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);
+    byte x=0x0;
+    while(x != B100000)
+    {
+        gyro.regRead(USER_CTRL,&x);
+        gyro.regWrite(USER_CTRL,B00100000);
+    }
+    Serial.println("Gyro init complete!")
+    delayMicroseconds(10);
+
+    Serial.println("Initializing accel: ");
+    accel.setI2CAddr(Accel_Address);
+    accel.dataMode(Settings.HighDef, Settings.gScaleRange);
+    Serial.println("Accel init complete!")
+    delayMicroseconds(10);
+
+    get_Initial_Offsets();                              // Initial offsets
+
+    return true;
+}
 
 /**************************************************************************/
 /*!
     @brief Reads data from sensors
 */
 /**************************************************************************/
-void control::updateData_State()
+void Control::updateData_State()
 {
+    accel.update();
+    gyro.update();
+
+    Data_State.ax = accel.x() - Offsets.ax;          // Store Raw values
+    Data_State.ay = accel.y() - Offsets.ay;
+    Data_State.az = accel.z() - Offsets.az;
+
+    Data_State.wx = gyro.x() - Offsets.wx;
+    Data_State.wy = gyro.y() - Offsets.wy;
+    Data_State.wz = gyro.z() - Offsets.wz;
+
+    SI_convert();                                    // Convert to SI units
 
 }

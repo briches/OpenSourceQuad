@@ -1,6 +1,15 @@
 /******************************************************
-Library designed to manage, update, and control the
+Library designed to manage, update, and Control the
 state of quadcopter
+
+Author  : Brandon Riches
+Date    : May 2013
+
+
+    *Intructions to use*
+    1) Call initSensor() in setup().
+    2) Call get_Initial_Offsets in setup().
+    3) At least, call updateData_State() in loop().
 
 
 ******************************************************/
@@ -48,7 +57,8 @@ typedef struct Quadcopter_Data_State_s
     float wx;
     float wy;
     float wz;
-    float timestamp;
+    float t_current;
+    float t_previous;
     float alpha;
     float beta;
     float heading;
@@ -70,23 +80,47 @@ typedef struct Device_Settings_s
 
 } Device_Settings;
 
+/*=========================================================================
+    DEVICE SETTINGS STRUCTURE
+    -----------------------------------------------------------------------*/
+typedef struct Initial_Offsets_s
+{
+    float ax;
+    float ay;
+    float az;
+    float wx;
+    float wy;
+    float wz;
+
+} Initial_Offsets;
+
 
 /*=========================================================================
     CLASS DECLARATION
     -----------------------------------------------------------------------*/
-class control
+class Control
 {
     public:
 
-        control();                          // Constructor
-        bool initSensor();              // Initializes the two sensors
+        Control();                          // Constructor
+        bool initSensor();                  // Initializes the two sensors
         void updateData_State();            // Updates the structure
+        Quadcopter_Data_State   Data_State; // Creates the structure
 
 
     private:
 
-        Quadcopter_Data_State   Data_State; // Creates the structure
+
         Device_Settings         Settings;   // Creates the structure
-        void getSettings(void)
+        Initial_Offsets         Offsets;    // Creates the structure
+
+        MMA8453_n0m1            accel;      // Constructs an instance
+        OseppGyro               gyro;       // Constructs an instance
+
+        void getSettings();                 // Fill settings struct
+        void SI_convert();                  // Convert to SI
+        void get_Initial_Offsets();         // Gets the initial Offsets
+
+
 }
 #endif // CONTROL_H_INCLUDED
