@@ -18,7 +18,6 @@ void setup()
   Serial.begin(9600);
   QCopter.initSensor();
 }
-  
 void loop()
 {
   QCopter.updateData_State();
