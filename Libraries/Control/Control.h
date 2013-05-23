@@ -109,8 +109,6 @@ class Control
 
 
     private:
-
-
         Device_Settings         Settings;   // Creates the structure
         Initial_Offsets         Offsets;    // Creates the structure
 
