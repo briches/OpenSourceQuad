@@ -1,3 +1,11 @@
+ /*=========================================================================
+Name: QCopterMain.ino
+Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
+Date: May 2013
+
+
+    -----------------------------------------------------------------------*/
+    
 #include <Control.h>
 #include <MMA8453_n0m1.h>
 #include <OseppGyro.h>
