@@ -95,9 +95,9 @@ const byte FULL_SCALE_RANGE_2g = 0x0;
 const byte FULL_SCALE_RANGE_4g = 0x1;
 const byte FULL_SCALE_RANGE_8g = 0x2;
 
-const float SI_CONVERT_2g = 0.03832;
-const float SI_CONVERT_4g = 0.076641;
-const float SI_CONVERT_8g = 0.153281;
+const double SI_CONVERT_2g = 0.03832;
+const double SI_CONVERT_4g = 0.076641;
+const double SI_CONVERT_8g = 0.153281;
 
 extern "C" void accelISR(void) __attribute__ ((signal));
 
