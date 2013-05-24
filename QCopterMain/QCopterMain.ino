@@ -12,14 +12,17 @@ Date: May 2013
 #include <I2C.h>
 
 Control QCopter;
-
+double rate = 0;
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   QCopter.initSensor();
+  QCopter.Settings.g_threshold = 0.10; // 0.10 m/s^2 threshold for noise
+  QCopter.Settings.d_threshold = 0.5; // 0.5 d/s threshold for noise
 }
 void loop()
 {
   QCopter.updateData_State();
-  Serial.println(QCopter.Data_State.heading);
+  rate = 1/((QCopter.Data_State.t_current - QCopter.Data_State.t_previous)/1000000);
+  Serial.println((int)rate);
 }

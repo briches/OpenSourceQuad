@@ -44,8 +44,8 @@ const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 const int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
 const int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
 const bool HighDef = true; // Is accel output 2byte or 1byte
-const int g_threshold = 10; //Upper threshold for set zero from accel data
-const int d_threshold = 10; //Upper threshold for set zero from gyro data
+const int g_threshold = 0.05; //Upper threshold for set zero from accel data
+const int d_threshold = 1; //Upper threshold for set zero from gyro data
 
 
 /*=========================================================================
@@ -108,10 +108,11 @@ class Control
         bool initSensor();                  // Initializes the two sensors
         void updateData_State();            // Updates the structure
         Quadcopter_Data_State   Data_State; // Creates the structure
+        Device_Settings         Settings;   // Creates the structure
 
     private:
 
-        Device_Settings         Settings;   // Creates the structure
+
         Initial_Offsets         Offsets;    // Creates the structure
 
         MMA8453_n0m1            accel;      // Constructs an instance

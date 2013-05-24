@@ -43,7 +43,7 @@ Date    : May 2013
 void Control::getSettings()
 {
     Settings.d_ScaleRange = d_ScaleRange;          // This function is just for
-    Settings.g_ScaleRange = g_ScaleRange;          // generality. Allows user 
+    Settings.g_ScaleRange = g_ScaleRange;          // generality. Allows user
     Settings.DLPF = DLPF;                          // changes of settings.
     Settings.HighDef = HighDef;
     Settings.g_threshold = g_threshold;
@@ -92,7 +92,7 @@ void Control::get_Initial_Offsets()
     Offsets.ay = (Offsets.ay)/offset_counter;
     Serial.print("accelerometer y-offset: ");
     Serial.println(Offsets.ay);
-    Offsets.az = ((Offsets.az)/offset_counter) + 256;
+    Offsets.az = ((Offsets.az)/offset_counter) - 256;
     Serial.print("accelerometer z-offset: ");
     Serial.println(Offsets.az);
     Offsets.wx = (Offsets.wx)/offset_counter;
@@ -180,7 +180,7 @@ bool Control::initSensor()
 {
     getSettings();                                             // Settings struct
 
-    Serial.println("Intializing gyro: ");                      // See OseppGyro.h 
+    Serial.println("Intializing gyro: ");                      // See OseppGyro.h
     gyro.setI2CAddr(Gyro_Address);                             // Set the I2C address in OseppGyro class
     gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);       // Set the dataMode in the OseppGyro Class
     byte x=0x0;
@@ -210,23 +210,30 @@ bool Control::initSensor()
 /**************************************************************************/
 void Control::updateData_State()
 {
-    accel.update();                                   // Update the registers storing data INSIDE the sensors
+    accel.update();                                                 // Update the registers storing data INSIDE the sensors
     gyro.update();
-   
-    Data_State.ax = accel.x() - Offsets.ax;           // Store Raw values from the sensor registers 
-    Data_State.ay = accel.y() - Offsets.ay;           // and removes the initial offsets
+
+    Data_State.ax = accel.x() - Offsets.ax;                         // Store Raw values from the sensor registers
+    Data_State.ay = accel.y() - Offsets.ay;                         // and removes the initial offsets
     Data_State.az = accel.z() - Offsets.az;
     Data_State.wx = gyro.x() - Offsets.wx;
     Data_State.wy = gyro.y() - Offsets.wy;
     Data_State.wz = gyro.z() - Offsets.wz;
-   
-    SI_convert();                                     // Convert to SI units from raw data type
-   
-    Data_State.t_previous = Data_State.t_current;     // Update the timestamps
+
+    SI_convert();                                                   // Convert to SI units from raw data type
+
+    if(fabs(Data_State.ax) < Settings.g_threshold) {Data_State.ax = 0;}   // Check if the data is less than the threshold
+    if(fabs(Data_State.ay) < Settings.g_threshold) {Data_State.ay = 0;}
+    if(fabs(Data_State.az) < Settings.g_threshold) {Data_State.az = 0;}
+    if(fabs(Data_State.wx) < Settings.d_threshold) {Data_State.wx = 0;}
+    if(fabs(Data_State.wy) < Settings.d_threshold) {Data_State.wy = 0;}
+    if(fabs(Data_State.wz) < Settings.d_threshold) {Data_State.wz = 0;}
+
+    Data_State.t_previous = Data_State.t_current;                   // Update the timestamps
     Data_State.t_current = micros();
-    double time = (Data_State.t_current - Data_State.t_previous) / (1000000); // Converts time from micros to seconds
-    Data_State.heading = Data_State.heading + Data_State.wz * (time);// Integrats wz to find the angular displacement
-   
+    double time = (Data_State.t_current - Data_State.t_previous) / (1000000); // Converts time from microseconds to seconds
+    Data_State.heading = Data_State.heading + Data_State.wz * (time);// Integrates wz to find the angular displacement
+
     Data_State.alpha = atan2(Data_State.ax, Data_State.az) *180/Pi ; // Arctan of the two values returns the angle,
     Data_State.beta = atan2(Data_State.ay, Data_State.az) *180/Pi;   // in rads, and convert to degrees.
 };
