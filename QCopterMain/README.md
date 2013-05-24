@@ -24,4 +24,4 @@ What the code does so far:
     + 
 - Fetches raw data outputs from each of the sensors
 - Takes a small running average to smooth the raw data, and sets data to zero if below thresholds
-- 
+
