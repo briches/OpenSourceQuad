@@ -2,6 +2,11 @@ Version History
 =========
 Please update this if you add something, it helps others see whats new.
 
+V0.301 <br />
+	- Fixed some unit conversion stuff involved in the noise reduction. <br />
+	- Now it actually works.   <br />
+	- Work begins on including motor initialization <br />
+
 V0.3 <br />
 	- Biggest change yet, changed to work with the Control library
 	- Is now simple! Yay!
