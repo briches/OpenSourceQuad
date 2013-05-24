@@ -9,7 +9,7 @@ Date    : May 2013
     *Intructions to use*
     1) Call initSensor() in setup().
     2) Call get_Initial_Offsets in setup().
-    3) At least, call updateData_State() in loop().
+    3) At the very least, call updateData_State() in loop().
 
 
 ******************************************************/
@@ -42,9 +42,9 @@ Date    : May 2013
 /**************************************************************************/
 void Control::getSettings()
 {
-    Settings.d_ScaleRange = d_ScaleRange;
-    Settings.g_ScaleRange = g_ScaleRange;
-    Settings.DLPF = DLPF;
+    Settings.d_ScaleRange = d_ScaleRange;          // This function is just for
+    Settings.g_ScaleRange = g_ScaleRange;          // generality. Allows user 
+    Settings.DLPF = DLPF;                          // changes of settings.
     Settings.HighDef = HighDef;
     Settings.g_threshold = g_threshold;
     Settings.d_threshold = d_threshold;
@@ -57,7 +57,7 @@ void Control::getSettings()
 /**************************************************************************/
 void Control::get_Initial_Offsets()
 {
-    int offset_counter = 10;
+    int offset_counter = 10;                       // # of data sets to consider when finding offsets
     int counter = 1;
     double acceldata[3];
     double gyrodata[3];
@@ -66,11 +66,11 @@ void Control::get_Initial_Offsets()
 
     while(counter <= offset_counter)
     {
-        accel.update();  // Updates the accelerometer registers
+        accel.update();                            // Updates the accelerometer registers
         acceldata[0] = accel.x();
         acceldata[1] = accel.y();
         acceldata[2] = accel.z();
-        gyro.update();   // Updates the gyro output registers
+        gyro.update();                             // Updates the gyro output registers
         gyrodata[0] = gyro.x();
         gyrodata[1] = gyro.y();
         gyrodata[2] = gyro.z();
@@ -82,11 +82,11 @@ void Control::get_Initial_Offsets()
         Offsets.wz = (Offsets.wz + gyrodata[2] );
         counter = counter + 1 ;
 
-        delayMicroseconds(10);
+        delayMicroseconds(10);                     // Delay to ensure accel/gyro can physically keep up
     }
 
     Serial.println(" ");
-    Offsets.ax = (Offsets.ax)/offset_counter;
+    Offsets.ax = (Offsets.ax)/offset_counter;      // Store the average of the readings into the Offsets struct
     Serial.print("accelerometer x-offset: ");
     Serial.println(Offsets.ax);
     Offsets.ay = (Offsets.ay)/offset_counter;
@@ -116,7 +116,6 @@ void Control::SI_convert()
 {
   //Convert accelerometer readouts to m/s^2
     switch(g_ScaleRange) {
-
         case FULL_SCALE_RANGE_2g:
             Data_State.ax = Data_State.ax * SI_CONVERT_2g;
             Data_State.ay = Data_State.ay * SI_CONVERT_2g;
@@ -179,27 +178,27 @@ void Control::SI_convert()
 /**************************************************************************/
 bool Control::initSensor()
 {
-    getSettings();                                      // Settings struct
+    getSettings();                                             // Settings struct
 
-    Serial.println("Intializing gyro: ");
-    gyro.setI2CAddr(Gyro_Address);
-    gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);
+    Serial.println("Intializing gyro: ");                      // See OseppGyro.h 
+    gyro.setI2CAddr(Gyro_Address);                             // Set the I2C address in OseppGyro class
+    gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);       // Set the dataMode in the OseppGyro Class
     byte x=0x0;
     while(x != B100000)
     {
-        gyro.regRead(USER_CTRL,&x);
-        gyro.regWrite(USER_CTRL,B00100000);
+        gyro.regRead(USER_CTRL,&x);                            // See the data sheet for the MPU3050 gyro
+        gyro.regWrite(USER_CTRL,B00100000);                    // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
     }
     Serial.println("Gyro init complete!");
     delayMicroseconds(10);
 
-    Serial.println("Initializing accel: ");
-    accel.setI2CAddr(Accel_Address);
-    accel.dataMode(Settings.HighDef, Settings.g_ScaleRange);
+    Serial.println("Initializing accel: ");                    // Same as the gyro initialization, but the accel isnt an ass
+    accel.setI2CAddr(Accel_Address);                           // See the data sheet for the MMA8452Q Accelerometer registers
+    accel.dataMode(Settings.HighDef, Settings.g_ScaleRange);   // http://cache.freescale.com/files/sensors/doc/data_sheet/MMA8452Q.pdf?fpsp=1
     Serial.println("Accel init complete!");
     delayMicroseconds(10);
 
-    get_Initial_Offsets();                              // Initial offsets
+    get_Initial_Offsets();                                     // Initial offsets private function in Control class
 
     return true;
 };
@@ -211,25 +210,23 @@ bool Control::initSensor()
 /**************************************************************************/
 void Control::updateData_State()
 {
-    accel.update();
+    accel.update();                                   // Update the registers storing data INSIDE the sensors
     gyro.update();
-
-    Data_State.ax = accel.x() - Offsets.ax;          // Store Raw values
-    Data_State.ay = accel.y() - Offsets.ay;
+   
+    Data_State.ax = accel.x() - Offsets.ax;           // Store Raw values from the sensor registers 
+    Data_State.ay = accel.y() - Offsets.ay;           // and removes the initial offsets
     Data_State.az = accel.z() - Offsets.az;
     Data_State.wx = gyro.x() - Offsets.wx;
     Data_State.wy = gyro.y() - Offsets.wy;
     Data_State.wz = gyro.z() - Offsets.wz;
-
-    Data_State.t_previous = Data_State.t_current;                // Update the timestamps
+   
+    SI_convert();                                     // Convert to SI units from raw data type
+   
+    Data_State.t_previous = Data_State.t_current;     // Update the timestamps
     Data_State.t_current = micros();
-    double time = (Data_State.t_current - Data_State.t_previous) / (1000000);
-
-    Data_State.alpha = atan2(Data_State.ax, Data_State.az) *180/Pi ;
-    Data_State.beta = atan2(Data_State.ay, Data_State.az) *180/Pi;
-
-    Data_State.heading = Data_State.heading + Data_State.wz * (time);
-
-    SI_convert();                                    // Convert to SI units
-
+    double time = (Data_State.t_current - Data_State.t_previous) / (1000000); // Converts time from micros to seconds
+    Data_State.heading = Data_State.heading + Data_State.wz * (time);// Integrats wz to find the angular displacement
+   
+    Data_State.alpha = atan2(Data_State.ax, Data_State.az) *180/Pi ; // Arctan of the two values returns the angle,
+    Data_State.beta = atan2(Data_State.ay, Data_State.az) *180/Pi;   // in rads, and convert to degrees.
 };
