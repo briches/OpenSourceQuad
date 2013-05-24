@@ -43,9 +43,9 @@ const double Pi = 3.14159;
 const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 const int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
 const int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
-const bool HighDef = true;
+const bool HighDef = true; // Is accel output 2byte or 1byte
 const int g_threshold = 10; //Upper threshold for set zero from accel data
-const int d_threshold = 10;
+const int d_threshold = 10; //Upper threshold for set zero from gyro data
 
 
 /*=========================================================================
@@ -54,18 +54,18 @@ const int d_threshold = 10;
 typedef struct Quadcopter_Data_State_s
 {
 
-    double ax;
+    double ax;                   // Basic sensor data
     double ay;
     double az;
     double wx;
     double wy;
     double wz;
-    double t_current;
-    double t_previous;
-    double alpha;
-    double beta;
-    double heading;
-    double altitude;
+    double t_current;            // Time @ call to updateData_State();
+    double t_previous;           // Time @ previous call to updateData_State();
+    double alpha;                // Angle between x and z
+    double beta;                 // Angle between y and z
+    double heading;              // Time integration of wz
+    double altitude;             // From Infrared Sensor; Accelerometry is too hard
 
 } Quadcopter_Data_State;
 
@@ -88,7 +88,7 @@ typedef struct Device_Settings_s
     -----------------------------------------------------------------------*/
 typedef struct Initial_Offsets_s
 {
-    double ax;
+    double ax;                   // Offsets from initial position sensor data
     double ay;
     double az;
     double wx;
