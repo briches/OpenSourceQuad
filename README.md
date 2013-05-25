@@ -12,11 +12,26 @@ The code contained within this repository is intended to act as the complete con
 quadcopter with 6-axis sensor capability. Specifically, the code is written for compatability with the LSM303DLHC <br /> 
 Accel+Compass and the Osepp MPU3000/MPU3050 gyro. <br />
 
+
+Features and long term goals:
+----------------------------
+   <br />
+  - Fully autonomous flight and landing. Has the option to be controlled via radio comms. <br />
+
+  - 6 DOF Sensor capability, upgrade to 9 DOF including magnetometer module.  <br />
+  
+  - Obstacle avoidance and tracking, mapping cabalilities  <br />
+  
+  - Open source =]
+   <br />
+   <br />
+
 Under development currently:
+----------------------------
 
-1) Sensor noise reduction - DONE, unless we find out later it's still too noisy.
+ <br />
+  - Sensor noise reduction - DONE, unless we find out later it's still too noisy. <br />
 
-2) Smooth motor control
+  - Smooth motor control. <br />
 
-3) Assembly with all 4 motors
-
+  - Assembly with all 4 motors. <br />
