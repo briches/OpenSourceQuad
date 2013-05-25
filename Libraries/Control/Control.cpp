@@ -161,27 +161,27 @@ void Control::SI_convert()
             Data_State.wz = Data_State.wz * SI_CONVERT_2000;
             break;
     }
-    if (Data_State.hieght >= 400) {Data_State.hieght = 10;}
-    else if( (Data_State.hieght <= 400) && (Data_State.hieght > 290)) {Data_State.hieght = 15;}
-    else if( (Data_State.hieght <= 290) && (Data_State.hieght > 230)) {Data_State.hieght = 20;}
-    else if( (Data_State.hieght <= 230) && (Data_State.hieght > 190)) {Data_State.hieght = 25;}
-    else if( (Data_State.hieght <= 190) && (Data_State.hieght > 170)) {Data_State.hieght = 30;}
-    else if( (Data_State.hieght <= 170) && (Data_State.hieght > 150)) {Data_State.hieght = 35;}
-    else if( (Data_State.hieght <= 150) && (Data_State.hieght > 130)) {Data_State.hieght = 40;}
-    else if( (Data_State.hieght <= 130) && (Data_State.hieght > 118)) {Data_State.hieght = 45;}
-    else if( (Data_State.hieght <= 118) && (Data_State.hieght > 107)) {Data_State.hieght = 50;}
-    else if( (Data_State.hieght <= 107) && (Data_State.hieght > 97)) {Data_State.hieght = 55;}
-    else if( (Data_State.hieght <= 97) && (Data_State.hieght > 91)) {Data_State.hieght = 60;}
-    else if( (Data_State.hieght <= 91) && (Data_State.hieght > 81)) {Data_State.hieght = 65;}
-    else if( (Data_State.hieght <= 81) && (Data_State.hieght > 75)) {Data_State.hieght = 70;}
-    else if( (Data_State.hieght <= 75) && (Data_State.hieght > 71)) {Data_State.hieght = 75;}
-    else if( (Data_State.hieght <= 71) && (Data_State.hieght > 69)) {Data_State.hieght = 80;}
-    else if( (Data_State.hieght <= 69) && (Data_State.hieght > 67)) {Data_State.hieght = 85;}
-    else if( (Data_State.hieght <= 67) && (Data_State.hieght > 65)) {Data_State.hieght = 90;}
-    else if( (Data_State.hieght <= 65) && (Data_State.hieght > 64)) {Data_State.hieght = 95;}
-    else if( (Data_State.hieght <= 64) && (Data_State.hieght > 63)) {Data_State.hieght = 100;}
-    else if( (Data_State.hieght <= 63) && (Data_State.hieght > 62)) {Data_State.hieght = 105;}
-    else {Data_State.hieght = 999;}
+    if (Data_State.height >= 400) {Data_State.height = 10;}
+    else if( (Data_State.height <= 400) && (Data_State.height > 290)) {Data_State.height = 15;}
+    else if( (Data_State.height <= 290) && (Data_State.height > 230)) {Data_State.height = 20;}
+    else if( (Data_State.height <= 230) && (Data_State.height > 190)) {Data_State.height = 25;}
+    else if( (Data_State.height <= 190) && (Data_State.height > 170)) {Data_State.height = 30;}
+    else if( (Data_State.height <= 170) && (Data_State.height > 150)) {Data_State.height = 35;}
+    else if( (Data_State.height <= 150) && (Data_State.height > 130)) {Data_State.height = 40;}
+    else if( (Data_State.height <= 130) && (Data_State.height > 118)) {Data_State.height = 45;}
+    else if( (Data_State.height <= 118) && (Data_State.height > 107)) {Data_State.height = 50;}
+    else if( (Data_State.height <= 107) && (Data_State.height > 97)) {Data_State.height = 55;}
+    else if( (Data_State.height <= 97) && (Data_State.height > 91)) {Data_State.height = 60;}
+    else if( (Data_State.height <= 91) && (Data_State.height > 81)) {Data_State.height = 65;}
+    else if( (Data_State.height <= 81) && (Data_State.height > 75)) {Data_State.height = 70;}
+    else if( (Data_State.height <= 75) && (Data_State.height > 71)) {Data_State.height = 75;}
+    else if( (Data_State.height <= 71) && (Data_State.height > 69)) {Data_State.height = 80;}
+    else if( (Data_State.height <= 69) && (Data_State.height > 67)) {Data_State.height = 85;}
+    else if( (Data_State.height <= 67) && (Data_State.height > 65)) {Data_State.height = 90;}
+    else if( (Data_State.height <= 65) && (Data_State.height > 64)) {Data_State.height = 95;}
+    else if( (Data_State.height <= 64) && (Data_State.height > 63)) {Data_State.height = 100;}
+    else if( (Data_State.height <= 63) && (Data_State.height > 62)) {Data_State.height = 105;}
+    else {Data_State.height = 999;}
 };
 
 
@@ -241,7 +241,7 @@ void Control::updateData_State()
     Data_State.wy = gyro.y() - Offsets.wy;
     Data_State.wz = gyro.z() - Offsets.wz;
 
-    Data_State.hieght = analogRead(0);                              // Reads the analog infrared output
+    Data_State.height = analogRead(0);                              // Reads the analog infrared output
 
     SI_convert();                                                   // Convert to SI units from raw data type
 

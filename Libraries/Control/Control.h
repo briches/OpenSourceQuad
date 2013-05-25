@@ -65,7 +65,7 @@ typedef struct Quadcopter_Data_State_s
     double alpha;                // Angle between x and z
     double beta;                 // Angle between y and z
     double heading;              // Time integration of wz
-    double hieght;               // From Infrared Sensor; Accelerometry is too hard
+    double height;               // From Infrared Sensor; Accelerometry is too hard
 
 } Quadcopter_Data_State;
 

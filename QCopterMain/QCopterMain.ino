@@ -24,5 +24,5 @@ void loop()
 {
   QCopter.updateData_State();    // See control.cpp for clarification
   rate = 1/((QCopter.Data_State.t_current - QCopter.Data_State.t_previous)/1000000);
-  Serial.println(QCopter.Data_State.hieght);
+  Serial.println(QCopter.Data_State.height);
 }
