@@ -9,7 +9,7 @@ Date    : May 2013
     *Intructions to use*
     1) Call initSensor() in setup().
     2) Call get_Initial_Offsets in setup().
-    3) At the very least, call updateData_State() in loop().
+    3) At the very least, call updateDS() in loop().
 
 
 ******************************************************/
@@ -26,7 +26,7 @@ Date    : May 2013
 #include <OseppGyro.h>
 #include <I2C.h>
 #include <math.h>
-
+#include <Servo.h>
 
 /***************************************************************************
  CONTROL
@@ -107,6 +107,19 @@ void Control::get_Initial_Offsets()
     Serial.println(" ");
 };
 
+/* CALCULATES ALTITUDE. REPLACED IN LINES
+double calc_alt (int input) {
+    if (input > 450) {
+        return 0;
+    }
+    double result = 10579 * pow(input,-1.136);
+    if (result > 100) {
+        return -1;
+    }
+    return result;
+}
+*/
+
 /**************************************************************************/
 /*!
     @brief Converts the raw data from sensors to SI units
@@ -117,71 +130,86 @@ void Control::SI_convert()
   //Convert accelerometer readouts to m/s^2
     switch(g_ScaleRange) {
         case FULL_SCALE_RANGE_2g:
-            Data_State.ax = Data_State.ax * SI_CONVERT_2g;
-            Data_State.ay = Data_State.ay * SI_CONVERT_2g;
-            Data_State.az = Data_State.az * SI_CONVERT_2g;
+            DS.ax = DS.ax * SI_CONVERT_2g;
+            DS.ay = DS.ay * SI_CONVERT_2g;
+            DS.az = DS.az * SI_CONVERT_2g;
             break;
 
         case FULL_SCALE_RANGE_4g:
-            Data_State.ax = Data_State.ax * SI_CONVERT_4g;
-            Data_State.ay = Data_State.ay * SI_CONVERT_4g;
-            Data_State.az = Data_State.az * SI_CONVERT_4g;
+            DS.ax = DS.ax * SI_CONVERT_4g;
+            DS.ay = DS.ay * SI_CONVERT_4g;
+            DS.az = DS.az * SI_CONVERT_4g;
             break;
 
         case FULL_SCALE_RANGE_8g:
-            Data_State.ax = Data_State.ax * SI_CONVERT_8g;
-            Data_State.ay = Data_State.ay * SI_CONVERT_8g;
-            Data_State.az = Data_State.az * SI_CONVERT_8g;
+            DS.ax = DS.ax * SI_CONVERT_8g;
+            DS.ay = DS.ay * SI_CONVERT_8g;
+            DS.az = DS.az * SI_CONVERT_8g;
             break;
     }
     // Convert gyro readouts to degrees/s
     switch(d_ScaleRange) {
 
         case FULL_SCALE_RANGE_250:
-            Data_State.wx = Data_State.wx * SI_CONVERT_250;
-            Data_State.wy = Data_State.wy * SI_CONVERT_250;
-            Data_State.wz = Data_State.wz * SI_CONVERT_250;
+            DS.wx = DS.wx * SI_CONVERT_250;
+            DS.wy = DS.wy * SI_CONVERT_250;
+            DS.wz = DS.wz * SI_CONVERT_250;
             break;
 
         case FULL_SCALE_RANGE_500:
-            Data_State.wx = Data_State.wx * SI_CONVERT_500;
-            Data_State.wy = Data_State.wy * SI_CONVERT_500;
-            Data_State.wz = Data_State.wz * SI_CONVERT_500;
+            DS.wx = DS.wx * SI_CONVERT_500;
+            DS.wy = DS.wy * SI_CONVERT_500;
+            DS.wz = DS.wz * SI_CONVERT_500;
             break;
 
         case FULL_SCALE_RANGE_1000:
-            Data_State.wx = Data_State.wx * SI_CONVERT_1000;
-            Data_State.wy = Data_State.wy * SI_CONVERT_1000;
-            Data_State.wz = Data_State.wz * SI_CONVERT_1000;
+            DS.wx = DS.wx * SI_CONVERT_1000;
+            DS.wy = DS.wy * SI_CONVERT_1000;
+            DS.wz = DS.wz * SI_CONVERT_1000;
             break;
 
         case FULL_SCALE_RANGE_2000:
-            Data_State.wx = Data_State.wx * SI_CONVERT_2000;
-            Data_State.wy = Data_State.wy * SI_CONVERT_2000;
-            Data_State.wz = Data_State.wz * SI_CONVERT_2000;
+            DS.wx = DS.wx * SI_CONVERT_2000;
+            DS.wy = DS.wy * SI_CONVERT_2000;
+            DS.wz = DS.wz * SI_CONVERT_2000;
             break;
     }
-    if (Data_State.height >= 400) {Data_State.height = 10;}
-    else if( (Data_State.height <= 400) && (Data_State.height > 290)) {Data_State.height = 15;}
-    else if( (Data_State.height <= 290) && (Data_State.height > 230)) {Data_State.height = 20;}
-    else if( (Data_State.height <= 230) && (Data_State.height > 190)) {Data_State.height = 25;}
-    else if( (Data_State.height <= 190) && (Data_State.height > 170)) {Data_State.height = 30;}
-    else if( (Data_State.height <= 170) && (Data_State.height > 150)) {Data_State.height = 35;}
-    else if( (Data_State.height <= 150) && (Data_State.height > 130)) {Data_State.height = 40;}
-    else if( (Data_State.height <= 130) && (Data_State.height > 118)) {Data_State.height = 45;}
-    else if( (Data_State.height <= 118) && (Data_State.height > 107)) {Data_State.height = 50;}
-    else if( (Data_State.height <= 107) && (Data_State.height > 97)) {Data_State.height = 55;}
-    else if( (Data_State.height <= 97) && (Data_State.height > 91)) {Data_State.height = 60;}
-    else if( (Data_State.height <= 91) && (Data_State.height > 81)) {Data_State.height = 65;}
-    else if( (Data_State.height <= 81) && (Data_State.height > 75)) {Data_State.height = 70;}
-    else if( (Data_State.height <= 75) && (Data_State.height > 71)) {Data_State.height = 75;}
-    else if( (Data_State.height <= 71) && (Data_State.height > 69)) {Data_State.height = 80;}
-    else if( (Data_State.height <= 69) && (Data_State.height > 67)) {Data_State.height = 85;}
-    else if( (Data_State.height <= 67) && (Data_State.height > 65)) {Data_State.height = 90;}
-    else if( (Data_State.height <= 65) && (Data_State.height > 64)) {Data_State.height = 95;}
-    else if( (Data_State.height <= 64) && (Data_State.height > 63)) {Data_State.height = 100;}
-    else if( (Data_State.height <= 63) && (Data_State.height > 62)) {Data_State.height = 105;}
-    else {Data_State.height = 999;}
+
+    // DONT USE THIS:
+/*    if (DS.height >= 400) {DS.height = 10;}
+    else if( (DS.height <= 400) && (DS.height > 290)) {DS.height = 15;}
+    else if( (DS.height <= 290) && (DS.height > 230)) {DS.height = 20;}
+    else if( (DS.height <= 230) && (DS.height > 190)) {DS.height = 25;}
+    else if( (DS.height <= 190) && (DS.height > 170)) {DS.height = 30;}
+    else if( (DS.height <= 170) && (DS.height > 150)) {DS.height = 35;}
+    else if( (DS.height <= 150) && (DS.height > 130)) {DS.height = 40;}
+    else if( (DS.height <= 130) && (DS.height > 118)) {DS.height = 45;}
+    else if( (DS.height <= 118) && (DS.height > 107)) {DS.height = 50;}
+    else if( (DS.height <= 107) && (DS.height > 97)) {DS.height = 55;}
+    else if( (DS.height <= 97) && (DS.height > 91)) {DS.height = 60;}
+    else if( (DS.height <= 91) && (DS.height > 81)) {DS.height = 65;}
+    else if( (DS.height <= 81) && (DS.height > 75)) {DS.height = 70;}
+    else if( (DS.height <= 75) && (DS.height > 71)) {DS.height = 75;}
+    else if( (DS.height <= 71) && (DS.height > 69)) {DS.height = 80;}
+    else if( (DS.height <= 69) && (DS.height > 67)) {DS.height = 85;}
+    else if( (DS.height <= 67) && (DS.height > 65)) {DS.height = 90;}
+    else if( (DS.height <= 65) && (DS.height > 64)) {DS.height = 95;}
+    else if( (DS.height <= 64) && (DS.height > 63)) {DS.height = 100;}
+    else if( (DS.height <= 63) && (DS.height > 62)) {DS.height = 105;}
+    else {DS.height = 999;}*/
+
+/* //USE THIS IF YOU DIDN'T BREAK THE IR SENSOR
+    if (DS.height > 450) {
+        DS.height = 0;
+    } else {
+        double result = 10579 * pow(DS.height,-1.136);
+        if (result > 100) {
+            DS.height = -1;
+        } else {
+            DS.height = result;
+        }
+    }
+*/
 };
 
 
@@ -226,37 +254,85 @@ bool Control::initSensor()
 
 /**************************************************************************/
 /*!
+    @brief Initializes the motors, code from Andrew's script
+*/
+/**************************************************************************/
+bool Control::initMotors()
+{
+    DS.motor1s = 0;                         // Initialize all motor speeds to 0
+    DS.motor2s = 0;                         // This might be useful, later
+    DS.motor3s = 0;
+    DS.motor4s = 0;
+    motor1.attach(11);                      // Attach motor 1 to D11
+    motor2.attach(10);                      // Attach motor 2 to D10
+    motor3.attach(9);                       // Attach motor 3 to D9
+    motor4.attach(6);                       // Attach motor 4 to D8
+
+    // initializes motor1
+    for(DS.motor1s = 0; DS.motor1s < 40; DS.motor1s += 5)
+    {
+      motor1.write(DS.motor1s);
+      delay(250);
+    }
+
+    // initializes motor2
+    for(DS.motor2s = 0; DS.motor2s < 40; DS.motor2s += 5)
+    {
+      motor2.write(DS.motor2s);
+      delay(250);
+    }
+
+    // initializes motor3
+    for(DS.motor3s = 0; DS.motor3s < 40; DS.motor3s += 5)
+    {
+      motor3.write(DS.motor3s);
+      delay(250);
+    }
+
+    // initializes motor4
+    for(DS.motor4s = 0; DS.motor4s < 40; DS.motor4s += 5)
+    {
+      motor4.write(DS.motor4s);
+      delay(250);
+    }
+
+    return true;
+}
+
+
+/**************************************************************************/
+/*!
     @brief Reads data from sensors
 */
 /**************************************************************************/
-void Control::updateData_State()
+void Control::update()
 {
     accel.update();                                                 // Update the registers storing data INSIDE the sensors
     gyro.update();
 
-    Data_State.ax = accel.x() - Offsets.ax;                         // Store Raw values from the sensor registers
-    Data_State.ay = accel.y() - Offsets.ay;                         // and removes the initial offsets
-    Data_State.az = accel.z() - Offsets.az;
-    Data_State.wx = gyro.x() - Offsets.wx;
-    Data_State.wy = gyro.y() - Offsets.wy;
-    Data_State.wz = gyro.z() - Offsets.wz;
+    DS.ax = accel.x() - Offsets.ax;                         // Store Raw values from the sensor registers
+    DS.ay = accel.y() - Offsets.ay;                         // and removes the initial offsets
+    DS.az = accel.z() - Offsets.az;
+    DS.wx = gyro.x() - Offsets.wx;
+    DS.wy = gyro.y() - Offsets.wy;
+    DS.wz = gyro.z() - Offsets.wz;
 
-    Data_State.height = analogRead(0);                              // Reads the analog infrared output
+    DS.height = analogRead(0);                              // Reads the analog infrared output
 
-    SI_convert();                                                   // Convert to SI units from raw data type
+    SI_convert();                                           // Convert to SI units from raw data type
 
-    if(fabs(Data_State.ax) < Settings.g_threshold) {Data_State.ax = 0;}   // Check if the data is less than the threshold
-    if(fabs(Data_State.ay) < Settings.g_threshold) {Data_State.ay = 0;}
-    if(fabs(Data_State.az) < Settings.g_threshold) {Data_State.az = 0;}
-    if(fabs(Data_State.wx) < Settings.d_threshold) {Data_State.wx = 0;}
-    if(fabs(Data_State.wy) < Settings.d_threshold) {Data_State.wy = 0;}
-    if(fabs(Data_State.wz) < Settings.d_threshold) {Data_State.wz = 0;}
+    if(fabs(DS.ax) < Settings.g_threshold) {DS.ax = 0;}     // Check if the data is less than the threshold
+    if(fabs(DS.ay) < Settings.g_threshold) {DS.ay = 0;}
+    if(fabs(DS.az) < Settings.g_threshold) {DS.az = 0;}
+    if(fabs(DS.wx) < Settings.d_threshold) {DS.wx = 0;}
+    if(fabs(DS.wy) < Settings.d_threshold) {DS.wy = 0;}
+    if(fabs(DS.wz) < Settings.d_threshold) {DS.wz = 0;}
 
-    Data_State.t_previous = Data_State.t_current;                   // Update the timestamps
-    Data_State.t_current = micros();
-    double time = (Data_State.t_current - Data_State.t_previous) / (1000000); // Converts time from microseconds to seconds
-    Data_State.heading = Data_State.heading + Data_State.wz * (time);// Integrates wz to find the angular displacement
+    DS.t_previous = DS.t_current;                   // Update the timestamps
+    DS.t_current = micros();
+    double time = (DS.t_current - DS.t_previous) / (1000000); // Converts time from microseconds to seconds
+    DS.heading = DS.heading + DS.wz * (time);// Integrates wz to find the angular displacement
 
-    Data_State.alpha = atan2(Data_State.ax, Data_State.az) *180/Pi ; // Arctan of the two values returns the angle,
-    Data_State.beta = atan2(Data_State.ay, Data_State.az) *180/Pi;   // in rads, and convert to degrees.
+    DS.alpha = atan2(DS.ax, DS.az) *180/Pi ; // Arctan of the two values returns the angle,
+    DS.beta = atan2(DS.ay, DS.az) *180/Pi;   // in rads, and convert to degrees.
 };
