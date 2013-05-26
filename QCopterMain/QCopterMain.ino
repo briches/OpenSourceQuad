@@ -27,6 +27,7 @@ Date: May 2013
     -----------------------------------------------------------------------*/
     
 #include <Control.h>
+#include <PID_v1.h>
 #include <MMA8453_n0m1.h>
 #include <OseppGyro.h>
 #include <I2C.h>
@@ -44,8 +45,22 @@ void setup()
 }
 void loop()
 {
-  int rate = 0;
   QCopter.update();    // See control.cpp for clarification
-  rate = 1/((QCopter.DS.t_current - QCopter.DS.t_previous)/1000000);
-  Serial.println(QCopter.DS.alpha);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

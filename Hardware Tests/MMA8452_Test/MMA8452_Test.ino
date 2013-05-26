@@ -9,6 +9,11 @@
 
 #include <I2C.h>
 #include <MMA8453_n0m1.h>
+#include <PID_v1.h>
+
+
+double Xin, Xout, Xsetpoint;
+PID xPID(&Xin, &Xout, &Xsetpoint, 1, 1, 0, DIRECT);
 
 MMA8453_n0m1 accel;
 
@@ -75,17 +80,25 @@ void setup() {
   Serial.println("**********************************");
   regPrint(buf);  
   Serial.println("**********************************");
-
+  
+  
+  Xsetpoint = 100;
+  xPID.SetMode(AUTOMATIC);
+  xPID.SetOutputLimits(-500,500);
+  xPID.SetSampleTime(1);
+  
 }
 
 
 void loop () {
   
   accel.update();
-  Serial.print("X: "); Serial.print(accel.x());
-  Serial.print(" Y: "); Serial.print(accel.y());
-  Serial.print(" Z: "); Serial.println(accel.z());
-  
+  int x = accel.x();
+  Serial.print(x);
+  Xin = x;
+  xPID.Compute();
+  Serial.print(" PID: ");
+  Serial.println(Xout);
 }
 
 
