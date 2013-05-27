@@ -29,6 +29,8 @@ Date    : May 2013
 #include <math.h>
 #include <Servo.h>
 
+using namespace std;
+
 const double Pi = 3.14159;
 
 /*=========================================================================
@@ -36,7 +38,6 @@ const double Pi = 3.14159;
     -----------------------------------------------------------------------*/
 #define Accel_Address   (0x1D)
 #define Gyro_Address    (0x69)
-
 
  /*=========================================================================
     Device settings (Options for sensors)
@@ -51,9 +52,23 @@ const int d_threshold = 1; //Upper threshold for set zero from gyro data
 
 
 /*=========================================================================
-    INTERNAL ACCELERATION DATA TYPE
+	Calculated state variables from sensor data and motor speeds
     -----------------------------------------------------------------------*/
-typedef struct Quadcopter_DS_s
+
+typedef struct Quadcopter_MotorSpeed_s
+{
+	int motor1s;                 // Motor speed for all 4 motors
+	int motor2s;
+	int motor3s;
+	int motor4s;
+} Quadcopter_MotorSpeed;
+
+
+
+/*=========================================================================
+    Sensor data and timestamps
+    -----------------------------------------------------------------------*/
+typedef struct Quadcopter_Data_s
 {
 
     double ax;                   // Basic sensor data
@@ -62,18 +77,11 @@ typedef struct Quadcopter_DS_s
     double wx;
     double wy;
     double wz;
-    double t_current;            // Time @ call to updateDS();
-    double t_previous;           // Time @ previous call to updateDS();
-    double alpha;                // Angle between x and z
-    double beta;                 // Angle between y and z
-    double heading;              // Time integration of wz
-    double height;               // From Infrared Sensor; Accelerometry is too hard
-    int motor1s;                 // Motor speed for all 4 motors
-    int motor2s;
-    int motor3s;
-    int motor4s;
+    double t_current;            // Time @ call to updateData();
+    double t_previous;           // Time @ previous call to updateData();
 
-} Quadcopter_DS;
+
+} Quadcopter_Data;
 
 /*=========================================================================
     DEVICE SETTINGS STRUCTURE
@@ -113,21 +121,28 @@ class Control
 
         bool initSensor();                  // Initializes the two sensors
         bool initMotors();                  // Initializes the 4 motors
+        bool initPID();						// Initializes the PID process
         void update();                      // Updates the structure
 
-        Quadcopter_DS           DS;         // Creates the structure
-        Device_Settings         Settings;   // Creates the structure
+        Quadcopter_Data           Data;         // Creates the structure
+        Device_Settings         Settings;
+        Quadcopter_MotorSpeed Speeds;
+
+        double alpha;                // Angle between x and z
+		double beta;                 // Angle between y and z
+		double heading;              // Time integration of wz
+
 
     private:
 
         Initial_Offsets         Offsets;    // Creates the structure
 
-        MMA8453_n0m1            accel;      // Device classes
-        OseppGyro               gyro;
-        Servo                   motor1;
-        Servo                   motor2;
-        Servo                   motor3;
-        Servo                   motor4;
+        MMA8453_n0m1            	accel;      // Accel class
+        OseppGyro                           gyro;		// Gyro class
+        Servo                                 motor1;		//  Motor 1
+        Servo                   			  motor2;		// Motor 2
+        Servo                   			  motor3;		// Motor 3
+        Servo                   			  motor4;		// Motor 4
 
         void getSettings(void);                 // Fill settings struct
         void SI_convert(void);                  // Convert to SI
