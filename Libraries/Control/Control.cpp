@@ -29,7 +29,6 @@ Date    : May 2013
 #include <Servo.h>
 #include <PID_v1.h>
 
-using namespace std;
 
 /***************************************************************************
  CONTROL
@@ -283,6 +282,8 @@ void Control::update()
     Data.t_previous = Data.t_current;                   // Update the timestamps
     Data.t_current = micros();
     double time = (Data.t_current - Data.t_previous) / (1000000); // Converts time from microseconds to seconds
+    Data.freq = 1/time;
+
     heading = heading + Data.wz * (time);// Integrates wz to find the angular displacement
 
     alpha = atan2(Data.ax, Data.az) *180/Pi ; // Arctan of the two values returns the angle,
