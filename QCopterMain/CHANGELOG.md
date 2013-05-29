@@ -4,8 +4,8 @@ Please update this if you add something, it helps others see whats new.
 
 
 V0.4 <br />
-	- Fixed various issues, added in PID control system functionality
-	- Note: Full functionality is still not added. ie, it doesn't fly yet
+	- Fixed various issues, added in PID control system functionality <br />
+	- Note: Full functionality is still not added. ie, it doesn't fly yet <br />
 
 V0.301 <br />
 	- Fixed some unit conversion stuff involved in the noise reduction. <br />
