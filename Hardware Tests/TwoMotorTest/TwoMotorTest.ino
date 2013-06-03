@@ -6,10 +6,10 @@ Servo Motor3;
 Servo Motor4;
 
 int x;
-unsigned long time; 
 
 void setup()
 {
+  Serial.begin(9600);
   Motor1.attach(11);
   Motor2.attach(10);
   Motor3.attach(9);
@@ -18,27 +18,15 @@ void setup()
 
 void loop()
 {
-  time = millis();
-  if ((time < 10000) && (x ==0))
+if (x == 0)
+{
+  for(x = 0; x <= 90  ; x += 1)
   {
-    for(x = 0; x <= 50; x += 5)
-    {
-      Motor1.write(x);
-      Motor2.write(x);
-      Motor3.write(x);
-      Motor4.write(x);
-      delay(1000);
-    }
+    Motor1.write(x);
+    Motor2.write(x);
+    Motor3.write(x);
+    Motor4.write(x);
+    delay(100);
   }
-  else if ( (time >= 10000) && (x == 50) )
-  {
-    for(x = 50; x >= 0; x -= 5)
-    {
-      Motor1.write(x);
-      Motor2.write(x);
-      Motor3.write(x);
-      Motor4.write(x);
-      delay(250);
-    }
-  }
+}
 }

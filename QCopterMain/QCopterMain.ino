@@ -52,7 +52,7 @@ Copyright stuff from all included libraries that I didn't write
 /*=========================================================================
     PID gain constants
     -----------------------------------------------------------------------*/
-double aKp = 0.866;                   // Proportional gain const for alpha
+double aKp = 1.5;                   // Proportional gain const for alpha
 double aKi = 0.1;                     // Integral gain const for alpha
 double aKd = 0;                     // Differential gain const for alpha
 
@@ -81,29 +81,27 @@ void setup()
 {
   Serial.begin(115200);          // Higher number means much higher frequency, for now. Later we will just take out all the "Serial" lines
   
-  bool x = QCopter.initSensor(); while(!x); x = false;     // See the control.cpp file for clarification
+  QCopter.initSensor();     // See the control.cpp file for clarification
                                                            // Also, is there a better way of doing this???
   QCopter.Settings.g_threshold = 0.10; // 0.10 m/s^2 threshold for noise
-  QCopter.Settings.d_threshold = 0.5; // 0.5 d/s threshold for noise
+  QCopter.Settings.d_threshold = 0.7; // 0.5 d/s threshold for noise
   
   aPID.SetMode(AUTOMATIC);
-  aPID.SetSampleTime(8);	// Set sample time to 10 ms
-  aPID.SetOutputLimits(-5,5);	// Sets the output limits to {-5,5}. Might be managable
+  aPID.SetSampleTime(10);	// Set sample time to 10 ms
+  aPID.SetOutputLimits(-250,250);	// Sets the output limits to {-5,5}. Might be managable
   bPID.SetMode(AUTOMATIC);
   bPID.SetSampleTime(10);	// Set sample time to 10 ms
   bPID.SetOutputLimits(-5,5);	// Output limits to {-5,5}
       
   des_a = 0;		// Setpoint for alpha set to 0. This can be changed later, for control
   des_b = 0;            // Setpoint for beta set to 0.
-  
-  // x = QCopter.initMotors(); while(!x){Serial.println("here");} 
-  
-  
+  Serial.println("Initializing motors...");
+  QCopter.initMotors();
+  Serial.println("Motors intialized!");
 }
 void loop()
 {
   QCopter.update();    // See control.cpp for clarification
   aPID.Compute();
   bPID.Compute();
-  Serial.println(QCopter.alpha);
 }

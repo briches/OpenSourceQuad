@@ -43,7 +43,7 @@ const double Pi = 3.14159;
     -----------------------------------------------------------------------*/
 const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 const int g_ScaleRange = FULL_SCALE_RANGE_2g; // x2g,x4g,x8g
-const int DLPF = 0; // 0,1,2,3,4,5,6,7 // See data sheet
+const int DLPF = 7; // 0,1,2,3,4,5,6,7 // See data sheet
 const bool HighDef = true; // Is accel output 2byte or 1byte
 
 const double g_threshold = 0.05; //Upper threshold for set zero from accel data
@@ -76,9 +76,10 @@ typedef struct Quadcopter_Data_s
     double wx;
     double wy;
     double wz;
-    double t_current;            // Time @ call to update();
-    double t_previous;           // Time @ previous call to update();
-    int freq;				// Frequency of calls to update();
+    double prev_data[42]; // Stores 6 previous data sets, 1 current
+    double t_current;       // Time @ call to update();
+    double t_previous;    // Time @ previous call to update();
+    int freq;						// Frequency of calls to update();
 
 
 } Quadcopter_Data;
@@ -121,8 +122,8 @@ class Control
 
         bool initSensor();                  // Initializes the two sensors
         bool initMotors();                  // Initializes the 4 motors
-        bool initPID();						// Initializes the PID process
         void update();                      // Updates the structure
+        void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
 
         Quadcopter_Data           Data;         // Creates the structure
         Device_Settings         Settings;
@@ -130,7 +131,8 @@ class Control
 
         double alpha;                // Angle between x and z
 		double beta;                 // Angle between y and z
-		double heading;              // Time integration of wz
+		double heading;          // Time integration of wz
+
 
 
     private:

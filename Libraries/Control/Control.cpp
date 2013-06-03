@@ -222,31 +222,16 @@ bool Control::initMotors()
     motor4.attach(6);                       // Attach motor 4 to D8
 
     // initializes motor1
-    for(Speeds.motor1s = 0; Speeds.motor1s < 40; Speeds.motor1s += 5)
+    for(Speeds.motor1s = 0; Speeds.motor1s < 55; Speeds.motor1s += 1)
     {
       motor1.write(Speeds.motor1s);
-      delay(250);
-    }
-
-    // initializes motor2
-    for(Speeds.motor2s = 0; Speeds.motor2s < 40; Speeds.motor2s += 5)
-    {
-      motor2.write(Speeds.motor2s);
-      delay(250);
-    }
-
-    // initializes motor3
-    for(Speeds.motor3s = 0; Speeds.motor3s < 40; Speeds.motor3s += 5)
-    {
-      motor3.write(Speeds.motor3s);
-      delay(250);
-    }
-
-    // initializes motor4
-    for(Speeds.motor4s = 0; Speeds.motor4s < 40; Speeds.motor4s += 5)
-    {
-      motor4.write(Speeds.motor4s);
-      delay(250);
+      motor2.write(Speeds.motor1s);
+      motor3.write(Speeds.motor1s);
+      motor4.write(Speeds.motor1s);
+      Speeds.motor2s = Speeds.motor1s;
+      Speeds.motor3s = Speeds.motor1s;
+      Speeds.motor4s = Speeds.motor1s;
+      delay(50);
     }
 
     return true;
@@ -266,8 +251,8 @@ void Control::update()
     Data.ax = accel.x() - Offsets.ax;                         // Store Raw values from the sensor registers
     Data.ay = accel.y() - Offsets.ay;                         // and removes the initial offsets
     Data.az = accel.z() - Offsets.az;
-    Data.wx = gyro.x() - Offsets.wx;
-    Data.wy = gyro.y() - Offsets.wy;
+    Data.wx = gyro.y() - Offsets.wy;
+    Data.wy = gyro.x() - Offsets.wx;
     Data.wz = gyro.z() - Offsets.wz;
 
     SI_convert();                                           // Convert to SI units from raw data type
@@ -279,13 +264,291 @@ void Control::update()
     if(fabs(Data.wy) < Settings.d_threshold) {Data.wy = 0;}
     if(fabs(Data.wz) < Settings.d_threshold) {Data.wz = 0;}
 
+	/*  Updates the prev_data by bumping up each data set */
+    for (int i = 30; i <= 35; i ++)
+    {
+    	Data.prev_data[i+6] = Data.prev_data[i];
+    }
+	for (int i = 24; i <=29; i++)
+	{
+		Data.prev_data[i+6] = Data.prev_data[i];
+	}
+	for (int i = 18; i <=23; i++)
+	{
+		Data.prev_data[i+6] = Data.prev_data[i];
+	}
+	for (int i = 12; i <=17; i++)
+	{
+		Data.prev_data[i+6] = Data.prev_data[i];
+	}
+	for (int i = 6; i <=11; i++)
+	{
+		Data.prev_data[i+6] = Data.prev_data[i];
+	}
+	for (int i = 0; i <=5; i++)
+	{
+		Data.prev_data[i+6] = Data.prev_data[i];
+	}
+	Data.prev_data[0] = Data.ax;
+	Data.prev_data[1] = Data.ay;
+	Data.prev_data[2] = Data.az;
+	Data.prev_data[3] = Data.wx;
+	Data.prev_data[4] = Data.wy;
+	Data.prev_data[5] = Data.wz;					// Buffer is updated, now a moving average can be calculated
+																			// If the buffer size has to be increased then we can do that.
+
+	Data.ax = 0; Data.ay = 0; Data.az = 0; Data.wx = 0; Data.wy = 0; Data.wz = 0; // ready for average calculation
+
+	for (int i = 0; i <=36; i += 6)
+	{
+		Data.ax = Data.ax + Data.prev_data[i];
+	}
+	for (int i = 1; i <=37 ; i += 6)
+	{
+		Data.ay = Data.ay + Data.prev_data[i];
+	}
+	for (int i = 2; i <=38 ; i += 6)
+	{
+		Data.az = Data.az + Data.prev_data[i];
+	}
+	for (int i = 3; i <=39 ; i += 6)
+	{
+		Data.wx = Data.wx + Data.prev_data[i];
+	}
+	for (int i = 4; i <=40 ; i += 6)
+	{
+		Data.wy = Data.wy + Data.prev_data[i];
+	}
+	for (int i = 5; i <=41 ; i += 6)
+	{
+		Data.wz = Data.wz + Data.prev_data[i];
+	}
+
+	Data.ax /= 7;
+	Data.ay /= 7;
+	Data.az /= 7;
+	Data.wx /= 7;
+	Data.wy /= 7;
+	Data.wz /= 7;
+	Serial.println(Data.ax);
+
+
     Data.t_previous = Data.t_current;                   // Update the timestamps
     Data.t_current = micros();
     double time = (Data.t_current - Data.t_previous) / (1000000); // Converts time from microseconds to seconds
     Data.freq = 1/time;
 
     heading = heading + Data.wz * (time);// Integrates wz to find the angular displacement
-
+    // Accelerometer code to find angles
     alpha = atan2(Data.ax, Data.az) *180/Pi ; // Arctan of the two values returns the angle,
-    beta = atan2(Data.ay, Data.az) *180/Pi;   // in rads, and convert to degrees.
+    beta = atan2(Data.ay, Data.az) *180/Pi;   // in rads, and convert to degrees
+
 };
+
+/**************************************************************************/
+/*!
+    @brief Sets the motors to a new speed
+*/
+/**************************************************************************/
+
+void Control::setMotorSpeed(int motor, int speed)
+{
+	switch (motor)
+	{
+		/* MOTOR 1*/
+		case 1:
+
+			if (speed !=  Speeds.motor1s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor1s)										// Need to go up
+				{
+					for (int x = Speeds.motor1s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor1.write(x);
+						Speeds.motor1s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor1s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor1.write(x);
+						Speeds.motor1s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+
+			/* MOTOR 2 */
+			case 2:
+
+			if (speed !=  Speeds.motor2s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor2s)										// Need to go up
+				{
+					for (int x = Speeds.motor2s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						Speeds.motor2s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor2s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						Speeds.motor2s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+
+			/* MOTOR 3 */
+			case 3:
+
+			if (speed !=  Speeds.motor3s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor3s)										// Need to go up
+				{
+					for (int x = Speeds.motor3s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						Speeds.motor3s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor3s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						Speeds.motor3s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+
+			/* MOTOR 4 */
+			case 4:
+
+			if (speed !=  Speeds.motor4s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor4s)										// Need to go up
+				{
+					for (int x = Speeds.motor4s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						Speeds.motor4s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor4s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						Speeds.motor4s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+
+			/* ALL MOTORS*/
+			case 5:
+
+			if (speed !=  Speeds.motor1s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor1s)										// Need to go up
+				{
+					for (int x = Speeds.motor1s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor1.write(x);
+						Speeds.motor1s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor1s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor1.write(x);
+						Speeds.motor1s = x;
+						delay(25);
+					}
+				}
+			}
+
+			if (speed !=  Speeds.motor2s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor2s)										// Need to go up
+				{
+					for (int x = Speeds.motor2s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						Speeds.motor2s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor2s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						Speeds.motor2s = x;
+						delay(25);
+					}
+				}
+			}
+
+			if (speed !=  Speeds.motor3s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor3s)										// Need to go up
+				{
+					for (int x = Speeds.motor3s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						Speeds.motor3s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor3s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						Speeds.motor3s = x;
+						delay(25);
+					}
+				}
+			}
+
+						if (speed !=  Speeds.motor4s)										// Change required, not the same
+			{
+				if (speed > Speeds.motor4s)										// Need to go up
+				{
+					for (int x = Speeds.motor4s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						Speeds.motor4s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = Speeds.motor4s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						Speeds.motor4s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+	}
+}
