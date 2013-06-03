@@ -2,6 +2,10 @@ Version History
 =========
 Please update this if you add something, it helps others see whats new.
 
+###V0.5 <br />
+> -  Issue discovered regarding sensor noise when motors are running. Motors induce very high frequency noise in the <br />
+>    signals from sensors. Added Processing sketches to visualize and export data to MATLAB for analysis.
+
 
 ###V0.4 <br />
 > - Fixed various issues, added in PID control system functionality <br />
