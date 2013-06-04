@@ -1,6 +1,6 @@
  /*=========================================================================
 Name: QCopterMain.ino
-Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
+Authors: Brandon Riches, Branden Yue, Patrick Fairbanks, Andrew Coulthard
 Date: May 2013
   
     Initialize the Control class by calling: Control QCopter;
