@@ -53,18 +53,18 @@ Copyright stuff from all included libraries that I didn't write
     PID gain constants
     -----------------------------------------------------------------------*/
 double aKp = 1.5;                   // Proportional gain const for alpha
-double aKi = 0.1;                     // Integral gain const for alpha
+double aKi = 0.1;                   // Integral gain const for alpha
 double aKd = 0;                     // Differential gain const for alpha
 
 double bKp = 0.4;                   // Proportional gain const for beta
-double bKi = 0.2;                     // Integratl gain const for beta
+double bKi = 0.2;                   // Integratl gain const for beta
 double bKd = 0;                     // Differential gain const for beta
 
 /*=========================================================================
     PID output variables and desired setpoints
     -----------------------------------------------------------------------*/
-double aPID_out; 		          // PID output for alpha
-double bPID_out;				  // PID output for beta
+double aPID_out; 	 // PID output for alpha
+double bPID_out;			// PID output for beta
 double des_a;				  // Setpoint for alpha
 double des_b;				  // Setpoint for beta
 
@@ -79,22 +79,22 @@ PID bPID(&QCopter.beta,   &bPID_out,  &des_b,   bKp,  bKi,  bKd,  DIRECT);
 
 void setup()
 {
-  Serial.begin(115200);          // Higher number means much higher frequency, for now. Later we will just take out all the "Serial" lines
+  Serial.begin(115200);                     // Higher number means much higher frequency, for now. Later we will just take out all the "Serial" lines
   
-  QCopter.initSensor();     // See the control.cpp file for clarification
-                                                           // Also, is there a better way of doing this???
-  QCopter.Settings.g_threshold = 0.10; // 0.10 m/s^2 threshold for noise
-  QCopter.Settings.d_threshold = 0.7; // 0.5 d/s threshold for noise
+  QCopter.initSensor();                     // See the control.cpp file for clarification
+                                            // Also, is there a better way of doing this???
+  QCopter.Settings.g_threshold = 0.10;      // 0.10 m/s^2 threshold for noise
+  QCopter.Settings.d_threshold = 0.7;       // 0.5 d/s threshold for noise
   
   aPID.SetMode(AUTOMATIC);
-  aPID.SetSampleTime(10);	// Set sample time to 10 ms
-  aPID.SetOutputLimits(-250,250);	// Sets the output limits to {-5,5}. Might be managable
+  aPID.SetSampleTime(10);	                  // Set sample time to 10 ms
+  aPID.SetOutputLimits(-250,250);	          // Sets the output limits to {-5,5}. Might be managable
   bPID.SetMode(AUTOMATIC);
-  bPID.SetSampleTime(10);	// Set sample time to 10 ms
-  bPID.SetOutputLimits(-5,5);	// Output limits to {-5,5}
+  bPID.SetSampleTime(10);	                  // Set sample time to 10 ms
+  bPID.SetOutputLimits(-5,5);	              // Output limits to {-5,5}
       
-  des_a = 0;		// Setpoint for alpha set to 0. This can be changed later, for control
-  des_b = 0;            // Setpoint for beta set to 0.
+  des_a = 0;		                              // Setpoint for alpha set to 0. This can be changed later, for control
+  des_b = 0;                                // Setpoint for beta set to 0.
   Serial.println("Initializing motors...");
   QCopter.initMotors();
   Serial.println("Motors intialized!");
