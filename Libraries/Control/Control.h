@@ -32,6 +32,49 @@ Date    : May 2013
 
 const double Pi = 3.14159;
 
+/* 
+// Since I don't have a familiar IDE at the university I'm sticking this here.
+// General Strategy:
+// angle_correct()
+// 	This function is the umbrella for the correction algorithm. Calls subfunctions and assigns "Locally Global" variables needed in this scope.
+// evaluate_angle()
+//	Creates a speed to return to the motors based on the current motor speed and gyro rotation.
+//	Takes arguments:
+//		float MyGyro - Array of the current rotation of the craft. Stored as X,Y,Z rotation.
+//		int MySpeeds - Array of the current assigned speed of the motors.
+
+// enumeration for cartesian coordinate sysem. May be usefull when constructing algorithms. Not sure.
+// Creates a data type called Cartesian with 6 possible values.
+enum Cartesian {
+	XPOS,
+	XNEG,
+	YPOS,
+	YNEG,
+	ZPOS,
+	ZNEG
+}
+
+// Pseudocode for correction algorithm since I don't know most of the relevant function calls.
+// Assume global array MyArray which has values for:
+//  - Last assigned speed for each motor
+//  - Maybe other stuff
+
+void angle_correct(){
+	float CurrentRot[3] = {get_x_rot(), get_y_rot(), get_z_rot();}
+	// Assume assigned speeds are arranged by:
+	// XPOS, XNEG, YPOS, YNEG
+	int CurrentSpd[4] = {MyArray[0], MyArray[1], MyArray[2], MyArray[3]};
+	evaluate_angle(CurrentRot[], CurrentSpd[])
+}
+
+int evaluate_angle(){//ran out of time.};
+
+
+
+*/
+
+
+
 /*=========================================================================
     I2C Addresses
     -----------------------------------------------------------------------*/
