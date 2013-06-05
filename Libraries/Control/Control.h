@@ -28,7 +28,7 @@ Date    : May 2013
 #include <I2C.h>
 #include <math.h>
 
-const double Pi = 3.14159;
+const double Pi = 3.14159265358979323846264338327950288419716939937510582;
 
 /*=========================================================================
     I2C Addresses
@@ -51,7 +51,7 @@ const int d_threshold = 10;
 /*=========================================================================
     INTERNAL ACCELERATION DATA TYPE
     -----------------------------------------------------------------------*/
-typedef struct Quadcopter_Data_State_s
+struct Quadcopter_Data_State_s
 {
 
     double ax;
@@ -67,12 +67,12 @@ typedef struct Quadcopter_Data_State_s
     double heading;
     double altitude;
 
-} Quadcopter_Data_State;
+} Data;
 
 /*=========================================================================
     DEVICE SETTINGS STRUCTURE
     -----------------------------------------------------------------------*/
-typedef struct Device_Settings_s
+struct Device_Settings_s
 {
     int d_ScaleRange;
     int g_ScaleRange;
@@ -81,12 +81,12 @@ typedef struct Device_Settings_s
     int g_threshold;
     int d_threshold;
 
-} Device_Settings;
+} Settings;
 
 /*=========================================================================
     DEVICE SETTINGS STRUCTURE
     -----------------------------------------------------------------------*/
-typedef struct Initial_Offsets_s
+struct Initial_Offsets_s
 {
     double ax;
     double ay;
@@ -95,7 +95,7 @@ typedef struct Initial_Offsets_s
     double wy;
     double wz;
 
-} Initial_Offsets;
+} Offsets;
 
 
 /*=========================================================================
