@@ -33,6 +33,16 @@
 using namespace std;
 
 /**
+PLACEHOLDER FUNCTIONS
+**/
+void PLACEHOLDER_CMS (int speed, cartesian ID){} // Change Motor Speed
+void PLACEHOLDER_FSE (int code){} // Flags silent errors.
+
+
+
+
+
+/**
 THINGS THAT MIGHT BE USEFUL
 **/
 enum cartesian {
@@ -45,25 +55,88 @@ enum cartesian {
 };
 
 struct FrameData {
-    int XPOS_MOTOR,     // In the actual implementation,
-    int XNEG_MOTOR,     // replace these whith whatever
-    int YPOS_MOTOR,     // system we have in place.
-    int YNEG_MOTOR,
-    float GYRO_X,
-    float GYRO_Y,
-    float GYRO_Z,
-    float ACCEL_X,
-    float ACCEL_Y,
-    float ACCEL_Z,
-    float TILT_DIR,	// Angle in degrees - Platform's Z+ tilt direction.
-    float TILT_MAG	// Magnitude of tilt.
+    int     XPOS_MOTOR,     // In the actual implementation,
+            XNEG_MOTOR,     // replace these whith whatever
+            YPOS_MOTOR,     // system we have in place.
+            YNEG_MOTOR;
+    float   GYRO_X,
+            GYRO_Y,
+            GYRO_Z,
+            ACCEL_X,
+            ACCEL_Y,
+            ACCEL_Z,
+            TILT_DIR,	// Angle in degrees - Platform's Z+ tilt direction.
+            TILT_MAG;	// Magnitude of tilt.
 } data;
+
+
+
+
+
+/**
+PROPORTIONATOR 9001
+    I had the documentation for this here, and then I lost it. I'll write it soon.
+
+    Notes:
+        - Function tends towards OVER correction.
+**/
+int proportionator_9001 (float angle, bool mode)
+{
+    const int   UNIT_ANGLE = 0; // For every UNIT_ANGLE degrees we are tilted
+    const float UNIT_SPEED = 0; // modify the speed by UNIT_SPEED
+
+    angle = abs(angle);
+    int result = 0;
+
+    while (angle > 0)
+    {
+        angle  -= UNIT_ANGLE;
+        result += UNIT_SPEED;
+    }
+
+    if (mode)
+    {
+        return result;
+    }
+    else
+    {
+        return (-1 * result);
+    }
+}
+/**DOUBLE OVERLOAD**/
+int proportionator_9001 (double angle, double mode)
+{
+    const int    UNIT_ANGLE = 0; // For every UNIT_ANGLE degrees we are tilted
+    const double UNIT_SPEED = 0; // modify the speed by UNIT_SPEED
+
+    angle = abs(angle);
+    int result = 0;
+
+    while (angle > 0)
+    {
+        angle -= UNIT_ANGLE;
+        result += UNIT_SPEED;
+    }
+
+    if (mode)
+    {
+        return result;
+    }
+    else
+    {
+        return (-1 * result);
+    }
+}
+
+
+
 
 
 /**
 CORRECTION ALGORITHM CODE
 **/
-/*  General Strategy:
+/**
+    General Strategy:
         - Obtain current speeds assigned to each motor, accelerometer and gyro data. This is the current "frame"
         - Compute next speed to assign each motor based on this data.
           The exact algorithm we should use for this purpose has to be discussed.
@@ -74,7 +147,7 @@ CORRECTION ALGORITHM CODE
             Are we about to crash into terrain?
         - Send data to the motors, and store any data we need for the next frame.
     Eventually, the code should account for user input for movement.
- */
+ **/
 // Pseudocode Follows:
 void Correction (FrameData &data)
 {
@@ -83,9 +156,9 @@ void Correction (FrameData &data)
 	// we're at - 9.81 in only Z, we're level and not tilting in any other direction.
 	//
 	// We need to take into account all of our parameters. Which ones are most important?
-	
-	float AccelBuffer = 0 //Number corresponding to our calculated noise in the accelerometer.
-	
+
+	float AccelBuffer = 0; //Number corresponding to our calculated noise in the accelerometer.
+
 	if (data.ACCEL_Z + 9.81 < AccelBuffer and data.ACCEL_X < AccelBuffer and data.ACCEL_Y < AccelBuffer)
 	{
 		// This is our ideal scenario.
@@ -93,18 +166,18 @@ void Correction (FrameData &data)
 	}
 	else
 	{
-		MyFunction2 () 
+		//MyFunction2 ()
 		{
 			/* I have no idea what the mathematics is for this, but here are some thoughts.
-			
+
 			If our tilt direction is any multiple of 1/2 rad, one motor must increase and one must decrease.
 			The other two remain constant, since the tilt is along one of the platform's axises.
 			These this is our edge case.
 			*/
 			if (not data.TILT_DIR % 90 < AccelBuffer) { // If the tilt direction is within error for one of the axises:
 				// Get floor(90) for syntax clarification.
-				r = data.TILT_DIR;
-				myCount = 0
+				float r = data.TILT_DIR;
+				int myCount = 0;
 				while (r > -45)
 				{
 					r -= 90;
@@ -117,28 +190,46 @@ void Correction (FrameData &data)
 				4  = Tilted towards X+ Y-
 				5+ = Datum data.TILT_DIR was not in the range 0 - 360. THIS SHOULD NOT HAPPEN.
 				*/
-				marker:
-				switch myCount:
+				switch (myCount)
+				{
+				    /**
+				    case N:
+				    {
+                        FUNCTION_TO_CHANGE_MOTOR_SPEED (CURRENT_SPEED + FUNCTION_TO_MAKE_ADJUSTMENT (CURRENT_TILT, INCREASE_SPEED), TARGET_MOTOR)
+                        FUNCTION_TO_CHANGE_MOTOR_SPEED (CURRENT_SPEED + FUNCTION_TO_MAKE_ADJUSTMENT (CURRENT_TILT, DECREASE_SPEED), TARGET_MOTOR)
+				    }
+				    **/
 					case 1:
-						INCREASE_XPOS();
-						DECREASE_XNEG();
-						break;
+					{
+					    PLACEHOLDER_CMS (data.XPOS_MOTOR + proportionator_9001 (data.TILT_MAG, true ), XPOS);
+					    PLACEHOLDER_CMS (data.XNEG_MOTOR + proportionator_9001 (data.TILT_MAG, false), XNEG);
+					    break;
+					}
 					case 2:
-						INCREASE_YPOS();
-						DECREASE_YNEG();
-						break;
+					{
+					    PLACEHOLDER_CMS (data.YPOS_MOTOR + proportionator_9001 (data.TILT_MAG, true ), YPOS);
+					    PLACEHOLDER_CMS (data.YNEG_MOTOR + proportionator_9001 (data.TILT_MAG, false), YNEG);
+					    break;
+					}
 					case 3:
-						INCREASE_XNEG();
-						DECREASE_XPOS();
-						break;
+					{
+					    PLACEHOLDER_CMS (data.XPOS_MOTOR + proportionator_9001 (data.TILT_MAG, false), XPOS);
+					    PLACEHOLDER_CMS (data.XNEG_MOTOR + proportionator_9001 (data.TILT_MAG, true ), XNEG);
+					    break;
+					}
 					case 4:
-						INCREASE_YNEG();
-						DECREASE_XPOS();
-						break;
+					{
+					    PLACEHOLDER_CMS (data.YPOS_MOTOR + proportionator_9001 (data.TILT_MAG, false), YPOS);
+					    PLACEHOLDER_CMS (data.YNEG_MOTOR + proportionator_9001 (data.TILT_MAG, true ), YNEG);
+					    break;
+					}
 					default:
-						flag_silent_error();
+                        /**
+                        IF IMPLEMENTED CORRECTLY, THE PROGRAM NEVER EXECUTES THIS BLOCK
+                        **/
+						PLACEHOLDER_FSE (-1);
 						myCount -= 4;
-						goto marker;
+				}
 			}
 			else
 			{
@@ -146,7 +237,7 @@ void Correction (FrameData &data)
 				Otherwise the tilt direction falls into one of four "quadrants" and all motors must make a change
 				in speed. If this problem can be solved by addressing the X and Y components of the tilt
 				independently then this should be a nonissue.
-				
+
 				We simply need a rough approximation of the relative force we get out of each incrimental change
 				in motor speed.
 				*/
@@ -156,10 +247,6 @@ void Correction (FrameData &data)
 		At this point, we should have calculated our desired speed for each motor. Now we simply
 		save this data for the next iteration.
 		*/
-		XPOS_MOTOR = 0;
-		XNEG_MOTOR = 0;
-		YPOS_MOTOR = 0;
-		YNEG_MOTOR = 0;
 	}
 }
 
