@@ -51,7 +51,7 @@ const int d_threshold = 10;
 /*=========================================================================
     INTERNAL ACCELERATION DATA TYPE
     -----------------------------------------------------------------------*/
-typedef struct Quadcopter_Data_State_s
+struct Quadcopter_Data_State_s
 {
 
     double ax;
@@ -67,7 +67,7 @@ typedef struct Quadcopter_Data_State_s
     double heading;
     double altitude;
 
-} Quadcopter_Data_State;
+} QCopter.Data;
 
 /*=========================================================================
     DEVICE SETTINGS STRUCTURE
