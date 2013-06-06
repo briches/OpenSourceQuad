@@ -26,21 +26,24 @@
         `-._________,--'
 
  */
+ /**
+ WHITEBOARD NOTES
+ **/
+ /*
+    Nothing to see here. for now.
+ */
+
+
+
+
 
 #include <iostream>
+#include <stdio.h>
 #include <cmath>
+#include <fstream>
+#include <time.h>
 
 using namespace std;
-
-/**
-PLACEHOLDER FUNCTIONS
-**/
-void PLACEHOLDER_CMS (int speed, cartesian ID){} // Change Motor Speed
-void PLACEHOLDER_FSE (int code){} // Flags silent errors.
-
-
-
-
 
 /**
 THINGS THAT MIGHT BE USEFUL
@@ -53,7 +56,20 @@ enum cartesian {
 	ZPOS,
 	ZNEG
 };
+/*
+struct New_Motor_Properties {
 
+    cartesian ID;
+    int
+        speed,
+        other_property_1,
+        other_property_2;
+    float
+        float_thing_1,
+        float_thing_2;
+
+} motor_XPOS, motor_XNEG, motor_YPOS, motor_YNEG;
+*/
 struct FrameData {
     int     XPOS_MOTOR,     // In the actual implementation,
             XNEG_MOTOR,     // replace these whith whatever
@@ -74,13 +90,24 @@ struct FrameData {
 
 
 /**
-PROPORTIONATOR 9001
-    I had the documentation for this here, and then I lost it. I'll write it soon.
+PLACEHOLDER FUNCTIONS
+**/
+void PLACEHOLDER_CMS (int speed, cartesian ID){} //     Change Motor Speed
+void PLACEHOLDER_FSE (int code){} //                    Flags silent errors
+
+
+
+
+
+/**
+AIR BUBBLE IN A GLASS TUBE 9001
+    This function is meant to provide a convienient means of determining how much
+    of a change in the assigned motor speed
 
     Notes:
         - Function tends towards OVER correction.
 **/
-int proportionator_9001 (float angle, bool mode)
+int AIR_BUBBLE_IN_GLASS_TUBE_9001 (float angle, bool mode)
 {
     const int   UNIT_ANGLE = 0; // For every UNIT_ANGLE degrees we are tilted
     const float UNIT_SPEED = 0; // modify the speed by UNIT_SPEED
@@ -104,7 +131,7 @@ int proportionator_9001 (float angle, bool mode)
     }
 }
 /**DOUBLE OVERLOAD**/
-int proportionator_9001 (double angle, double mode)
+int AIR_BUBBLE_IN_GLASS_TUBE_9001 (double angle, double mode)
 {
     const int    UNIT_ANGLE = 0; // For every UNIT_ANGLE degrees we are tilted
     const double UNIT_SPEED = 0; // modify the speed by UNIT_SPEED
@@ -172,9 +199,9 @@ void Correction (FrameData &data)
 
 			If our tilt direction is any multiple of 1/2 rad, one motor must increase and one must decrease.
 			The other two remain constant, since the tilt is along one of the platform's axises.
-			These this is our edge case.
+			These are our simple edge case.
 			*/
-			if (not data.TILT_DIR % 90 < AccelBuffer) { // If the tilt direction is within error for one of the axises:
+			if (data.TILT_DIR % 90 < AccelBuffer) { // If the tilt direction is within error for one of the axises:
 				// Get floor(90) for syntax clarification.
 				float r = data.TILT_DIR;
 				int myCount = 0;
@@ -201,26 +228,26 @@ void Correction (FrameData &data)
 				    **/
 					case 1:
 					{
-					    PLACEHOLDER_CMS (data.XPOS_MOTOR + proportionator_9001 (data.TILT_MAG, true ), XPOS);
-					    PLACEHOLDER_CMS (data.XNEG_MOTOR + proportionator_9001 (data.TILT_MAG, false), XNEG);
+					    PLACEHOLDER_CMS (data.XPOS_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, true ), XPOS);
+					    PLACEHOLDER_CMS (data.XNEG_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, false), XNEG);
 					    break;
 					}
 					case 2:
 					{
-					    PLACEHOLDER_CMS (data.YPOS_MOTOR + proportionator_9001 (data.TILT_MAG, true ), YPOS);
-					    PLACEHOLDER_CMS (data.YNEG_MOTOR + proportionator_9001 (data.TILT_MAG, false), YNEG);
+					    PLACEHOLDER_CMS (data.YPOS_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, true ), YPOS);
+					    PLACEHOLDER_CMS (data.YNEG_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, false), YNEG);
 					    break;
 					}
 					case 3:
 					{
-					    PLACEHOLDER_CMS (data.XPOS_MOTOR + proportionator_9001 (data.TILT_MAG, false), XPOS);
-					    PLACEHOLDER_CMS (data.XNEG_MOTOR + proportionator_9001 (data.TILT_MAG, true ), XNEG);
+					    PLACEHOLDER_CMS (data.XPOS_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, false), XPOS);
+					    PLACEHOLDER_CMS (data.XNEG_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, true ), XNEG);
 					    break;
 					}
 					case 4:
 					{
-					    PLACEHOLDER_CMS (data.YPOS_MOTOR + proportionator_9001 (data.TILT_MAG, false), YPOS);
-					    PLACEHOLDER_CMS (data.YNEG_MOTOR + proportionator_9001 (data.TILT_MAG, true ), YNEG);
+					    PLACEHOLDER_CMS (data.YPOS_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, false), YPOS);
+					    PLACEHOLDER_CMS (data.YNEG_MOTOR + AIR_BUBBLE_IN_GLASS_TUBE_9001 (data.TILT_MAG, true ), YNEG);
 					    break;
 					}
 					default:
@@ -259,6 +286,11 @@ void Correction (FrameData &data)
 THIS IS JUST SO SOMETHING HAPPPENS WHEN THIS COMPILES & RUNS
 **/
 int main () {
+    time_t rawtime;
+    struct tm * ptm;
+    time ( &rawtime );
+    ptm = gmtime ( &rawtime );
     cout << "Hello world!" << endl;
+    printf ("GMT: %2d:%02d\n", (ptm->tm_hour)%24, ptm->tm_min);
     return 0;
 }
