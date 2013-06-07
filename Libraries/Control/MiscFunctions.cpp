@@ -20,12 +20,44 @@ SILENT ERROR FLAGGER.
 	CODE:    Default -1 (unspecified) Error code. Probably not important for our purposes.
     
         OUTPUT
+    Function returns @void
     Writes an error log to an external file named ERR_LOG.csv
     Err messages take the form:
     UTC_TIME, FILE_ID, LINE_NO, CODE\n
+    
+    	NOTES
+    Causes runtime exception on cocurrent access, but since we're not using a distributed system
+    this is a nonissue. If we upgrade to a 4X XEON platform, remind me to recode this.
 **/
 
+/**
+ * Dependent on:
+ **/
+#include <iostream>
+#include <fstream>
+#include <time.h>
+
+//FUNCTION:
 void SILENT_ERR (int FILE_ID = -1, int LINE_NO = -1, int CODE = -1)
 {
-    //Write code here.
+	/// REMEMBER TO IMPLEMENT THIS CORRECTLY.
+	time_t rawtime;
+	struct tm * UTC_TIME;
+	time (&rawtime);
+	UTC_TIME = gmtime ( &rawtime );
+	
+    err.open (ERR_LOG.csv, ios::out | ios::app); // open the resource: ERR_LOG.csv in output & append mode
+    
+    if (err.is_open()) // Exception CYA.
+    {
+    	err << UTC_TIME->tm_hour%24 << ":" << UTC_TIME->tm_min << ","
+    	    << FILE_ID  << ","
+    		<< LINE_NO  << ","
+    		<< CODE     << '\n';
+    }
+    else
+    {
+    	//ERROR-CEPTION! We don't really need anything here, or it basically becomes a recursive function.
+    }
+    err.close(); // Free the resource.
 }
