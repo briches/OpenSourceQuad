@@ -5,21 +5,26 @@
   *
   */
 
+#include <iostream>
+#include <fstream>
+#include <time.h>
+using namespace std;
+
 /**
 FUNCTIONS:
 **/
 void SILENT_ERR(int, int, int);
-
+void SILENT_ERR();
 
 
 /**
 MAIN: FOR DEBUG PURPOSES. COMMENT THIS OUT WHEN USING THIS FILE.
-**//*
+**/
 int main ()
 {
     cout << "Hello World!" << endl;
-    SILENT_ERR(1,1,1);
-    SILENT_ERR(2,2,2);
+    SILENT_ERR(1,2,3);
+    SILENT_ERR();
     return 0;
 }
 //*/
@@ -36,7 +41,7 @@ SILENT ERROR FLAGGER.
 	It actually works.
 
         INPUT
-	Takes optional parameters:
+	Takes either 0 or 3 parameters:
 	FILE_ID: Default -1 (unspecified) Name or corresponding file ID where the error occured.
 	LINE_NO: Default -1 (unspecified) Line which the error occured. Due to the tedious nature of hard coding this,
 	         the value entered here will usually be an approximation.
@@ -44,45 +49,75 @@ SILENT ERROR FLAGGER.
 
         OUTPUT
     Function returns @void
-    Writes an error log to an external file named ERR_LOG.csv
+    Function writes an error log to an external file named ERR_LOG.csv. If no such file exists, it is created. If the error
+    logger was unable to open the csv file, WARNING.txt is created to flag this error error.
     Err messages take the form:
-    UTC_TIME, FILE_ID, LINE_NO, CODE\n
+    UTC_DATE (dd.mm.yyyy), UTC_TIME, FILE_ID, LINE_NO, CODE\n
 
     	NOTES
-    Causes runtime exception on cocurrent access, but since we're not using a distributed system
-    this is a nonissue. If we upgrade to a 4X XEON platform, remind me to recode this.
-**/
+    time.h may cause a data race on cocurrent access. This does not apply to an Arduino (I think).
 
-/**
- * Dependent on:
+        Dependent on:
+    #include <iostream>
+    #include <fstream>
+    #include <time.h>
+
  **/
-#include <iostream>
-#include <fstream>
-#include <time.h>
-using namespace std;
 
-//FUNCTION:
 void SILENT_ERR (int FILE_ID = -1, int LINE_NO = -1, int CODE = -1)
 {
-	/// REMEMBER TO IMPLEMENT THIS CORRECTLY.
+    char Date [80];
 	time_t rawtime;
 	struct tm * UTC_TIME;
 	time (&rawtime);
-	UTC_TIME = gmtime ( &rawtime );
+	UTC_TIME = gmtime (&rawtime);
+	strftime(Date, 80, "%d.%m.%Y", UTC_TIME);
 
     ofstream err;
     err.open ("ERR_LOG.csv", ios::out | ios::app); // open the resource: ERR_LOG.csv in output & append mode
 
     if (err.is_open()) // Exception CYA.
     {
-    	err << UTC_TIME->tm_hour%24 << ":" << UTC_TIME->tm_min << ","
+    	err << Date << ","
+    	    << UTC_TIME->tm_hour%24 << ":" << UTC_TIME->tm_min << ","
     	    << FILE_ID  << ","
     		<< LINE_NO  << ","
     		<< CODE     << '\n';
     }
     else
     {
-    	//ERROR-CEPTION! We don't really need anything here, or it basically becomes a recursive function.
+        err.open ("WARNING.txt", ios::out);
+        err << "The error recorder was unable to record an error. This is an error. Errorception.";
+        err.close();
+    }
+    err.close(); // Free the resource.
+}
+/**NO ARGS OVERLOAD**/
+void SILENT_ERR ()
+{
+    char Date [80];
+	time_t rawtime;
+	struct tm * UTC_TIME;
+	time (&rawtime);
+	UTC_TIME = gmtime (&rawtime);
+	strftime(Date, 80, "%d.%m.%Y", UTC_TIME);
+
+    ofstream err;
+    err.open ("ERR_LOG.csv", ios::out | ios::app); // open the resource: ERR_LOG.csv in output & append mode
+
+    if (err.is_open()) // Exception CYA.
+    {
+    	err << Date << ","
+    	    << UTC_TIME->tm_hour%24 << ":" << UTC_TIME->tm_min << ","
+    	    << "-1" << ","
+    		<< "-1" << ","
+    		<< "-1" << '\n';
+    }
+    else
+    {
+        err.open ("WARNING.txt", ios::out);
+        err << "The error recorder was unable to record an error. This is an error. Errorception.";
+        err.close();
     }
     err.close(); // Free the resource.
 }
