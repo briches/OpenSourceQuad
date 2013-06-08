@@ -68,6 +68,8 @@ double bPID_out;		          // PID output for beta
 double des_a;				  // Setpoint for alpha
 double des_b;				  // Setpoint for beta
 int PID_SampleTime = 10;                  // Sample time for PID controllers in ms
+int PID_OutLims[] = {-10,10};
+
 
 /*=========================================================================
     Classes that need to be initialized
@@ -81,13 +83,15 @@ void PID_init();            // Function declaration
 void setup()
 {
   Serial.begin(9600);       // Higher number means much higher frequency, for now. Later we will just take out all the "Serial" lines
+  Serial.println(" ");
+  Serial.println("Main Initialization");
   QCopter.initSensor();     // See the control.cpp file for clarification
-  PID_init();               // INitialize PID controllers
+  PID_init();               // Initialize PID controllers
   QCopter.initMotors();     // Turn on the motors.
   des_a = 0;		    // Setpoint for alpha set to 0. This can be changed later, for control
   des_b = 0;                // Setpoint for beta set to 0.
 }
-void loop()
+void loop()                 // Main runtime loop
 {
   QCopter.update();         // See control.cpp for clarification
   aPID.Compute();
@@ -99,10 +103,12 @@ void loop()
 
 void PID_init()                          // Initializes the PID controllers
 {
+  Serial.print("Initializing PID controllers ....  ");
   aPID.SetMode(AUTOMATIC);
-  aPID.SetSampleTime(PID_SampleTime);	 // Set sample time to 10 ms
-  aPID.SetOutputLimits(-250,250);	 // Sets the output limits to {-5,5}. Might be managable
+  aPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
+  aPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);	 // Sets the output limits to {-5,5}. Might be managable
   bPID.SetMode(AUTOMATIC);
-  bPID.SetSampleTime(PID_SampleTime);	 // Set sample time to 10 ms
-  bPID.SetOutputLimits(-5,5);	         // Output limits to {-5,5}
+  bPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
+  bPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);   // Output limits to {-5,5}
+  Serial.println("Done!");
 }
