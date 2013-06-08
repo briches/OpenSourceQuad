@@ -46,7 +46,7 @@ void Control::getSettings()
 {
     Settings.d_ScaleRange = d_ScaleRange;          // This function is just for
     Settings.g_ScaleRange = g_ScaleRange;          // generality. Allows user
-    Settings.DLPF = DLPF;                          // changes of settings.
+    Settings.DLPF = DLPF;                         					// changes of settings.
     Settings.HighDef = HighDef;
     Settings.g_threshold = g_threshold;
     Settings.d_threshold = d_threshold;
@@ -181,11 +181,11 @@ void Control::SI_convert()
 bool Control::initSensor()
 {
     getSettings();                                             // Settings struct
-
-    Serial.println("Intializing gyro: ");                      // See OseppGyro.h
+	byte x=0x0;
+	Serial.println("Intializing gyro: ");                      // See OseppGyro.h
     gyro.setI2CAddr(Gyro_Address);                             // Set the I2C address in OseppGyro class
     gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);       // Set the dataMode in the OseppGyro Class
-    byte x=0x0;
+
     while(x != B100000)
     {
         gyro.regRead(USER_CTRL,&x);                            // See the data sheet for the MPU3050 gyro
@@ -212,25 +212,25 @@ bool Control::initSensor()
 /**************************************************************************/
 bool Control::initMotors()
 {
-    Speeds.motor1s = 0;                         // Initialize all motor speeds to 0
-    Speeds.motor2s = 0;                         // This might be useful, later
-    Speeds.motor3s = 0;
-    Speeds.motor4s = 0;
+    MotorSpeeds.motor1s = 0;                         // Initialize all motor speeds to 0
+    MotorSpeeds.motor2s = 0;                         // This might be useful, later
+    MotorSpeeds.motor3s = 0;
+    MotorSpeeds.motor4s = 0;
     motor1.attach(11);                      // Attach motor 1 to D11
     motor2.attach(10);                      // Attach motor 2 to D10
     motor3.attach(9);                       // Attach motor 3 to D9
     motor4.attach(6);                       // Attach motor 4 to D8
 
     // initializes motor1
-    for(Speeds.motor1s = 0; Speeds.motor1s < 55; Speeds.motor1s += 1)
+    for(MotorSpeeds.motor1s = 0; MotorSpeeds.motor1s < 50; MotorSpeeds.motor1s += 1)
     {
-      motor1.write(Speeds.motor1s);
-      motor2.write(Speeds.motor1s);
-      motor3.write(Speeds.motor1s);
-      motor4.write(Speeds.motor1s);
-      Speeds.motor2s = Speeds.motor1s;
-      Speeds.motor3s = Speeds.motor1s;
-      Speeds.motor4s = Speeds.motor1s;
+      motor1.write(MotorSpeeds.motor1s);
+      motor2.write(MotorSpeeds.motor1s);
+      motor3.write(MotorSpeeds.motor1s);
+      motor4.write(MotorSpeeds.motor1s);
+      MotorSpeeds.motor2s = MotorSpeeds.motor1s;
+      MotorSpeeds.motor3s = MotorSpeeds.motor1s;
+      MotorSpeeds.motor4s = MotorSpeeds.motor1s;
       delay(50);
     }
 
@@ -330,7 +330,7 @@ void Control::update()
 	Data.wx /= 7;
 	Data.wy /= 7;
 	Data.wz /= 7;
-	Serial.println(Data.ax);
+
 
 
     Data.t_previous = Data.t_current;                   // Update the timestamps
@@ -353,195 +353,162 @@ void Control::update()
 
 void Control::setMotorSpeed(int motor, int speed)
 {
-    int MyDelay = 25;
+	int m1d;		// Directions that motor speed needs to increment
+	int m2d;		// +1 for increase, -1 for decrease
+	int m3d;
+	int m4d;
+
 	switch (motor)
 	{
 		/* MOTOR 1*/
 		case 1:
-			if (speed !=  Speeds.motor1s)										// Change required, not the same
+
+			if (speed !=  MotorSpeeds.motor1s)										// Change required, not the same
 			{
-				if (speed > Speeds.motor1s)										// Need to go up
+				if (speed > MotorSpeeds.motor1s)										// Need to go up
 				{
-					for (int x = Speeds.motor1s; x <= speed; x += 1)	        // Ease into the new speed
+					for (int x = MotorSpeeds.motor1s; x <= speed; x += 1)	// Ease into the new speed
 					{
 						motor1.write(x);
-						Speeds.motor1s = x;
-						delay(MyDelay);
+						MotorSpeeds.motor1s = x;
+						delay(25);
 					}
 				}
-				else															// Need to decrease speed
+				else																					// Need to decrease speed
 				{
-					for (int x = Speeds.motor1s; x >= speed; x -= 1)	        // Ease into the new speed
+					for (int x = MotorSpeeds.motor1s; x >= speed; x -= 1)	// Ease into the new speed
 					{
 						motor1.write(x);
-						Speeds.motor1s = x;
-						delay(MyDelay);
+						MotorSpeeds.motor1s = x;
+						delay(25);
 					}
 				}
 			}
 			break;
 
 			/* MOTOR 2 */
-        case 2:
-            if (speed !=  Speeds.motor2s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor2s)										// Need to go up
-                {
-                    for (int x = Speeds.motor2s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor2.write(x);
-                        Speeds.motor2s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor2s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor2.write(x);
-                        Speeds.motor2s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            break;
+			case 2:
+
+			if (speed !=  MotorSpeeds.motor2s)										// Change required, not the same
+			{
+				if (speed > MotorSpeeds.motor2s)										// Need to go up
+				{
+					for (int x = MotorSpeeds.motor2s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						MotorSpeeds.motor2s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = MotorSpeeds.motor2s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor2.write(x);
+						MotorSpeeds.motor2s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
 
 			/* MOTOR 3 */
-        case 3:
-            if (speed !=  Speeds.motor3s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor3s)										// Need to go up
-                {
-                    for (int x = Speeds.motor3s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor3.write(x);
-                        Speeds.motor3s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor3s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor3.write(x);
-                        Speeds.motor3s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            break;
+			case 3:
+
+			if (speed !=  MotorSpeeds.motor3s)										// Change required, not the same
+			{
+				if (speed > MotorSpeeds.motor3s)										// Need to go up
+				{
+					for (int x = MotorSpeeds.motor3s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						MotorSpeeds.motor3s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = MotorSpeeds.motor3s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor3.write(x);
+						MotorSpeeds.motor3s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
 
 			/* MOTOR 4 */
-        case 4:
-            if (speed !=  Speeds.motor4s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor4s)										// Need to go up
-                {
-                    for (int x = Speeds.motor4s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor4.write(x);
-                        Speeds.motor4s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor4s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor4.write(x);
-                        Speeds.motor4s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            break;
+			case 4:
 
-			/* ALL MOTORS*/
-        case 5:
-            if (speed !=  Speeds.motor1s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor1s)										// Need to go up
-                {
-                    for (int x = Speeds.motor1s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor1.write(x);
-                        Speeds.motor1s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else														    // Need to decrease speed
-                {
-                    for (int x = Speeds.motor1s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor1.write(x);
-                        Speeds.motor1s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            if (speed !=  Speeds.motor2s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor2s)										// Need to go up
-                {
-                    for (int x = Speeds.motor2s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor2.write(x);
-                        Speeds.motor2s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor2s; x >= speed; x -= 1)            // Ease into the new speed
-                    {
-                        motor2.write(x);
-                        Speeds.motor2s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            if (speed !=  Speeds.motor3s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor3s)										// Need to go up
-                {
-                    for (int x = Speeds.motor3s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor3.write(x);
-                        Speeds.motor3s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor3s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor3.write(x);
-                        Speeds.motor3s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            if (speed !=  Speeds.motor4s)										// Change required, not the same
-            {
-                if (speed > Speeds.motor4s)										// Need to go up
-                {
-                    for (int x = Speeds.motor4s; x <= speed; x += 1)	        // Ease into the new speed
-                    {
-                        motor4.write(x);
-                        Speeds.motor4s = x;
-                        delay(MyDelay);
-                    }
-                }
-                else															// Need to decrease speed
-                {
-                    for (int x = Speeds.motor4s; x >= speed; x -= 1)	        // Ease into the new speed
-                    {
-                        motor4.write(x);
-                        Speeds.motor4s = x;
-                        delay(MyDelay);
-                    }
-                }
-            }
-            break;
+			if (speed !=  MotorSpeeds.motor4s)										// Change required, not the same
+			{
+				if (speed > MotorSpeeds.motor4s)										// Need to go up
+				{
+					for (int x = MotorSpeeds.motor4s; x <= speed; x += 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						MotorSpeeds.motor4s = x;
+						delay(25);
+					}
+				}
+				else																					// Need to decrease speed
+				{
+					for (int x = MotorSpeeds.motor4s; x >= speed; x -= 1)	// Ease into the new speed
+					{
+						motor4.write(x);
+						MotorSpeeds.motor4s = x;
+						delay(25);
+					}
+				}
+			}
+			break;
+
+			/* ALL MOTORS REQUIRE CHANGE */
+			case 5:
+
+			if  ((speed > MotorSpeeds.motor1s )&& (!= MotorSpeeds.motor1s)) {m1d = 1;}
+			else {m1d = -1;}
+
+			if  ((speed > MotorSpeeds.motor2s )&& (!= MotorSpeeds.motor2s)) {m2d = 1;}
+			else {m2d = -1;}
+
+			if  ((speed > MotorSpeeds.motor3s )&& (!= MotorSpeeds.motor3s)) {m3d = 1;}
+			else {m3d= -1;}
+
+			if  ((speed > MotorSpeeds.motor4s )&& (!= MotorSpeeds.motor4s)) {m4d = 1;}
+			else {m4d= -1;}
+
+			while ( (MotorSpeeds.motor1s != speed)
+				  ||  (MotorSpeeds.motor2s != speed)
+				  ||  (MotorSpeeds.motor3s != speed)
+				  ||  (MotorSpeeds.motor4s != speed) )
+				  {
+						if (MotorSpeeds.motor1s != speed )
+						{
+							MotorSpeeds.motor1s += m1d;
+							motor1.write(MotorSpeeds.motor1s);
+						}
+						if (MotorSpeeds.motor2s != speed )
+						{
+							MotorSpeeds.motor2s += m2d;
+							motor2.write(MotorSpeeds.motor2s);
+						}
+						if (MotorSpeeds.motor3s != speed )
+						{
+							MotorSpeeds.motor3s += m3d;
+							motor3.write(MotorSpeeds.motor3s);
+						}
+						if (MotorSpeeds.motor4s != speed )
+						{
+							MotorSpeeds.motor4s += m4d;
+							motor4.write(MotorSpeeds.motor4s);
+						}
+
+						delay(25);
+				  }
+
+
+			break;
 	}
 }
