@@ -128,6 +128,44 @@ void SILENT_ERR ()
 
 
 /**
+MOTOR_WRITER_MAX_9000
+	This is the meat and potatoes for the correction logic.
+**/
+void Corrector ()
+{
+	double Buffer = 0; 
+	
+	double MOT1_MOD,
+	       MOT2_MOD,
+	       MOT3_MOD,
+	       MOT4_MOD;
+	
+	// Uses public variables in Class Control
+	if (Control.alpha >= 0 + Buffer)
+	{
+		//I COMPLETELY FORGOT THE ARRANGEMENT OF THE MOTORS.
+		MOT1_MOD = aPID_out + Control.Quadcopter_MotorSpeed.motor1s;
+	}
+	else
+	{
+		
+	}
+	
+	if (Control.beta >= 0 + Buffer)
+	{
+		
+	}
+	else
+	{
+		
+	}
+}
+
+
+
+
+
+/**
 DATA BANK
         @OVERVIEW
     I know that this is completely redundant, but I think it's advantageous for us to have
