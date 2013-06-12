@@ -56,10 +56,13 @@ void getChebyCoeff(double A[], double B[], double fcut, double PR, double NP)
     double GAIN =0;
     A[2] = 1;
     B[2] = 1;
+    /* Debug
     cout << "FC = " << fcut << endl;
     cout << "LH = " << "0" << endl;
     cout << "PR = " << PR << endl;
     cout << "NP = " << NP << endl;
+    */
+
     for (int p = 1; p <= NP/2; p++)
     {
 
@@ -111,9 +114,12 @@ void GOSUB(double A[], double B[], double fcut, double PR, double NP, int p)
 
     RP = -cos(Pi/(NP*2) + (p-1)*Pi/NP);                                   // Pole location on unit circle
     IP = sin(Pi/(NP*2)+ (p-1)*Pi/NP);
+
+    /* Debug
     cout << endl;
     cout << "RP = " << RP << endl;
     cout << "IP = " << IP << endl;
+    */
 
     if(PR != 0)
     {
@@ -125,9 +131,11 @@ void GOSUB(double A[], double B[], double fcut, double PR, double NP, int p)
         IP = IP*( (exp(VX) + exp(-VX))/2) / KX;
     }
 
+    /* Debug
     cout << "ES = " << ES << endl;
     cout << "VX = " << VX << endl;
     cout << "KX = " << KX << endl;
+    */
 
     T = 2*tan(0.5);
     W = 2*Pi*fcut;
@@ -147,6 +155,7 @@ void GOSUB(double A[], double B[], double fcut, double PR, double NP, int p)
     B[1] = (2*K + Y1 + Y1*pow(K,2) - 2*Y2*K)/D;
     B[2] = (-pow(K,2) - Y1*K + Y2)/D;
 
+    /* Debug
     cout << "T = " << T << endl;
     cout << "W = " << W << endl;
     cout << "M = " << M << endl;
@@ -162,7 +171,5 @@ void GOSUB(double A[], double B[], double fcut, double PR, double NP, int p)
     cout << "A2 = " << A[2] << endl;
     cout << "B1 = " << B[1] << endl;
     cout << "B2 = " << B[2] << endl;
-
-
-
+    */
 }
