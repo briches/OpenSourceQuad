@@ -82,7 +82,7 @@ void PID_init();            // Function declaration
 
 void setup()
 {
-  Serial.begin(9600);       // Higher number means much higher frequency, for now. Later we will just take out all the "Serial" lines
+  Serial.begin(19200);       // Later we will just take out all the "Serial" commands. No need, just write to file
   Serial.println(" ");
   Serial.println("Main Initialization");
   QCopter.initSensor();     // See the control.cpp file for clarification
@@ -96,9 +96,7 @@ void loop()                 // Main runtime loop
   QCopter.update();         // See control.cpp for clarification
   aPID.Compute();
   bPID.Compute();
-  Serial.print(QCopter.beta);
-  Serial.print(" ");
-  Serial.println(bPID_out);
+  Serial.println(QCopter.Data.elev);
 }
 
 void PID_init()                          // Initializes the PID controllers

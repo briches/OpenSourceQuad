@@ -34,6 +34,60 @@ int main ()
 
 
 /**
+
+**/
+void UpdateSpeeds ()
+{
+    float buffer,
+          MOD_M1,
+          MOD_M2,
+          MOD_M3,
+          MOD_M4;
+
+    if (control.alpha >= 0 + buffer)
+    {
+        MOD_M1 += aPID_out;
+        MOD_M4 += aPID_out;
+
+        MOD_M2 -= aPID_out;
+        MOD_M3 -= aPID_out;
+    }
+    else
+    {
+        MOD_M1 -= aPID_out;
+        MOD_M4 -= aPID_out;
+
+        MOD_M2 += aPID_out;
+        MOD_M3 += aPID_out;
+    }
+
+    if (control.beta >= 0 + buffer)
+    {
+        MOD_M3 += bPID_out;
+        MOD_M4 += bPID_out;
+
+        MOD_M1 -= bPID_out;
+        MOD_M2 -= bPID_out;
+    }
+    else
+    {
+        MOD_M3 -= bPID_out;
+        MOD_M4 -= bPID_out;
+
+        MOD_M1 += bPID_out;
+        MOD_M2 += bPID_out;
+    }
+    motor1.write(MotorSpeeds1.motor1s + MOD_M1);
+    motor2.write(MotorSpeeds1.motor2s + MOD_M2);
+    motor3.write(MotorSpeeds1.motor3s + MOD_M3);
+    motor4.write(MotorSpeeds1.motor4s + MOD_M4);
+}
+
+
+
+
+
+/**
 SILENT ERROR FLAGGER.
         @OVERVIEW
     Every once in a while, there's a spot in the code which we never want the runtime to get to, but
@@ -165,6 +219,8 @@ void Corrector ()
 
 
 
+/
+//
 /**
 DATA BANK
         @OVERVIEW

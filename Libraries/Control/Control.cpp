@@ -180,12 +180,15 @@ bool Control::initSensor()
     getSettings();                                             // Settings struct
 	byte x=0x0;
 	Serial.print("Intializing gyro ....  ");                      // See OseppGyro.h
+	delay(50);
     gyro.setI2CAddr(Gyro_Address);                             // Set the I2C address in OseppGyro class
+    delay(50);
     gyro.dataMode(Settings.d_ScaleRange, Settings.DLPF);       // Set the dataMode in the OseppGyro Class
-
+	delay(50);
     while(x != B100000)
     {
         gyro.regRead(USER_CTRL,&x);                            // See the data sheet for the MPU3050 gyro
+        delay(50);
         gyro.regWrite(USER_CTRL,B00100000);                    // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
     }
     Serial.println("Done!");
@@ -221,7 +224,7 @@ bool Control::initMotors()
     motor4.attach(6);                       // Attach motor 4 to D8
 
     // initializes motor1
-    for(MotorSpeeds.motor1s = 0; MotorSpeeds.motor1s < 50; MotorSpeeds.motor1s += 1)
+    for(MotorSpeeds.motor1s = 0; MotorSpeeds.motor1s < 85; MotorSpeeds.motor1s += 1)
     {
       motor1.write(MotorSpeeds.motor1s);
       motor2.write(MotorSpeeds.motor1s);
@@ -264,71 +267,94 @@ void Control::update()
     if(fabs(Data.wz) < Settings.d_threshold) {Data.wz = 0;}
 
 	/*  Updates the prev_data by bumping up each data set */
-    for (int i = 30; i <= 35; i ++)
+    for (int i = 35; i <= 41; i ++)
     {
-    	Data.prev_data[i+6] = Data.prev_data[i];
+    	Data.prev_data[i+7] = Data.prev_data[i];
     }
-	for (int i = 24; i <=29; i++)
+	for (int i = 28; i <=34; i++)
 	{
-		Data.prev_data[i+6] = Data.prev_data[i];
+		Data.prev_data[i+7] = Data.prev_data[i];
 	}
-	for (int i = 18; i <=23; i++)
+	for (int i = 21; i <=27; i++)
 	{
-		Data.prev_data[i+6] = Data.prev_data[i];
+		Data.prev_data[i+7] = Data.prev_data[i];
 	}
-	for (int i = 12; i <=17; i++)
+	for (int i = 14; i <=20; i++)
 	{
-		Data.prev_data[i+6] = Data.prev_data[i];
+		Data.prev_data[i+7] = Data.prev_data[i];
 	}
-	for (int i = 6; i <=11; i++)
+	for (int i = 7; i <=13; i++)
 	{
-		Data.prev_data[i+6] = Data.prev_data[i];
+		Data.prev_data[i+7] = Data.prev_data[i];
 	}
-	for (int i = 0; i <=5; i++)
+	for (int i = 0; i <=6; i++)
 	{
-		Data.prev_data[i+6] = Data.prev_data[i];
+		Data.prev_data[i+7] = Data.prev_data[i];
 	}
-	Data.prev_data[0] = Data.ax;
+	Data.prev_data[0] = Data.ax;									// These reads happen fast, no interrupt req'd
 	Data.prev_data[1] = Data.ay;
 	Data.prev_data[2] = Data.az;
 	Data.prev_data[3] = Data.wx;
 	Data.prev_data[4] = Data.wy;
-	Data.prev_data[5] = Data.wz;					// Buffer is updated, now a moving average can be calculated
-																			// If the buffer size has to be increased then we can do that.
+	Data.prev_data[5] = Data.wz;								// End of fast reads.
 
-	Data.ax = 0; Data.ay = 0; Data.az = 0; Data.wx = 0; Data.wy = 0; Data.wz = 0; // ready for average calculation
+																						// USRF read happens with 20 ms delay
+																						// Check interrupt.
 
-	for (int i = 0; i <=36; i += 6)
+
+	double check_intr = Data.USRF_ct - Data.USRF_pt;
+
+	if (check_intr >= USRF_interrupt) 						// If interrupt available, sensor is ready
+	{
+		Data.prev_data[6] = analogRead( USRF_pin );
+		Data.USRF_pt = Data.USRF_ct;								// Move the last read time into previous
+		Data.USRF_ct = micros();
+	}
+	else																				// Sensor not ready, use last value
+	{
+		Data.prev_data[6] = Data.prev_data[13];
+		Data.USRF_ct = micros();
+	}
+
+	// Buffer is updated, now a moving average can be calculated,  If the buffer size has to be increased then we can do that.
+	Data.ax = 0; Data.ay = 0; Data.az = 0; Data.wx = 0; Data.wy = 0; Data.wz = 0; Data.elev = 0; // ready for average calculation
+
+	for (int i = 0; i <=42; i += 7)
 	{
 		Data.ax = Data.ax + Data.prev_data[i];
 	}
-	for (int i = 1; i <=37 ; i += 6)
+	for (int i = 1; i <=43 ; i += 7)
 	{
 		Data.ay = Data.ay + Data.prev_data[i];
 	}
-	for (int i = 2; i <=38 ; i += 6)
+	for (int i = 2; i <=44 ; i += 7)
 	{
 		Data.az = Data.az + Data.prev_data[i];
 	}
-	for (int i = 3; i <=39 ; i += 6)
+	for (int i = 3; i <=45 ; i += 7)
 	{
 		Data.wx = Data.wx + Data.prev_data[i];
 	}
-	for (int i = 4; i <=40 ; i += 6)
+	for (int i = 4; i <=46 ; i += 7)
 	{
 		Data.wy = Data.wy + Data.prev_data[i];
 	}
-	for (int i = 5; i <=41 ; i += 6)
+	for (int i = 5; i <=47; i += 7)
 	{
 		Data.wz = Data.wz + Data.prev_data[i];
 	}
+	for (int i = 6; i <= 48; i+= 7)
+	{
+		Data.elev = Data.elev + Data.prev_data[i];
+	}
 
-	Data.ax /= 7;
+	Data.ax /= 7;						// Finish off the calculation
 	Data.ay /= 7;
 	Data.az /= 7;
 	Data.wx /= 7;
 	Data.wy /= 7;
 	Data.wz /= 7;
+	Data.elev /= 7;
 
 
 

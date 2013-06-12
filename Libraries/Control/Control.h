@@ -30,7 +30,6 @@ Date    : May 2013
 #include <Servo.h>
 
 
-const double Pi = 3.14159;
 
 /*
 // Since I don't have a familiar IDE at the university I'm sticking this here.
@@ -73,7 +72,9 @@ int evaluate_angle(){//ran out of time.};
 
 */
 
-
+#define Pi  (3.14159F)								// Its pi.
+#define USRF_interrupt (50000)				// The latency period between readings of the USRF, in microseconds
+#define USRF_pin (0x0)								// Connect the USRF AN pin to this pin
 
 /*=========================================================================
     I2C Addresses
@@ -119,9 +120,16 @@ typedef struct Quadcopter_Data_s
     double wx;
     double wy;
     double wz;
-    double prev_data[42];       // Stores 6 previous data sets, 1 current
-    double t_current;           // Time @ call to update();
+    double elev;
+    double prev_data[49];       // Stores 6 previous data sets, 1 current.
+												// Prev_data is used for a moving average filter.
+
+    double t_current;             // Time @ call to update(); used for integrations
     double t_previous;          // Time @ previous call to update();
+
+    double USRF_ct; 			// Time at USRF read
+    double USRF_pt;			// Time at last read of USRF
+
     int freq;				    // Frequency of calls to update();
 
 
