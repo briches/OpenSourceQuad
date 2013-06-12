@@ -20,7 +20,10 @@ if nargin == 2, fprintf('\n  Error: specify cutoff frequency\n\n'); end
 if nargin == 3, hilo=0; plotswitch=1; end
 if nargin == 4,         plotswitch=1; end
 
-if hilo == 1 highswitch = 'high'; else highswitch = 'low'; end 
+if hilo == 1 
+	highswitch = 'high'; 
+else highswitch = 'low'; 
+end 
 
 [b,a] = cheby2(12,40,fcut/(fsamp/2),highswitch);
 filtdata = filtfilt(b,a,rawdata);
