@@ -17,7 +17,7 @@ Under development currently:
 
  <br />
   - Sensor noise reduction. Motor operation induces high magnitude high frequency noise.<br />
-      - See [QCopterDebug.pde](https://github.com/briches/Quadcopter/blob/master/QCopterMain/QCopterDebug/QCopterDebug.pde) for info. <br />
+      - See [Data_ Fourier Analysis](https://github.com/briches/Quadcopter/tree/master/Data_Fourier%20Analysis) for info. <br />
 
   - PID algorithm for sustained stability <br />
       - See [QCopterMain.ino](https://github.com/briches/Quadcopter/blob/master/QCopterMain/QCopterMain.ino) for info. <br />
