@@ -47,6 +47,27 @@ Copyright stuff from all included libraries that I didn't write
 #include <I2C.h>
 #include <Servo.h>
 #include <math.h>
+// #include <SD.h>
+// #include <stdio.h>
+
+/*=========================================================================
+    SD card variables and class instances
+    -----------------------------------------------------------------------*/
+    
+/*
+const int chipSelect = 10;  
+File myFile;
+String BUFFER1 = "";
+String BUFFER2 = "";
+String BUFFER3 = "";
+String BUFFER4 = "";
+int BUFFER_C1;
+int BUFFER_C2;
+int BUFFER_C3;
+int BUFFER_C4;
+int BUF_SEL = 1;
+const int myBufLen = 12;
+char tstring[15]; 
 
 
 /*=========================================================================
@@ -82,9 +103,13 @@ void PID_init();            // Function declaration
 
 void setup()
 {
-  Serial.begin(19200);       // Later we will just take out all the "Serial" commands. No need, just write to file
+  Serial.begin(19200);      // Later we will just take out all the "Serial" commands. No need, just write to file
+  
+  while(!Serial) {
+    ;                       // Wait for serial port to connect
+  }
+  
   Serial.println(" ");
-  Serial.println("Main Initialization");
   QCopter.initSensor();     // See the control.cpp file for clarification
   PID_init();               // Initialize PID controllers
   QCopter.initMotors();     // Turn on the motors.
@@ -96,17 +121,21 @@ void loop()                 // Main runtime loop
   QCopter.update();         // See control.cpp for clarification
   aPID.Compute();
   bPID.Compute();
-  Serial.println(QCopter.Data.elev);
+  Serial.println(QCopter.alpha);
+ 
 }
+
 
 void PID_init()                          // Initializes the PID controllers
 {
-  Serial.print("Initializing PID controllers ....  ");
+  Serial.print("InitPID....  ");
   aPID.SetMode(AUTOMATIC);
   aPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
   aPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);	 // Sets the output limits to {-5,5}. Might be managable
   bPID.SetMode(AUTOMATIC);
   bPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
   bPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);   // Output limits to {-5,5}
-  Serial.println("Done!");
+  Serial.println("D");
 }
+
+

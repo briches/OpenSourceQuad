@@ -39,7 +39,7 @@ Date    : May 2013
 // evaluate_angle()
 //	Creates a speed to return to the motors based on the current motor speed and gyro rotation.
 //	Takes arguments:
-//		float MyGyro - Array of the current rotation of the craft. Stored as X,Y,Z rotation.
+//		double MyGyro - Array of the current rotation of the craft. Stored as X,Y,Z rotation.
 //		int MySpeeds - Array of the current assigned speed of the motors.
 
 // enumeration for cartesian coordinate sysem. May be usefull when constructing algorithms. Not sure.
@@ -59,7 +59,7 @@ enum Cartesian {
 //  - Maybe other stuff
 
 void angle_correct(){
-	float CurrentRot[3] = {get_x_rot(), get_y_rot(), get_z_rot();}
+	double CurrentRot[3] = {get_x_rot(), get_y_rot(), get_z_rot();}
 	// Assume assigned speeds are arranged by:
 	// XPOS, XNEG, YPOS, YNEG
 	int CurrentSpd[4] = {MyArray[0], MyArray[1], MyArray[2], MyArray[3]};
@@ -162,6 +162,8 @@ typedef struct Initial_Offsets_s
     double wz;
 
 } Initial_Offsets;
+
+
 
 
 /*=========================================================================

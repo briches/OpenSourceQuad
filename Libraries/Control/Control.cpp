@@ -87,22 +87,22 @@ void Control::get_Initial_Offsets()
 
     Serial.println(" ");
     Offsets.ax = (Offsets.ax)/offset_counter;      // Store the average of the readings into the Offsets struct
-    Serial.print("accelerometer x-offset: ");
+    Serial.print("ax: ");
     Serial.println(Offsets.ax);
     Offsets.ay = (Offsets.ay)/offset_counter;
-    Serial.print("accelerometer y-offset: ");
+    Serial.print("ay: ");
     Serial.println(Offsets.ay);
     Offsets.az = ((Offsets.az)/offset_counter) - 256;
-    Serial.print("accelerometer z-offset: ");
+    Serial.print("az: ");
     Serial.println(Offsets.az);
     Offsets.wx = (Offsets.wx)/offset_counter;
-    Serial.print("gyro x-offset: ");
+    Serial.print("wx: ");
     Serial.println(Offsets.wx);
     Offsets.wy = (Offsets.wy)/offset_counter;
-    Serial.print("gyro y-offset: ");
+    Serial.print("wy: ");
     Serial.println(Offsets.wy);
     Offsets.wz = (Offsets.wz)/offset_counter;
-    Serial.print("gyro z-offset: ");
+    Serial.print("wz: ");
     Serial.println(Offsets.wz);
 };
 
@@ -179,7 +179,7 @@ bool Control::initSensor()
 {
     getSettings();                                             // Settings struct
 	byte x=0x0;
-	Serial.print("Intializing gyro ....  ");                      // See OseppGyro.h
+	Serial.print("Int gyro  ");                      // See OseppGyro.h
 	delay(50);
     gyro.setI2CAddr(Gyro_Address);                             // Set the I2C address in OseppGyro class
     delay(50);
@@ -194,13 +194,13 @@ bool Control::initSensor()
     Serial.println("Done!");
     delayMicroseconds(10);
 
-    Serial.print("Initializing accel ....  ");                    // Same as the gyro initialization, but the accel isnt an ass
+    Serial.print("Init accel ");                    // Same as the gyro initialization, but the accel isnt an ass
     accel.setI2CAddr(Accel_Address);                           // See the data sheet for the MMA8452Q Accelerometer registers
     accel.dataMode(Settings.HighDef, Settings.g_ScaleRange);   // http://cache.freescale.com/files/sensors/doc/data_sheet/MMA8452Q.pdf?fpsp=1
 	Serial.println("Done!");
     delayMicroseconds(10);
 
-	Serial.print("Getting initial offset vals ....  ");
+	Serial.print("get init offs ");
     get_Initial_Offsets();                                     // Initial offsets private function in Control class
     Serial.println("Done!");
 
@@ -375,7 +375,7 @@ void Control::update()
     @brief Sets the motors to a new speed
 */
 /**************************************************************************/
-
+/*
 void Control::setMotorSpeed(int motor, int speed)
 {
 	int m1d;		// Directions that motor speed needs to increment
@@ -385,7 +385,7 @@ void Control::setMotorSpeed(int motor, int speed)
 
 	switch (motor)
 	{
-		/* MOTOR 1*/
+		/// MOTOR /
 		case 1:
 
 			if (speed !=  MotorSpeeds.motor1s)										// Change required, not the same
@@ -411,7 +411,7 @@ void Control::setMotorSpeed(int motor, int speed)
 			}
 			break;
 
-			/* MOTOR 2 */
+			//MOTOR 2
 			case 2:
 
 			if (speed !=  MotorSpeeds.motor2s)										// Change required, not the same
@@ -435,9 +435,8 @@ void Control::setMotorSpeed(int motor, int speed)
 					}
 				}
 			}
-			break;
-
-			/* MOTOR 3 */
+			break
+			//MOTOR 3
 			case 3:
 
 			if (speed !=  MotorSpeeds.motor3s)										// Change required, not the same
@@ -463,7 +462,7 @@ void Control::setMotorSpeed(int motor, int speed)
 			}
 			break;
 
-			/* MOTOR 4 */
+			// MOTOR 4
 			case 4:
 
 			if (speed !=  MotorSpeeds.motor4s)										// Change required, not the same
@@ -489,7 +488,7 @@ void Control::setMotorSpeed(int motor, int speed)
 			}
 			break;
 
-			/* ALL MOTORS REQUIRE CHANGE */
+			// ALL MOTORS REQUIRE CHANGE
 			case 5:
 
 			if  ((speed > MotorSpeeds.motor1s )&& (speed != MotorSpeeds.motor1s)) {m1d = 1;}
@@ -537,3 +536,4 @@ void Control::setMotorSpeed(int motor, int speed)
 			break;
 	}
 }
+*/
