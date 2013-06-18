@@ -1,32 +1,37 @@
 /********************
-This sketch tests the data logging capability of the SD card, only.
+This sketch tests the data logging capability of the sd card, only.
 Use with, or without, motors.
 
 
 
  ****** Important *********
- Do ctrl + f on this
- "LogTest1.txt"
+ Do ctrl + f, search this:
+ 
+ M75_T1.txt
  
  and REPLACE ALL with your new file name.
 
 
  
 ********************/
-#include <SD.h>
+#include <SdFat.h>
 #include <OseppGyro.h>
 #include <I2C.h>
 #include <MMA8453_n0m1.h>
 #include <Servo.h>
 #include <cstdio.h>
  
-// Adafruit SD shields and modules: pin 10
+ 
+int x =0;
+// Adafruit sd shields and modules: pin 10
 const int chipSelect = 10;  
 // Create the file
-File myFile;
+SdFat sd;
+SdFile myFile;
+
 String BUFFER;
 char tstring[15];
-const int myBufLen = 10;
+const int myBufLen = 32;
 int count;
 
 OseppGyro gyro;
@@ -34,6 +39,11 @@ MMA8453_n0m1 accel;
 
 int ScaleRange = 250;
 int DLPF = 6;
+
+Servo Motor1;
+Servo Motor2;
+Servo Motor3;
+Servo Motor4;
 
 void setup() 
 {
@@ -43,32 +53,24 @@ void setup()
     ; // wait for serial port to connect. Needed for Leonardo only
   }
 
+  // Initialize sdFat or print a detailed error message and halt
+  // Use half speed like the native library.
+  // change to SPI_FULL_SPEED for more performance.
+  if (!sd.begin(chipSelect, SPI_FULL_SPEED)) sd.initErrorHalt();
 
-  Serial.print("Initializing SD card...");
-  pinMode(SS, OUTPUT);
-  if (!SD.begin(chipSelect)) {
-    Serial.println("initialization failed!");
-    return;
+  // open the file for write at end like the Native sd library
+  if (!myFile.open("M75_T1.txt", O_RDWR | O_CREAT)) {
+    sd.errorHalt("opening M75_T1.txt for write failed");
   }
-  Serial.println("initialization done.");
-  
-  if (SD.exists("LogTest1.txt"))
-  {
-    SD.remove("LogTest1.txt");
-  }
-  myFile = SD.open("LogTest1.txt", FILE_WRITE);
-  
   // if the file opened okay, write to it:
-  if (myFile) {
-    Serial.print("Write test.txt...");
-    myFile.println("LogTest1.txt");
-    // close the file:
-    myFile.close();
-    Serial.println("done.");
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
-  }
+  Serial.print("Writing to M75_T1.txt...");
+  myFile.println("M75_T1.txt");
+
+  // close the file:
+  myFile.close();
+  Serial.println("done.");
+
+
   /************************ Gyro initialization ************************/
   Serial.println(" ");
   
@@ -108,47 +110,67 @@ void setup()
   delay(10);
   /******************* End Accel initialization ************************/
   
+  if (!myFile.open("M75_T1.txt", O_RDWR | O_AT_END)) 
+  {
+    sd.errorHalt("opening test.txt for write failed");
+  }
+  else {
+    myFile.println("Begin Data: ");
+  }
+  
+  Motor1.attach(5);
+  Motor2.attach(10);
+  Motor3.attach(9);
+  Motor4.attach(6);
+  
   
 }
+
 void loop() 
 {
-  accel.update();
-  long ax = accel.x();
-  ax *= 38.32;      // Divide by 100 to get to m/s^2
-  
-  int ay = accel.y();
-  ay *= 0.03832;
-  
-  int az = accel.z();
-  az *= 0.03832;
-  
-  gyro.update(); 
-  int wx = gyro.x();
-  wx *= 0.007608;
-  
-  int wy = gyro.y();
-  wy *= 0.007608;
-  
-  int wz = gyro.z();
-  wz *= 0.007608;
-  
-  sprintf(tstring, "%d", ax);
-  BUFFER += ( tstring + "\n");
-  count ++;
-  
-  if(count >= myBufLen)
+  if (millis() <= 30000)
   {
-    myFile = SD.open("LogTest1.txt", FILE_WRITE);
-    if (myFile) {
-      myFile.print(String(millis()) + ", ");
-      myFile.print(BUFFER);
-      myFile.close();
-    } else {
-      // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
+    if (x == 0)
+    {
+      for(x = 0; x <= 75; x += 1)
+      {
+        Motor1.write(x);
+        Motor2.write(x);
+        Motor3.write(x);
+        Motor4.write(x);
+        delay(50);
+      }
     }
-    BUFFER = "";
-    count = 0;
+    
+    accel.update();
+    int ax = accel.x();
+    ax *= 38.32;      // Divide by 100 to get to m/s^2
+    
+    int ay = accel.y();
+    ay *= 38.32;
+    
+    int az = accel.z();
+    az *= 38.32;
+    
+    gyro.update(); 
+    int wx = gyro.x();
+    wx *= 7.608;
+    
+    int wy = gyro.y();
+    wy *= 7.608;
+    
+    int wz = gyro.z();
+    wz *= 7.608;
+    
+    myFile.print((String)micros() + ", ");
+    sprintf(tstring, "%d", ax);
+    myFile.println(tstring);
+    
+  }
+  
+  else {
+    myFile.close();
+    
   }
 }
 

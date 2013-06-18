@@ -25,7 +25,7 @@ if hilo == 1
 else highswitch = 'low'; 
 end 
 
-[b,a] = cheby2(12,40,fcut/(fsamp/2),highswitch);
+[b,a] = cheby2(10,40,fcut/(fsamp/2),highswitch);
 filtdata = filtfilt(b,a,rawdata);
 if plotswitch == 1
   dt = 1/fsamp;
