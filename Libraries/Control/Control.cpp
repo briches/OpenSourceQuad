@@ -301,7 +301,6 @@ void Control::update()
 																						// USRF read happens with 20 ms delay
 																						// Check interrupt.
 
-
 	double check_intr = Data.USRF_ct - Data.USRF_pt;
 
 	if (check_intr >= USRF_interrupt) 						// If interrupt available, sensor is ready
@@ -315,6 +314,7 @@ void Control::update()
 		Data.prev_data[6] = Data.prev_data[13];
 		Data.USRF_ct = micros();
 	}
+
 
 	// Buffer is updated, now a moving average can be calculated,  If the buffer size has to be increased then we can do that.
 	Data.ax = 0; Data.ay = 0; Data.az = 0; Data.wx = 0; Data.wy = 0; Data.wz = 0; Data.elev = 0; // ready for average calculation
@@ -356,6 +356,8 @@ void Control::update()
 	Data.wz /= 7;
 	Data.elev /= 7;
 
+// Chebyshev IIR low pass filter formula
+
 
 
     Data.t_previous = Data.t_current;                   // Update the timestamps
@@ -375,7 +377,6 @@ void Control::update()
     @brief Sets the motors to a new speed
 */
 /**************************************************************************/
-/*
 void Control::setMotorSpeed(int motor, int speed)
 {
 	int m1d;		// Directions that motor speed needs to increment
@@ -536,4 +537,4 @@ void Control::setMotorSpeed(int motor, int speed)
 			break;
 	}
 }
-*/
+

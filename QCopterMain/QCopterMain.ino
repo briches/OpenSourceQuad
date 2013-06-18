@@ -47,14 +47,14 @@ Copyright stuff from all included libraries that I didn't write
 #include <I2C.h>
 #include <Servo.h>
 #include <math.h>
-// #include <SD.h>
-// #include <stdio.h>
+
 
 /*=========================================================================
     SD card variables and class instances
-    -----------------------------------------------------------------------*/
-    
+    -----------------------------------------------------------------------*
 /*
+#include <SD.h>
+#include <stdio.h>
 const int chipSelect = 10;  
 File myFile;
 String BUFFER1 = "";
@@ -68,7 +68,7 @@ int BUFFER_C4;
 int BUF_SEL = 1;
 const int myBufLen = 12;
 char tstring[15]; 
-
+*/
 
 /*=========================================================================
     PID gain constants
@@ -126,14 +126,14 @@ void loop()                 // Main runtime loop
 }
 
 
-void PID_init()                          // Initializes the PID controllers
+void PID_init()                                          // Initializes the PID controllers
 {
   Serial.print("InitPID....  ");
   aPID.SetMode(AUTOMATIC);
-  aPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
+  aPID.SetSampleTime(PID_SampleTime);	                 // Set sample time
   aPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);	 // Sets the output limits to {-5,5}. Might be managable
   bPID.SetMode(AUTOMATIC);
-  bPID.SetSampleTime(PID_SampleTime);	                 // Set sample time to 10 ms
+  bPID.SetSampleTime(PID_SampleTime);	                 // Set sample time
   bPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);   // Output limits to {-5,5}
   Serial.println("D");
 }
