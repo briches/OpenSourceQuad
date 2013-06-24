@@ -7,7 +7,7 @@ Use with, or without, motors.
  ****** Important *********
  Do ctrl + f, search this:
  
- M75_T1.txt
+ "75wxT1.txt"
  
  and REPLACE ALL with your new file name.
 
@@ -58,13 +58,14 @@ void setup()
   // change to SPI_FULL_SPEED for more performance.
   if (!sd.begin(chipSelect, SPI_FULL_SPEED)) sd.initErrorHalt();
 
+
   // open the file for write at end like the Native sd library
-  if (!myFile.open("M75_T1.txt", O_RDWR | O_CREAT)) {
-    sd.errorHalt("opening M75_T1.txt for write failed");
+  if (!myFile.open("75wxT1.txt", O_RDWR | O_CREAT)) {
+    sd.errorHalt("opening ""75wxT1.txt"" for write failed");
   }
   // if the file opened okay, write to it:
-  Serial.print("Writing to M75_T1.txt...");
-  myFile.println("M75_T1.txt");
+  Serial.print("Writing to ""75wxT1.txt""...");
+  myFile.println("75wxT1.txt");
 
   // close the file:
   myFile.close();
@@ -110,7 +111,7 @@ void setup()
   delay(10);
   /******************* End Accel initialization ************************/
   
-  if (!myFile.open("M75_T1.txt", O_RDWR | O_AT_END)) 
+  if (!myFile.open("75wxT1.txt", O_RDWR | O_AT_END)) 
   {
     sd.errorHalt("opening test.txt for write failed");
   }
@@ -143,27 +144,23 @@ void loop()
     }
     
     accel.update();
-    int ax = accel.x();
-    ax *= 38.32;      // Divide by 100 to get to m/s^2
+    int ax = accel.x();  // Divide by 100 to get to m/s^2
     
     int ay = accel.y();
-    ay *= 38.32;
-    
+
     int az = accel.z();
-    az *= 38.32;
-    
+
     gyro.update(); 
     int wx = gyro.x();
-    wx *= 7.608;
-    
+
     int wy = gyro.y();
-    wy *= 7.608;
     
     int wz = gyro.z();
-    wz *= 7.608;
+    
+//    int myvar = 100*ax;
     
     myFile.print((String)micros() + ", ");
-    sprintf(tstring, "%d", ax);
+    sprintf(tstring, "%d", wx);
     myFile.println(tstring);
     
   }

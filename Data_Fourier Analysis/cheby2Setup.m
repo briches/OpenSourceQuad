@@ -8,7 +8,8 @@ function [A,B] = cheby2Setup(n, r, Wst)
 %       input:
 %           n - filter order 
 %           r - stopband ripple is r decibels down
-%           Wst - stopband edge frequency (0-1.0)
+%           Wst - stopband edge frequency, as a fraction of
+%           sampling rate, ie from 0 to 1
 
 clc;
 
