@@ -38,17 +38,8 @@ Updated for compatability with main polling loop and GPS interrupts
 #define Gyro_Address    (0x69)
 
 	/*===============================================
-    Class initializations
-    -----------------------------------------------------------------------*/
-  MMA8453_n0m1  accel;       		// Accel class
-  OseppGyro             gyro;			// Gyro class
-  Servo                  motor1;			// Motor 1
-  Servo                  motor2;			// Motor 2
-  Servo                  motor3;			// Motor 3
-  Servo                  motor4;			// Motor 4
-
-	/*===============================================
     Device settings (Options for sensors)
+    - Explaining these is kinda hard, go read the data sheets.
     -----------------------------------------------------------------------*/
 	const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 	const int g_ScaleRange = FULL_SCALE_RANGE_2g;  // x2g,x4g,x8g
@@ -64,80 +55,85 @@ Updated for compatability with main polling loop and GPS interrupts
 /*==========================================================================
 	Main struct, holds settings, vars, and some data
     ------------------------------------------------------------------------------------------------------------*/
-typedef struct QuadcopterVars
+class Quadcopter
 {
-	/*===============================================
-    Current motor speeds
-    -----------------------------------------------------------------------*/
-	int motor1s;                 // Motor speed for all 4 motors
-	int motor2s;
-	int motor3s;
-	int motor4s;
+	public:
 
-	/*===============================================
-    Sensor data, current and buffer.
-    -----------------------------------------------------------------------*/
-	double ax;                   // Basic sensor data
-    double ay;
-    double az;
-    double wx;
-    double wy;
-    double wz;
-    double elev;
-    double prev_data[49];       // Stores 6 previous data sets, 1 current.
-												// Prev_data is used for a moving average filter.
+		/*===============================================
+		Current motor speeds
+		-----------------------------------------------------------------------*/
+		int motor1s;                 // Motor speed for all 4 motors
+		int motor2s;
+		int motor3s;
+		int motor4s;
 
-	/*===============================================
-    Time keeping for polling and interrupts
-    -----------------------------------------------------------------------*/
-    double tpoll1;
-    double tpoll2;
-    double tpoll3;
-    int freq;				    		// Frequency of calls to update();
+		/*===============================================
+		Sensor data, current and buffer.
+		-----------------------------------------------------------------------*/
+		double ax;                   // Basic sensor data
+		double ay;
+		double az;
+		double wx;
+		double wy;
+		double wz;
+		double elev;
+		double prev_data[49];       // Stores 6 previous data sets, 1 current.
+													// Prev_data is used for a moving average filter.
 
-
-	/*===============================================
-    Sensor initial offset data
-    -----------------------------------------------------------------------*/
-    double io_ax;                 // Offsets from initial position sensor data
-    double io_ay;
-    double io_az;
-    double io_wx;
-    double io_wy;
-    double io_wz;
+		/*===============================================
+		Time keeping for polling and interrupts
+		-----------------------------------------------------------------------*/
+		double tpoll1;
+		double tpoll2;
+		double tpoll3;
+		int freq;				    		// Frequency of calls to update();
 
 
-	/*===============================================
-    State variables
-    -----------------------------------------------------------------------*/
-	double alpha;                           								// Angle between x and z
-	double beta;                            								// Angle between y and z
-	double heading;                         							// Time integration of wz
+		/*===============================================
+		Sensor initial offset data
+		-----------------------------------------------------------------------*/
+		double io_ax;                 // Offsets from initial position sensor data
+		double io_ay;
+		double io_az;
+		double io_wx;
+		double io_wy;
+		double io_wz;
 
-};																			// Main struct name
+		/*=========================================================================
+		State variables
+		- The program didnt like having these in the class.
+		-----------------------------------------------------------------------*/
+		double alpha;
+		double beta;
+		double heading;
+
+		/***************************************************************************
+		 *! @FUNCTIONS
+		 ***************************************************************************/
+		bool initSensor();                      							// Initializes the two sensors
+		bool initMotors();                     							// Initializes the 4 motors
+		void update();      // Updates the structure
+		void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
+		bool updateMotors(double aPID_out, double bPID_out);
 
 
-/***************************************************************************
- *! @FUNCTIONS
- ***************************************************************************/
-/*=========================================================================
-    Function declarations
-    -----------------------------------------------------------------------*/
+		/*===============================================
+			Class initializations
+			-----------------------------------------------------------------------*/
+	  MMA8453_n0m1  accel;       		// Accel class
+	  OseppGyro             gyro;			// Gyro class
+	  Servo                  motor1;			// Motor 1
+	  Servo                  motor2;			// Motor 2
+	  Servo                  motor3;			// Motor 3
+	  Servo                  motor4;			// Motor 4
 
-void mov_avg();														// Runs a moving average
+		private:
+		void SI_convert();                 							// Convert to SI
+		void mov_avg();														// Runs a moving average
+		void get_Initial_Offsets();                           // Gets the initial Offsets
+};
 
-bool initSensor();                      							// Initializes the two sensors
 
-bool initMotors();                     							// Initializes the 4 motors
-
-void update();                         							 	// Updates the structure
-
-void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
-
-void SI_convert(void);                 							// Convert to SI
-void get_Initial_Offsets(void);         					// Gets the initial Offsets
-
-QuadcopterVars           QV;         							// Creates the structure
 
 
 #endif // CONTROL_H_INCLUDED

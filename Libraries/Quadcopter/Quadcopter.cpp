@@ -30,7 +30,7 @@ Updated for compatability with main polling loop and GPS interrupts
     @brief Gets the initial offsets in both sensors to accomodate starting
 */
 /**************************************************************************/
-void get_Initial_Offsets()
+void Quadcopter :: get_Initial_Offsets()
 {
     int offset_counter = 10;                       // # of data sets to consider when finding offsets
     int counter = 1;
@@ -49,29 +49,29 @@ void get_Initial_Offsets()
         gyrodata[1] = gyro.y();
         gyrodata[2] = gyro.z();
 
-        QV.io_ax = (QV.io_ax + acceldata[0] ); // Sum
-        QV.io_ay = (QV.io_ay + acceldata[1] );
-        QV.io_az = (QV.io_az + acceldata[2] );
-        QV.io_wx = (QV.io_wx + gyrodata[0] );
-        QV.io_wy = (QV.io_wy + gyrodata[1] );
-        QV.io_wz = (QV.io_wz + gyrodata[2] );
+        io_ax = (io_ax + acceldata[0] ); // Sum
+        io_ay = (io_ay + acceldata[1] );
+        io_az = (io_az + acceldata[2] );
+        io_wx = (io_wx + gyrodata[0] );
+        io_wy = (io_wy + gyrodata[1] );
+        io_wz = (io_wz + gyrodata[2] );
 
         counter = counter + 1 ;
     }
 
-    QV.io_ax /= offset_counter;
-	QV.io_ay /= offset_counter;
-	QV.io_az /= offset_counter;
-	QV.io_wx /= offset_counter;
-	QV.io_wy /= offset_counter;
-	QV.io_wz /= offset_counter;
+    io_ax /= offset_counter;
+	io_ay /= offset_counter;
+	io_az /= offset_counter + 256;
+	io_wx /= offset_counter;
+	io_wy /= offset_counter;
+	io_wz /= offset_counter;
 
-    Serial.println(QV.io_ax);
-    Serial.println(QV.io_ay);
-    Serial.println(QV.io_az);
-    Serial.println(QV.io_wx);
-    Serial.println(QV.io_wy);
-    Serial.println(QV.io_wz);
+    Serial.println(io_ax);
+    Serial.println(io_ay);
+    Serial.println(io_az);
+    Serial.println(io_wx);
+    Serial.println(io_wy);
+    Serial.println(io_wz);
 };
 
 /**************************************************************************/
@@ -79,53 +79,53 @@ void get_Initial_Offsets()
     @brief Converts the raw data from sensors to SI units
 */
 /**************************************************************************/
-void SI_convert()
+void Quadcopter :: SI_convert()
 {
   //Convert accelerometer readouts to m/s^2
     switch(g_ScaleRange) {
         case FULL_SCALE_RANGE_2g:
-            QV.ax = QV.ax * SI_CONVERT_2g;
-            QV.ay = QV.ay * SI_CONVERT_2g;
-            QV.az = QV.az * SI_CONVERT_2g;
+            ax = ax * SI_CONVERT_2g;
+            ay = ay * SI_CONVERT_2g;
+            az = az * SI_CONVERT_2g;
             break;
 
         case FULL_SCALE_RANGE_4g:
-            QV.ax = QV.ax * SI_CONVERT_4g;
-            QV.ay = QV.ay * SI_CONVERT_4g;
-            QV.az = QV.az * SI_CONVERT_4g;
+            ax = ax * SI_CONVERT_4g;
+            ay = ay * SI_CONVERT_4g;
+            az = az * SI_CONVERT_4g;
             break;
 
         case FULL_SCALE_RANGE_8g:
-            QV.ax = QV.ax * SI_CONVERT_8g;
-            QV.ay = QV.ay * SI_CONVERT_8g;
-            QV.az = QV.az * SI_CONVERT_8g;
+            ax = ax * SI_CONVERT_8g;
+            ay = ay * SI_CONVERT_8g;
+            az = az * SI_CONVERT_8g;
             break;
     }
     // Convert gyro readouts to degrees/s
     switch(d_ScaleRange) {
 
         case FULL_SCALE_RANGE_250:
-            QV.wx = QV.wx * SI_CONVERT_250;
-            QV.wy = QV.wy * SI_CONVERT_250;
-            QV.wz = QV.wz * SI_CONVERT_250;
+            wx = wx * SI_CONVERT_250;
+            wy = wy * SI_CONVERT_250;
+            wz = wz * SI_CONVERT_250;
             break;
 
         case FULL_SCALE_RANGE_500:
-            QV.wx = QV.wx * SI_CONVERT_500;
-            QV.wy = QV.wy * SI_CONVERT_500;
-            QV.wz = QV.wz * SI_CONVERT_500;
+            wx = wx * SI_CONVERT_500;
+            wy = wy * SI_CONVERT_500;
+            wz = wz * SI_CONVERT_500;
             break;
 
         case FULL_SCALE_RANGE_1000:
-            QV.wx = QV.wx * SI_CONVERT_1000;
-            QV.wy = QV.wy * SI_CONVERT_1000;
-            QV.wz = QV.wz * SI_CONVERT_1000;
+            wx = wx * SI_CONVERT_1000;
+            wy = wy * SI_CONVERT_1000;
+            wz = wz * SI_CONVERT_1000;
             break;
 
         case FULL_SCALE_RANGE_2000:
-            QV.wx = QV.wx * SI_CONVERT_2000;
-            QV.wy = QV.wy * SI_CONVERT_2000;
-            QV.wz = QV.wz * SI_CONVERT_2000;
+            wx = wx * SI_CONVERT_2000;
+            wy = wy * SI_CONVERT_2000;
+            wz = wz * SI_CONVERT_2000;
             break;
     }
 };
@@ -135,7 +135,7 @@ void SI_convert()
     @brief Initializes the various sensors and instruments
 */
 /**************************************************************************/
-bool initSensor()
+bool Quadcopter :: initSensor()
 {
 	byte x=0x0;
 
@@ -152,14 +152,11 @@ bool initSensor()
     }
     Serial.println("Done!");
 
-    Serial.print("Init accel ");                    // Same as the gyro initialization, but the accel isnt an ass
+	// Same as the gyro initialization, but the accel isnt an ass
     accel.setI2CAddr(Accel_Address);                           // See the data sheet for the MMA8452Q Accelerometer registers
     accel.dataMode(HighDef, g_ScaleRange);   // http://cache.freescale.com/files/sensors/doc/data_sheet/MMA8452Q.pdf?fpsp=1
-	Serial.println("Done!");
 
-	Serial.print("get init offs ");
     get_Initial_Offsets();                                     // Initial offsets private function in Control class
-    Serial.println("Done!");
 
     return true;
 };
@@ -169,12 +166,12 @@ bool initSensor()
     @brief Initializes the motors, code from Andrew's script
 */
 /**************************************************************************/
-bool initMotors()
+bool Quadcopter::initMotors()
 {
-    QV.motor1s = 0;                         // Initialize all motor speeds to 0
-    QV.motor2s = 0;                         // This might be useful, later
-    QV.motor3s = 0;
-    QV.motor4s = 0;
+    motor1s = 0;                         // Initialize all motor speeds to 0
+    motor2s = 0;                         // This might be useful, later
+    motor3s = 0;
+    motor4s = 0;
 
     motor1.attach(11);                      // Attach motor 1 to D11
     motor2.attach(10);                      // Attach motor 2 to D10
@@ -182,16 +179,16 @@ bool initMotors()
     motor4.attach(6);                       // Attach motor 4 to D8
 
     // initializes motor1
-    for(QV.motor1s = 0; QV.motor1s < 60; QV.motor1s += 1)
+    for(motor1s = 0; motor1s < 60; motor1s += 1)
     {
-      motor1.write(QV.motor1s);
-      motor2.write(QV.motor1s);
-      motor3.write(QV.motor1s);
-      motor4.write(QV.motor1s);
+      motor1.write(motor1s);
+      motor2.write(motor1s);
+      motor3.write(motor1s);
+      motor4.write(motor1s);
 
-      QV.motor2s = QV.motor1s;
-      QV.motor3s = QV.motor1s;
-      QV.motor4s = QV.motor1s;
+      motor2s = motor1s;
+      motor3s = motor1s;
+      motor4s = motor1s;
 
       delay(50);
     }
@@ -205,15 +202,18 @@ bool initMotors()
     @brief Checks elapsed time and executes various tasks such as running PID controllers
 */
 /**************************************************************************/
-void update()
+void Quadcopter::update()
 {
+	double alpha_accel, alpha_gyro, beta_accel, beta_gyro;
 	int poll_type;
+	unsigned long time;
+	float gcoeff = 0.9;
 
 	// Check the type of interrupt. If the time elapsed is less than the interrupt latency for a
 	// certain device, it doesn't need to be updated.
 	// The updates and calculations for those devices are wrapped in if statements that check
 	// the value of poll_type, and thus determine if data is available.
-	if (micros() - QV.tpoll1 >= 10000) /*microseconds*/
+	if (micros() - tpoll1 >= 10000) /*microseconds*/
 	{
 		poll_type = 1;								// Only essential updates are needed.
 																// Update PID controllers based on accel/gyro/mag data,
@@ -221,13 +221,13 @@ void update()
 	}
 	/* Important note about this interrupt: This interrupt may or may not be necessary, but
 	is here for future proofing */
-	if (micros() - QV.tpoll2 >=  poll2_interrupt)
+	if (micros() - tpoll2 >=  poll2_interrupt)
 	{
 		poll_type = 2;								// Essential updates + USRF updates needed
 																// Update PID contollers based on accel/gyro/mag data,
 																// motor logic, other sensors that fit this interrupt as decided.
 	}
-	if (micros() - QV.tpoll3 >= poll3_interrupt)
+	if (micros() - tpoll3 >= poll3_interrupt)
 	{
 		poll_type = 3;								// Essential updates + USRF + GPS updates needed
 																// Update PID contollers based on accel/gyro/mag data,
@@ -241,41 +241,58 @@ void update()
 		accel.update();                                                 // Update the registers storing data INSIDE the sensors
 		gyro.update();
 
-		QV.ax = accel.x() - QV.io_ax;                         // Store Raw values from the sensor registers
-		QV.ay = accel.y() - QV.io_ay;                         // and removes the initial offsets
-		QV.az = accel.z() - QV.io_az;
-		QV.wx = gyro.y() - QV.io_wy;
-		QV.wy = gyro.x() - QV.io_wx;
-		QV.wz = gyro.z() - QV.io_wz;
+		ax = accel.x() - io_ax;                         // Store Raw values from the sensor registers
+		ay = accel.y() - io_ay;                         // and removes the initial offsets
+		az = accel.z() - io_az;
+		wx = gyro.y() - io_wy;
+		wy = gyro.x() - io_wx;
+		wz = gyro.z() - io_wz;
+		Serial.print(wy); Serial.print("   ");
 
 		SI_convert();                                           // Convert to SI units from raw data type
 
-		if(fabs(QV.ax) < g_threshold) {QV.ax = 0;}     // Check if the data is less than the threshold
-		if(fabs(QV.ay) < g_threshold) {QV.ay = 0;}
-		if(fabs(QV.az) < g_threshold) {QV.az = 0;}
-		if(fabs(QV.wx) < d_threshold) {QV.wx = 0;}
-		if(fabs(QV.wy) < d_threshold) {QV.wy = 0;}
-		if(fabs(QV.wz) < d_threshold) {QV.wz = 0;}
+		if(fabs(ax) < g_threshold) {ax = 0;}     // Check if the data is less than the threshold
+		if(fabs(ay) < g_threshold) {ay = 0;}
+		if(fabs(az) < g_threshold) {az = 0;}
+		if(fabs(wx) < d_threshold) {wx = 0;}
+		if(fabs(wy) < d_threshold) {wy = 0;}
+		if(fabs(wz) < d_threshold) {wz = 0;}
 
-		mov_avg();
+		mov_avg();					// Very important step!
+												// Runs a moving average with a circular buffer
 
-		QV.alpha = atan2(QV.ax, QV.az) *180/Pi ; // Arctan of the two values returns the angle,
-		QV.beta = atan2(QV.ay, QV.az) *180/Pi;   // in rads, and convert to degrees
+		time = (micros() - tpoll1)/1000; // This is the elapsed time since poll1 ran
 
+		if (time >= 300000)			// For the begining of the program; It takes some time to get
+		{											// started and we dont want a massive integration to start
+			time = 0;
+		}
+		alpha_gyro += wy*time/1000;		// Time integration of wy gets rotation about y
+		beta_gyro += wx*time/1000;			// Time integration of wx gets rotation about x
+		Serial.print(alpha_gyro); Serial.print(" ");
+
+		alpha_accel = atan2(ax, az) *180/Pi ; // Arctan of the two values returns the angle,
+		Serial.println(alpha_accel);
+		beta_accel = atan2(ay, az) *180/Pi;   // in rads, and convert to degrees
+
+		alpha = gcoeff * alpha_gyro +   (1-gcoeff)*alpha_accel;
+		beta = gcoeff * beta_gyro +  (1-gcoeff)*beta_accel;
+
+		tpoll1 = micros();						// Ready for the next poll
 	}
 
 	/**! 				@Poll type two 				*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
 	if (poll_type == 2)
 	{
-		QV.tpoll2 = micros();
+		tpoll2 = micros();
 	}
 
 	/**! 				@Poll type three 				*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
 	if (poll_type == 3)
 	{
-		QV.tpoll3 = micros();
+		tpoll3 = micros();
 	}
 
 
@@ -284,61 +301,86 @@ void update()
 
 };
 
+bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
+{
+	motor1s -= aPID_out;
+	motor4s -= aPID_out;
 
-void mov_avg()
+	motor2s += aPID_out;
+	motor3s += aPID_out;
+
+	motor4s -= bPID_out;
+	motor3s -= bPID_out;
+
+	motor2s += bPID_out;
+	motor1s += bPID_out;
+
+	motor1.write(motor1s);
+	motor2.write(motor2s);
+	motor3.write(motor3s);
+	motor4.write(motor4s);
+}
+
+void Quadcopter :: mov_avg()
 {
 			// Updates the prev_data by bumping up each data set
 		for (int i = 35; i <= 41; i ++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 		for (int i = 28; i <=34; i++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 		for (int i = 21; i <=27; i++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 		for (int i = 14; i <=20; i++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 		for (int i = 7; i <=13; i++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 		for (int i = 0; i <=6; i++)
 		{
-			QV.prev_data[i+7] = QV.prev_data[i];
+			prev_data[i+7] = prev_data[i];
 		}
 
 		// Add new data sets to the first spot in the buffer
-		QV.prev_data[0] = QV.ax;
-		QV.prev_data[1] = QV.ay;
-		QV.prev_data[2] = QV.az;
-		QV.prev_data[3] = QV.wx;
-		QV.prev_data[4] = QV.wy;
-		QV.prev_data[5] = QV.wz;
+		prev_data[0] = ax;
+		prev_data[1] = ay;
+		prev_data[2] = az;
+		prev_data[3] = wx;
+		prev_data[4] = wy;
+		prev_data[5] = wz;
 
 		// Buffer is updated, now a moving average can be calculated,  If the buffer size has to be increased then we can do that.
-		QV.ax = 0; QV.ay = 0; QV.az = 0; QV.wx = 0; QV.wy = 0; QV.wz = 0; QV.elev = 0; // ready for average calculation
+		ax = 0;
+		ay = 0;
+		az = 0;
+		wx = 0;
+		wy = 0;
+		wz = 0;
+		elev = 0; // ready for average calculation
 
-		for (int i = 0; i <= 42; i += 7) 	{ QV.ax += QV.prev_data[i];}
-		for (int i = 1; i <= 43; i += 7) 	{ QV.ay += QV.prev_data[i];}
-		for (int i = 2; i <= 44; i += 7) 	{ QV.az += QV.prev_data[i];}
-		for (int i = 3; i <= 45; i += 7) 	{ QV.wx += QV.prev_data[i];}
-		for (int i = 4; i <= 46; i += 7) 	{ QV.wy += QV.prev_data[i];}
-		for (int i = 5; i <= 47; i += 7) 	{ QV.wz += QV.prev_data[i];}
-		for (int i = 6; i <= 48; i += 7) 	{ QV.elev += QV.prev_data[i];}
+		for (int i = 0; i <= 42; i += 7) 	{ ax += prev_data[i];}
+		for (int i = 1; i <= 43; i += 7) 	{ ay += prev_data[i];}
+		for (int i = 2; i <= 44; i += 7) 	{ az += prev_data[i];}
+		for (int i = 3; i <= 45; i += 7) 	{ wx += prev_data[i];}
+		for (int i = 4; i <= 46; i += 7) 	{ wy += prev_data[i];}
+		for (int i = 5; i <= 47; i += 7) 	{ wz += prev_data[i];}
+		for (int i = 6; i <= 48; i += 7) 	{ elev += prev_data[i];}
 
-		QV.ax /= 7;						// Finish off the calculation
-		QV.ay /= 7;
-		QV.az /= 7;
-		QV.wx /= 7;
-		QV.wy /= 7;
-		QV.wz /= 7;
-		QV.elev /= 7;
+		ax /= 7;						// Finish off the calculation
+		ay /= 7;
+		az /= 7;
+		wx /= 7;
+		wy /= 7;
+		wz /= 7;
+		elev /= 7;
 };
 
 

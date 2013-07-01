@@ -1,6 +1,8 @@
-#ifndef PID_v1_h
-#define PID_v1_h
-#define LIBRARY_VERSION	1.0.0
+
+
+
+#ifndef PID_v1_h_INCLUDED
+#define PID_v1_h_INCLUDED
 
 class PID
 {
@@ -49,7 +51,7 @@ class PID
 	double GetKi();						  //  they were created mainly for the pid front-end,
 	double GetKd();						  // where it's important to know what is actually
 	int GetMode();						  //  inside the PID.
-	int GetDirection();				 //
+	int GetDirection();					  //
 
   private:
 	void Initialize();
@@ -75,6 +77,8 @@ class PID
 	unsigned long SampleTime;
 	double outMin, outMax;
 	bool inAuto;
+
 };
+
 #endif
 
