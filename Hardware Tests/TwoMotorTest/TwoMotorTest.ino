@@ -20,7 +20,7 @@ void loop()
 {
 if (x == 0)
 {
-  for(x = 0; x <= 90  ; x += 1)
+  for(x = 0; x <= 100  ; x += 1)
   {
     Motor1.write(x);
     Motor2.write(x);
@@ -29,4 +29,11 @@ if (x == 0)
     delay(100);
   }
 }
+ if (millis() >= 5000)
+ {
+   Motor1.write(10);
+   Motor2.write(10);
+   Motor3.write(10);
+   Motor4.write(10);
+ }
 }
