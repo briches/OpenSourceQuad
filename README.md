@@ -1,7 +1,7 @@
 Quadcopter
 ==========
 
-Authors: Brandon Riches, Andrew Coulthard, Patrick Fairbanks  <br />
+Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
 Date   : May 2013 <br />
 Version: 0.5 <br />
 
