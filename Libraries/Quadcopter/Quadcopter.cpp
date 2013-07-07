@@ -17,7 +17,7 @@ Updated for compatability with main polling loop and GPS interrupts
 #endif
 
 #include <Quadcopter.h>
-#include <MMA8453_n0m1.h>
+#include <SENSORLIB.h>
 #include <OseppGyro.h>
 #include <I2C.h>
 #include <math.h>
@@ -153,8 +153,7 @@ bool Quadcopter :: initSensor()
     Serial.println("Done!");
 
 	// Same as the gyro initialization, but the accel isnt an ass
-    accel.setI2CAddr(Accel_Address);                           // See the data sheet for the MMA8452Q Accelerometer registers
-    accel.dataMode(HighDef, g_ScaleRange);   // http://cache.freescale.com/files/sensors/doc/data_sheet/MMA8452Q.pdf?fpsp=1
+    accelmag.Easy_Start();
 
     get_Initial_Offsets();                                     // Initial offsets private function in Control class
 
@@ -247,28 +246,20 @@ void Quadcopter::update()
 		wx = gyro.y() - io_wy;
 		wy = gyro.x() - io_wx;
 		wz = gyro.z() - io_wz;
-		Serial.print(wy); Serial.print("   ");
 
 		SI_convert();                                           // Convert to SI units from raw data type
-
-		if(fabs(ax) < g_threshold) {ax = 0;}     // Check if the data is less than the threshold
-		if(fabs(ay) < g_threshold) {ay = 0;}
-		if(fabs(az) < g_threshold) {az = 0;}
-		if(fabs(wx) < d_threshold) {wx = 0;}
-		if(fabs(wy) < d_threshold) {wy = 0;}
-		if(fabs(wz) < d_threshold) {wz = 0;}
 
 		mov_avg();					// Very important step!
 												// Runs a moving average with a circular buffer
 
 		time = (micros() - tpoll1)/1000; // This is the elapsed time since poll1 ran
 
-		if (time >= 300000)			// For the begining of the program; It takes some time to get
+		if (time <= 300000)			// For the begining of the program; It takes some time to get
 		{											// started and we dont want a massive integration to start
 			time = 0;
 		}
-		alpha_gyro += wy*time/1000;		// Time integration of wy gets rotation about y
-		beta_gyro += wx*time/1000;			// Time integration of wx gets rotation about x
+		alpha_gyro += wy * time/1000;		// Time integration of wy gets rotation about y
+		beta_gyro += wx * time/1000;			// Time integration of wx gets rotation about x
 		Serial.print(alpha_gyro); Serial.print(" ");
 
 		alpha_accel = atan2(ax, az) *180/Pi ; // Arctan of the two values returns the angle,
@@ -323,39 +314,27 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 
 void Quadcopter :: mov_avg()
 {
-			// Updates the prev_data by bumping up each data set
-		for (int i = 35; i <= 41; i ++)
+		// Updates the prev_data by bumping up each data set
+
+		for(int set = 9; set >= 0; set --)					// Data set number
 		{
-			prev_data[i+7] = prev_data[i];
-		}
-		for (int i = 28; i <=34; i++)
-		{
-			prev_data[i+7] = prev_data[i];
-		}
-		for (int i = 21; i <=27; i++)
-		{
-			prev_data[i+7] = prev_data[i];
-		}
-		for (int i = 14; i <=20; i++)
-		{
-			prev_data[i+7] = prev_data[i];
-		}
-		for (int i = 7; i <=13; i++)
-		{
-			prev_data[i+7] = prev_data[i];
-		}
-		for (int i = 0; i <=6; i++)
-		{
-			prev_data[i+7] = prev_data[i];
+			for (int var = 0; var <= 9; var++)				// Variable
+			{
+				prev_data[set][var] = prev_data[set-1][var];
+			}
 		}
 
 		// Add new data sets to the first spot in the buffer
-		prev_data[0] = ax;
-		prev_data[1] = ay;
-		prev_data[2] = az;
-		prev_data[3] = wx;
-		prev_data[4] = wy;
-		prev_data[5] = wz;
+		prev_data[0][0] = ax;
+		prev_data[0][1] = ay;
+		prev_data[0][2] = az;
+		prev_data[0][3] = wx;
+		prev_data[0][4] = wy;
+		prev_data[0][5] = wz;
+		prev_data[0][6] = mx;
+		prev_data[0][7] = my;
+		prev_data[0][8] = mz;
+		prev_data[0][9] = elev;
 
 		// Buffer is updated, now a moving average can be calculated,  If the buffer size has to be increased then we can do that.
 		ax = 0;
@@ -364,23 +343,42 @@ void Quadcopter :: mov_avg()
 		wx = 0;
 		wy = 0;
 		wz = 0;
+		mx = 0;
+		my = 0;
+		mz = 0;
 		elev = 0; // ready for average calculation
 
-		for (int i = 0; i <= 42; i += 7) 	{ ax += prev_data[i];}
-		for (int i = 1; i <= 43; i += 7) 	{ ay += prev_data[i];}
-		for (int i = 2; i <= 44; i += 7) 	{ az += prev_data[i];}
-		for (int i = 3; i <= 45; i += 7) 	{ wx += prev_data[i];}
-		for (int i = 4; i <= 46; i += 7) 	{ wy += prev_data[i];}
-		for (int i = 5; i <= 47; i += 7) 	{ wz += prev_data[i];}
-		for (int i = 6; i <= 48; i += 7) 	{ elev += prev_data[i];}
+		double foo[10];
 
-		ax /= 7;						// Finish off the calculation
-		ay /= 7;
-		az /= 7;
-		wx /= 7;
-		wy /= 7;
-		wz /= 7;
-		elev /= 7;
+		for(int var = 0; var <= 9; var++)				// Each variable
+		{
+			for (int set= 0; set<= 9; set++) 			// Each set
+			{
+				foo[var] += prev_data[set][var];
+			}
+		}
+
+		ax = foo[0];
+		ay = foo[1];
+		az = foo[2];
+		wx = foo[3];
+		wy = foo[4];
+		wz = foo[5];
+		mx = foo[6];
+		my = foo[7];
+		mz = foo[8];
+		elev = foo[9];
+
+		ax /= 10;						// Finish off the calculation
+		ay /= 10;
+		az /= 10;
+		wx /= 10;
+		wy /= 10;
+		wz /= 10;
+		mx /= 10;
+		my /= 10;
+		mz /= 10;
+		elev /= 10;
 };
 
 

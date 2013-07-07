@@ -19,7 +19,7 @@ Updated for compatability with main polling loop and GPS interrupts
  #include "WProgram.h"
 #endif
 
-#include <MMA8453_n0m1.h>
+#include <SENSORLIB.h>
 #include <OseppGyro.h>
 #include <I2C.h>
 #include <math.h>
@@ -34,8 +34,9 @@ Updated for compatability with main polling loop and GPS interrupts
 /*=========================================================================
     I2C Addresses
     -----------------------------------------------------------------------*/
-#define Accel_Address   (0x1D)
+#define Accel_Address   (0x19)
 #define Gyro_Address    (0x69)
+#define Magnetometer_Address	(0x1E)
 
 	/*===============================================
     Device settings (Options for sensors)
@@ -76,8 +77,11 @@ class Quadcopter
 		double wx;
 		double wy;
 		double wz;
+		double mx;
+		double my;
+		double mz;
 		double elev;
-		double prev_data[49];       // Stores 6 previous data sets, 1 current.
+		double prev_data[10][10];  // Stores 9 previous data sets, 1 current.
 													// Prev_data is used for a moving average filter.
 
 		/*===============================================
@@ -120,7 +124,7 @@ class Quadcopter
 		/*===============================================
 			Class initializations
 			-----------------------------------------------------------------------*/
-	  MMA8453_n0m1  accel;       		// Accel class
+	  SENSORLIB     accelmag;       		// Accel class
 	  OseppGyro             gyro;			// Gyro class
 	  Servo                  motor1;			// Motor 1
 	  Servo                  motor2;			// Motor 2
