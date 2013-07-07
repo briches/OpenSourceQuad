@@ -19,6 +19,7 @@ Copyright stuff from all included libraries that I didn't write
   Brett Beauregard, br3ttb@gmail.com
 
     -----------------------------------------------------------------------*/
+#include <SENSORLIB.h>
 #include <Quadcopter.h>
 #include <PID_v1.h>
 #include <MMA8453_n0m1.h>
@@ -27,6 +28,7 @@ Copyright stuff from all included libraries that I didn't write
 #include <Servo.h>
 #include <math.h>
 #include <SdFat.h>
+
 
 
 
@@ -55,6 +57,10 @@ void PID_init();                           // Function declaration
 
 void setup()
 {
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(YELLOW_LED, OUTPUT);
+  
   Serial.begin(19200);                     // Later we will just take out all the "Serial" commands. No need, just write to file
   
   while(!Serial) {
@@ -71,10 +77,10 @@ void setup()
 void loop()                            // Main runtime loop
 {
   Quadcopter.update();                 // See control.cpp for clarification
+  
   aPID.Compute();
   bPID.Compute();
-  //Serial.println(Quadcopter.alpha);
-  Quadcopter.updateMotors(aPID_out, bPID_out);
+  //Quadcopter.updateMotors(aPID_out, bPID_out);
   
 }
 

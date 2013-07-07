@@ -32,6 +32,7 @@ Updated for compatability with main polling loop and GPS interrupts
 /**************************************************************************/
 void Quadcopter :: get_Initial_Offsets()
 {
+	ERROR_LED(3);										// Warning LED
     int offset_counter = 10;                       // # of data sets to consider when finding offsets
     int counter = 1;
     double acceldata[3];
@@ -39,10 +40,10 @@ void Quadcopter :: get_Initial_Offsets()
 
     while(counter <= offset_counter)
     {
-        accel.update();                            // Updates the accelerometer registers
-        acceldata[0] = accel.x();
-        acceldata[1] = accel.y();
-        acceldata[2] = accel.z();
+        accelmag.Read_Accel();                            // Updates the accelerometer registers
+        acceldata[0] = accelmag.x();
+        acceldata[1] = accelmag.y();
+        acceldata[2] = accelmag.z();
 
         gyro.update();                             // Updates the gyro output registers
         gyrodata[0] = gyro.x();
@@ -72,6 +73,7 @@ void Quadcopter :: get_Initial_Offsets()
     Serial.println(io_wx);
     Serial.println(io_wy);
     Serial.println(io_wz);
+    ERROR_LED(1); 					// Success LED
 };
 
 /**************************************************************************/
@@ -81,26 +83,6 @@ void Quadcopter :: get_Initial_Offsets()
 /**************************************************************************/
 void Quadcopter :: SI_convert()
 {
-  //Convert accelerometer readouts to m/s^2
-    switch(g_ScaleRange) {
-        case FULL_SCALE_RANGE_2g:
-            ax = ax * SI_CONVERT_2g;
-            ay = ay * SI_CONVERT_2g;
-            az = az * SI_CONVERT_2g;
-            break;
-
-        case FULL_SCALE_RANGE_4g:
-            ax = ax * SI_CONVERT_4g;
-            ay = ay * SI_CONVERT_4g;
-            az = az * SI_CONVERT_4g;
-            break;
-
-        case FULL_SCALE_RANGE_8g:
-            ax = ax * SI_CONVERT_8g;
-            ay = ay * SI_CONVERT_8g;
-            az = az * SI_CONVERT_8g;
-            break;
-    }
     // Convert gyro readouts to degrees/s
     switch(d_ScaleRange) {
 
@@ -137,8 +119,9 @@ void Quadcopter :: SI_convert()
 /**************************************************************************/
 bool Quadcopter :: initSensor()
 {
-	byte x=0x0;
+	ERROR_LED(3);												// Warning LED
 
+	byte x=0x0;
 	Serial.print("Int gyro  ");                      		// See OseppGyro.h
 
     gyro.setI2CAddr(Gyro_Address);                // Set the I2C address in OseppGyro class
@@ -193,7 +176,7 @@ bool Quadcopter::initMotors()
     }
 
     return true;
-}
+};
 
 
 /**************************************************************************/
@@ -237,12 +220,13 @@ void Quadcopter::update()
 	// Code in this block executes if any of the poll conditions are satisfied
 	if (poll_type == 1 || poll_type == 2 || poll_type ==3 )
 	{
-		accel.update();                                                 // Update the registers storing data INSIDE the sensors
+		accelmag.Read_Accel();                                                 // Update the registers storing data INSIDE the sensors
 		gyro.update();
 
-		ax = accel.x() - io_ax;                         // Store Raw values from the sensor registers
-		ay = accel.y() - io_ay;                         // and removes the initial offsets
-		az = accel.z() - io_az;
+		ax = accelmag.x() - io_ax;                         // Store Raw values from the sensor registers
+		Serial.println(ax);
+		ay = accelmag.y() - io_ay;                         // and removes the initial offsets
+		az = accelmag.z() - io_az;
 		wx = gyro.y() - io_wy;
 		wy = gyro.x() - io_wx;
 		wz = gyro.z() - io_wz;
@@ -260,10 +244,8 @@ void Quadcopter::update()
 		}
 		alpha_gyro += wy * time/1000;		// Time integration of wy gets rotation about y
 		beta_gyro += wx * time/1000;			// Time integration of wx gets rotation about x
-		Serial.print(alpha_gyro); Serial.print(" ");
 
 		alpha_accel = atan2(ax, az) *180/Pi ; // Arctan of the two values returns the angle,
-		Serial.println(alpha_accel);
 		beta_accel = atan2(ay, az) *180/Pi;   // in rads, and convert to degrees
 
 		alpha = gcoeff * alpha_gyro +   (1-gcoeff)*alpha_accel;
@@ -310,7 +292,7 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 	motor2.write(motor2s);
 	motor3.write(motor3s);
 	motor4.write(motor4s);
-}
+};
 
 void Quadcopter :: mov_avg()
 {
@@ -380,6 +362,34 @@ void Quadcopter :: mov_avg()
 		mz /= 10;
 		elev /= 10;
 };
+
+
+void Quadcopter::ERROR_LED(int LED_SEL)
+{
+	switch(LED_SEL)
+	{
+		case 1:
+			// Green LED. Should indicate successes
+			digitalWrite(GREEN_LED, HIGH);
+			digitalWrite(RED_LED, LOW);
+			digitalWrite(YELLOW_LED, LOW);
+			break;
+
+		case 2:
+			//Red LED. Indicates critical errors
+			digitalWrite(RED_LED, HIGH);
+			digitalWrite(GREEN_LED, LOW);
+			digitalWrite(YELLOW_LED, LOW);
+			while(1);	// Stop everything
+			break;
+
+		case 3:
+			// Yellow LED. Indicates warnings
+			digitalWrite(RED_LED, LOW);
+			digitalWrite(GREEN_LED, LOW);
+			digitalWrite(YELLOW_LED, HIGH);
+	}
+}
 
 
 // This function for debugging purposes

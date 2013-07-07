@@ -38,12 +38,18 @@ Updated for compatability with main polling loop and GPS interrupts
 #define Gyro_Address    (0x69)
 #define Magnetometer_Address	(0x1E)
 
+/*=========================================================================
+    STATUS LEDs
+    -----------------------------------------------------------------------*/
+#define GREEN_LED 	43
+#define RED_LED 			41
+#define YELLOW_LED 	39
+
 	/*===============================================
     Device settings (Options for sensors)
     - Explaining these is kinda hard, go read the data sheets.
     -----------------------------------------------------------------------*/
 	const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
-	const int g_ScaleRange = FULL_SCALE_RANGE_2g;  // x2g,x4g,x8g
 	const int DLPF = 7;                 // 0,1,2,3,4,5,6,7 // See data sheet
 	const bool HighDef = true;          // Is accel output 2byte or 1byte
     const double g_threshold = 0.05; //Upper threshold for set zero from accel data
@@ -120,6 +126,8 @@ class Quadcopter
 		void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
 		bool updateMotors(double aPID_out, double bPID_out);
 
+		void ERROR_LED(int LED_SEL);
+
 
 		/*===============================================
 			Class initializations
@@ -133,8 +141,8 @@ class Quadcopter
 
 		private:
 		void SI_convert();                 							// Convert to SI
-		void mov_avg();														// Runs a moving average
-		void get_Initial_Offsets();                           // Gets the initial Offsets
+		void mov_avg();												// Runs a moving average
+		void get_Initial_Offsets();                           	// Gets the initial Offsets
 };
 
 
