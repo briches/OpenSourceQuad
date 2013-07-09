@@ -36,7 +36,6 @@ Updated for compatability with main polling loop and GPS interrupts
     -----------------------------------------------------------------------*/
 #define Accel_Address   (0x19)
 #define Gyro_Address    (0x69)
-#define Magnetometer_Address	(0x1E)
 
 /*=========================================================================
     STATUS LEDs

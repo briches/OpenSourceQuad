@@ -80,7 +80,11 @@ void loop()                            // Main runtime loop
   
   aPID.Compute();
   bPID.Compute();
-  //Quadcopter.updateMotors(aPID_out, bPID_out);
+  Quadcopter.updateMotors(aPID_out, bPID_out);
+//  Serial.print("M1s: "); Serial.print(Quadcopter.motor1s);
+//  Serial.print(" M2s: "); Serial.print(Quadcopter.motor2s);
+//  Serial.print(" M3s: "); Serial.print(Quadcopter.motor3s);
+//  Serial.print(" M4s: "); Serial.println(Quadcopter.motor4s);
   
 }
 

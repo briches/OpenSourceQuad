@@ -40,10 +40,10 @@ void Quadcopter :: get_Initial_Offsets()
 
     while(counter <= offset_counter)
     {
-        accelmag.Read_Accel();                            // Updates the accelerometer registers
-        acceldata[0] = accelmag.x();
-        acceldata[1] = accelmag.y();
-        acceldata[2] = accelmag.z();
+        accelmag.update();                            // Updates the accelerometer registers
+        acceldata[0] = accelmag.ax();
+        acceldata[1] = accelmag.ay();
+        acceldata[2] = accelmag.az();
 
         gyro.update();                             // Updates the gyro output registers
         gyrodata[0] = gyro.x();
@@ -57,6 +57,10 @@ void Quadcopter :: get_Initial_Offsets()
         io_wy = (io_wy + gyrodata[1] );
         io_wz = (io_wz + gyrodata[2] );
 
+		if ((io_ax==0)&&(io_ay == 0)&&(io_az == 0))
+		{
+			ERROR_LED(2);						// Critical error, accelerometer is NOT working
+		}
         counter = counter + 1 ;
     }
 
@@ -220,18 +224,18 @@ void Quadcopter::update()
 	// Code in this block executes if any of the poll conditions are satisfied
 	if (poll_type == 1 || poll_type == 2 || poll_type ==3 )
 	{
-		accelmag.Read_Accel();                                                 // Update the registers storing data INSIDE the sensors
+		accelmag.update();                                                 // Update the registers storing data INSIDE the sensors
 		gyro.update();
 
-		ax = accelmag.x() - io_ax;                         // Store Raw values from the sensor registers
+		ax = accelmag.ax() - io_ax;                         // Store Raw values from the sensor registers
 		Serial.println(ax);
-		ay = accelmag.y() - io_ay;                         // and removes the initial offsets
-		az = accelmag.z() - io_az;
+		ay = accelmag.ay() - io_ay;                         // and removes the initial offsets
+		az = accelmag.az() - io_az;
 		wx = gyro.y() - io_wy;
 		wy = gyro.x() - io_wx;
 		wz = gyro.z() - io_wz;
 
-		SI_convert();                                           // Convert to SI units from raw data type
+		SI_convert();                                           // Convert to SI units from raw data type in gyro data
 
 		mov_avg();					// Very important step!
 												// Runs a moving average with a circular buffer

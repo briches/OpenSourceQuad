@@ -7,22 +7,30 @@
 #include "WProgram.h"
 #endif
 
-#include <I2C.h>
+#include <I2c.h>
 
 class SENSORLIB
 {
 public:
     SENSORLIB();
     void Easy_Start();
-    void Read_Accel();
+    void update();
     void Cleanup();
 
-	double x();
-	double y();
-	double z();
+	double ax();
+	double ay();
+	double az();
 
-	double x_data;
-	double y_data;
-	double z_data;
+	double ax_data;
+	double ay_data;
+	double az_data;
+
+	double mx();
+	double my();
+	double mz();
+
+	double mx_data;
+	double my_data;
+	double mz_data;
 };
 #endif

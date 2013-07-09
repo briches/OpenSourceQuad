@@ -1,46 +1,56 @@
 /**
     Sensor Library
-    Author: Brandon Yue
+    Author: Brandon Yue and MEEEEEEEEEEE
 
     Replacement for the Adafruit LSM303 library. Uses I2C.
 **/
 
 #include "SENSORLIB.h"
-#include <I2C.h>
-#include <cmath>
+#include <I2c.h>
+#include <math.h>
 
 const uint8_t ACCEL_ADDR = 0x19;
-const uint8_t MAG_ADDR   = 0x1E;
+const uint8_t MAG_ADDR_W   = 0x3C;				// Use for WRITE operations
+const uint8_t MAG_ADDR_R    = 0x3D;				// Use for READ operations
 
-const double X_SCALE = 0.15696;
-const double Y_SCALE = 0.15449;
-const double Z_SCALE = 0.14115;
+const double AX_SCALE = 0.15696;
+const double AY_SCALE = 0.15449;
+const double AZ_SCALE = 0.14115;
+
+const double M_SCALE  = 0.635;
+
 
 
 namespace CONTROL_BYTES
 {
+	// Register address
     const uint8_t   	CONTROL_REG_1   = 0x20,
 								CONTROL_REG_2   = 0x21,
 								CONTROL_REG_3   = 0x22,
 								CONTROL_REG_4   = 0x23,
 								CONTROL_REG_5   = 0x24,
 
-								CRA_REG_M   = 0x00,
-								CRB_REG_M   = 0x01,
+								CRA_REG_M  	    = 0x00,
+								CRB_REG_M  	    = 0x01,
+
+								MR_REG_M 			= 0x02,
 
 								ACCEL_OUT_X1_REG= 0x28;
 
-    const uint8_t   CONTROL1        = B01111,
-								CONTROL2        = 0x00,
-								CONTROL3        = 0x00,
-								CONTROL4        = 0x00,
-								CONTROL5        = 0x00,
+	// Data content
+    const uint8_t    CONTROL1        = B00101111,
+								CONTROL2        = B00000000,
+								CONTROL3        = B00000000,
+								CONTROL4        = B00000000,
+								CONTROL5        = B00000000,
 
-								MAGCTRLA        = 0x00,
-								MAGCTRLB        = 0x01;
+								MAGCTRLA        = B00011000,
+								MAGCTRLB        = B00100000,
+
+								MR_REG		= B00000000,
+
+								OUT_XH_M		 = 0x03;				// H - L - H - L - H - L
 };
-
-I2C MyI2C;
 
 using namespace CONTROL_BYTES;
 
@@ -48,44 +58,57 @@ SENSORLIB::SENSORLIB(){}
 
 void SENSORLIB::Easy_Start()
 {
-        MyI2C.begin();
+		byte	before[1],
+					after[1];
+
+        I2c.begin();
 
         ///ACCEL OPTIONS
         //CONTROL REG 1:    DATA RATES + SENSOR ENABLES
         //[n/a] [n/a] [n/a] [DATA RATE 1] [DATA RATE 2] [X] [Y] [Z]
         //DEFAULT 0x03
-        MyI2C.write(ACCEL_ADDR, CONTROL_REG_1, CONTROL1);
+        I2c.read(ACCEL_ADDR, CONTROL_REG_1, 1, before);
+        I2c.write(ACCEL_ADDR, CONTROL_REG_1, CONTROL1);
+        I2c.read(ACCEL_ADDR, CONTROL_REG_1, 1, after);
+        Serial.print("ACCEL CONTROL_REG_1:		Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //CONTROL REG 2:    HIGH PASS FILTER
         //
         //DEFAULT 0x00
-        MyI2C.write(ACCEL_ADDR, CONTROL_REG_2, CONTROL2);
+        I2c.write(ACCEL_ADDR, CONTROL_REG_2, CONTROL2);
 
         //CONTROL REG 3:    INTERRUPTS
         //
         //DEFAULT 0x00
-        MyI2C.write(ACCEL_ADDR, CONTROL_REG_3, CONTROL3);
+        I2c.write(ACCEL_ADDR, CONTROL_REG_3, CONTROL3);
 
         //CONTROL REG 4:    BLOCK UPDATE PARAMS, SCALE SELECTION, SELF TEST
         //
         //DEFAULT 0x00
-        MyI2C.write(ACCEL_ADDR, CONTROL_REG_4, CONTROL4);
+        I2c.write(ACCEL_ADDR, CONTROL_REG_4, CONTROL4);
 
         //CONTROL REG 5:    SLEEP-TO-WAKE
         //
         //DEFAULT 0x00
-        MyI2C.write(ACCEL_ADDR, CONTROL_REG_5, CONTROL5);
+        I2c.write(ACCEL_ADDR, CONTROL_REG_5, CONTROL5);
 
         ///MAG OPTIONS
         //MAG CONTROL A
         //
         //DEFAULT 0x00
-        MyI2C.write(MAG_ADDR, CRA_REG_M, MAGCTRLA);
+        I2c.write(MAG_ADDR_W, CRA_REG_M, MAGCTRLA);
 
         //MAG CONTROL B
         //
         //DEFAULT 0x01
-        MyI2C.write(MAG_ADDR, CRB_REG_M, MAGCTRLB);
+        I2c.write(MAG_ADDR_W, CRB_REG_M, MAGCTRLB);
+
+        //MR_REG
+        //
+        I2c.write(MAG_ADDR_W, MR_REG_M, MR_REG);
 };
 
 
@@ -93,46 +116,99 @@ void SENSORLIB::Easy_Start()
 
 
 /**
-    Read_Accel
-    Reads the accelerometer data from the LSM303 registers. Converts the bytes
-    to floating point numbers automaticlly.
-    Takes 1 Argument:
-        - DataArray[]: Array of AT LEAST 3 ELEMENTS which stores the result floats.
-*/
-void SENSORLIB::Read_Accel()
-{
-    uint8_t ByteBuffer [6] = {};
+    update()
 
+    Reads the accelerometer data from the LSM303 registers. Converts the bytes
+    to floating point numbers automatically.
+
+    Reads the magnetometer data from the LSM303 registers. Converts the two byte
+    values to milligauss floating point values.
+
+    Stores the read values into the members "x_data, y_data, z_data"
+*/
+void SENSORLIB::update()
+{
+	/// Read Accelerometer data
+	// Data is initially stored in this byte buffer
+    byte ByteBuffer[6];
+
+	// Read all 6 registers.
+
+	//Method 1
     for (int i = 0; i < 6; i++)
     {
-        I2c.read(0x19, 0x28 + i, 1, ByteBuffer + i);
+        I2c.read(ACCEL_ADDR, ACCEL_OUT_X1_REG + i, 1, &ByteBuffer[i]);
     }
 
-    signed char x = (ByteBuffer[1]),
-                y = (ByteBuffer[3]),
-                z = (ByteBuffer[5]);
+	// The HIGH registers for each value. for some reason, the low ones are empty.
+    signed char    x = (ByteBuffer[1]),
+					y = (ByteBuffer[3]),
+					z = (ByteBuffer[5]);
 
-    x_data = (x * X_SCALE);
-    y_data = (y * Y_SCALE);
-    z_data = (z * Z_SCALE);
+	// Convert the byte to m/s^2 double
+    ax_data = (x * AX_SCALE);
+    ay_data = (y * AY_SCALE);
+    az_data = (z * AZ_SCALE);
+
+    /// Read Magnetometer Data
+    // Read the raw data from the registers
+	for (int i = 0; i < 6; i++)
+    {
+        I2c.read(MAG_ADDR_R, OUT_XH_M + i, 1, &ByteBuffer[i]);
+    }
+
+	// Concatenate the two bytes
+	x = ((ByteBuffer[0] << 8) | ByteBuffer[1]);
+	y = ((ByteBuffer[2] << 8) | ByteBuffer[3]);
+	z = ((ByteBuffer[4] << 8) | ByteBuffer[5]);
+
+	// Convert the byte to gauss
+    mx_data = (x * M_SCALE);
+    my_data = (y * M_SCALE);
+    mz_data = (z * M_SCALE);
 };
 
-double SENSORLIB::x()
+
+/**
+		double ax();
+		- 	Call to return the most recent read value of ax
+ */
+double SENSORLIB::ax()
 {
-	return x_data;
+	return ax_data;
 };
 
-double SENSORLIB::y()
+// Call to return the most recent value of ay
+double SENSORLIB::ay()
 {
-	return y_data;
+	return ay_data;
 };
 
-double SENSORLIB::z()
+// Call to return the most recent value of az
+double SENSORLIB::az()
 {
-	return z_data;
+	return az_data;
+};
+
+// Call to return the most recent value of mx
+double SENSORLIB::mx()
+{
+	return mx_data;
+};
+
+// Call to return the most recent value of my
+double SENSORLIB::my()
+{
+	return my_data;
+};
+
+// Call to return the most recent value of mz
+double SENSORLIB::mz()
+{
+	return mz_data;
 };
 
 void SENSORLIB::Cleanup()
 {
-    MyI2C.end();
+    I2c.end();
 };
