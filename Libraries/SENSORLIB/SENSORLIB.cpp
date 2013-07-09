@@ -70,7 +70,9 @@ void SENSORLIB::Easy_Start()
         I2c.read(ACCEL_ADDR, CONTROL_REG_1, 1, before);
         I2c.write(ACCEL_ADDR, CONTROL_REG_1, CONTROL1);
         I2c.read(ACCEL_ADDR, CONTROL_REG_1, 1, after);
-        Serial.print("ACCEL CONTROL_REG_1:		Prior to write: ");
+
+        Serial.println(" ");
+        Serial.print("ACCEL CONTROL_REG_1:		\n	Prior to write: ");
         Serial.print(before[0], BIN);
         Serial.print(" After write: ");
         Serial.println(after[0],BIN);
@@ -78,37 +80,87 @@ void SENSORLIB::Easy_Start()
         //CONTROL REG 2:    HIGH PASS FILTER
         //
         //DEFAULT 0x00
+        I2c.read(ACCEL_ADDR, CONTROL_REG_2, 1, before);
         I2c.write(ACCEL_ADDR, CONTROL_REG_2, CONTROL2);
+        I2c.read(ACCEL_ADDR, CONTROL_REG_2, 1, after);
+
+        Serial.print("ACCEL CONTROL_REG_2:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //CONTROL REG 3:    INTERRUPTS
         //
         //DEFAULT 0x00
+        I2c.read(ACCEL_ADDR, CONTROL_REG_3, 1, before);
         I2c.write(ACCEL_ADDR, CONTROL_REG_3, CONTROL3);
+		I2c.read(ACCEL_ADDR, CONTROL_REG_3, 1, after);
+
+        Serial.print("ACCEL CONTROL_REG_3:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //CONTROL REG 4:    BLOCK UPDATE PARAMS, SCALE SELECTION, SELF TEST
         //
         //DEFAULT 0x00
+        I2c.read(ACCEL_ADDR, CONTROL_REG_4, 1, before);
         I2c.write(ACCEL_ADDR, CONTROL_REG_4, CONTROL4);
+        I2c.read(ACCEL_ADDR, CONTROL_REG_4, 1, before);
+
+        Serial.print("ACCEL CONTROL_REG_4:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //CONTROL REG 5:    SLEEP-TO-WAKE
         //
         //DEFAULT 0x00
+		I2c.read(ACCEL_ADDR, CONTROL_REG_5, 1, before);
         I2c.write(ACCEL_ADDR, CONTROL_REG_5, CONTROL5);
+		I2c.read(ACCEL_ADDR, CONTROL_REG_5, 1, after);
+
+		Serial.print("ACCEL CONTROL_REG_5:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         ///MAG OPTIONS
         //MAG CONTROL A
         //
         //DEFAULT 0x00
+        I2c.read(MAG_ADDR_R, CRA_REG_M, 1, before);
         I2c.write(MAG_ADDR_W, CRA_REG_M, MAGCTRLA);
+		I2c.read(MAG_ADDR_R, CRA_REG_M, 1, after);
+
+		Serial.print("CRA_REG_M:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //MAG CONTROL B
         //
         //DEFAULT 0x01
+        I2c.read(MAG_ADDR_R, CRB_REG_M, 1, before);
         I2c.write(MAG_ADDR_W, CRB_REG_M, MAGCTRLB);
+        I2c.read(MAG_ADDR_R, CRB_REG_M, 1, after);
+
+		Serial.print("CRB_REG_M:		\n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
 
         //MR_REG
         //
+        I2c.read(MAG_ADDR_R, MR_REG_M, 1, before);
         I2c.write(MAG_ADDR_W, MR_REG_M, MR_REG);
+        I2c.read(MAG_ADDR_R, MR_REG_M, 1, after);
+
+  		Serial.print("MR_REG_M:	    \n	Prior to write: ");
+        Serial.print(before[0], BIN);
+        Serial.print(" After write: ");
+        Serial.println(after[0],BIN);
+
 };
 
 

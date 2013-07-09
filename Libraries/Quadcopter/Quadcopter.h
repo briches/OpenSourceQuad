@@ -31,6 +31,9 @@ Updated for compatability with main polling loop and GPS interrupts
 #define poll3_interrupt (100000)				// The latency period between readings of the USRF, in microseconds
 #define USRF_pin (0x0)								// Connect the USRF AN pin to this pin
 
+#define MOTOR_MIN   50
+#define MOTOR_MAX  105
+
 /*=========================================================================
     I2C Addresses
     -----------------------------------------------------------------------*/
@@ -67,8 +70,9 @@ class Quadcopter
 
 		/*===============================================
 		Current motor speeds
+		// Given in percent.
 		-----------------------------------------------------------------------*/
-		int motor1s;                 // Motor speed for all 4 motors
+		int motor1s;
 		int motor2s;
 		int motor3s;
 		int motor4s;
@@ -120,7 +124,7 @@ class Quadcopter
 		 *! @FUNCTIONS
 		 ***************************************************************************/
 		bool initSensor();                      							// Initializes the two sensors
-		bool initMotors();                     							// Initializes the 4 motors
+		bool initMotors(int speed);                     							// Initializes the 4 motors
 		void update();      // Updates the structure
 		void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
 		bool updateMotors(double aPID_out, double bPID_out);

@@ -32,7 +32,7 @@ Updated for compatability with main polling loop and GPS interrupts
 /**************************************************************************/
 void Quadcopter :: get_Initial_Offsets()
 {
-	ERROR_LED(3);										// Warning LED
+	ERROR_LED(2);										// Warning LED
     int offset_counter = 10;                       // # of data sets to consider when finding offsets
     int counter = 1;
     double acceldata[3];
@@ -59,7 +59,7 @@ void Quadcopter :: get_Initial_Offsets()
 
 		if ((io_ax==0)&&(io_ay == 0)&&(io_az == 0))
 		{
-			ERROR_LED(2);						// Critical error, accelerometer is NOT working
+			ERROR_LED(3);						// Critical error, accelerometer is NOT working
 		}
         counter = counter + 1 ;
     }
@@ -71,6 +71,7 @@ void Quadcopter :: get_Initial_Offsets()
 	io_wy /= offset_counter;
 	io_wz /= offset_counter;
 
+	Serial.println(" ");
     Serial.println(io_ax);
     Serial.println(io_ay);
     Serial.println(io_az);
@@ -123,10 +124,11 @@ void Quadcopter :: SI_convert()
 /**************************************************************************/
 bool Quadcopter :: initSensor()
 {
-	ERROR_LED(3);												// Warning LED
+	ERROR_LED(2);												// Warning LED
 
 	byte x=0x0;
-	Serial.print("Int gyro  ");                      		// See OseppGyro.h
+	unsigned long t1 = micros();
+	Serial.print("Intializing gyro...    ");                      		// See OseppGyro.h
 
     gyro.setI2CAddr(Gyro_Address);                // Set the I2C address in OseppGyro class
 
@@ -137,12 +139,34 @@ bool Quadcopter :: initSensor()
         gyro.regRead(USER_CTRL,&x);                            // See the data sheet for the MPU3050 gyro
         gyro.regWrite(USER_CTRL,B00100000);             // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
     }
-    Serial.println("Done!");
+    unsigned long t2 = micros();
+    double elaps = (t2 - t1);
+    elaps /= 1000;
+    Serial.print("Done!  Elapsed time (ms): ");
+    Serial.println(elaps,4);
+    Serial.println("");
 
+	t1 = micros();
+	Serial.print("Initializing accel and magnetometer...	");
 	// Same as the gyro initialization, but the accel isnt an ass
     accelmag.Easy_Start();
 
+    t2 = micros();
+    elaps = (t2 - t1);
+    elaps /= 1000;
+	Serial.print("Done!  Elapsed time (ms): ");
+	Serial.println(elaps,4);
+	Serial.println("");
+
+	t1 = micros();
+	Serial.print("Getting initial offset values...    ");
     get_Initial_Offsets();                                     // Initial offsets private function in Control class
+    t2 = micros();
+    elaps = (t2 - t1);
+    elaps/=1000;
+	Serial.print("Done!  Elapsed time (ms): ");
+	Serial.println(elaps,4);
+	Serial.println("");
 
     return true;
 };
@@ -152,9 +176,15 @@ bool Quadcopter :: initSensor()
     @brief Initializes the motors, code from Andrew's script
 */
 /**************************************************************************/
-bool Quadcopter::initMotors()
+bool Quadcopter::initMotors(int speed)
 {
-    motor1s = 0;                         // Initialize all motor speeds to 0
+	unsigned long t1, t2;
+	double elaps;
+
+	t1 = micros();
+	Serial.println("Initializing motors...");
+
+    motor1s = 0;                         // Initialize all motor speeds to 0% speed
     motor2s = 0;                         // This might be useful, later
     motor3s = 0;
     motor4s = 0;
@@ -165,19 +195,28 @@ bool Quadcopter::initMotors()
     motor4.attach(6);                       // Attach motor 4 to D8
 
     // initializes motor1
-    for(motor1s = 0; motor1s < 60; motor1s += 1)
+    for(motor1s = 0; motor1s <= speed; motor1s += 1)
     {
-      motor1.write(motor1s);
-      motor2.write(motor1s);
-      motor3.write(motor1s);
-      motor4.write(motor1s);
+    	// Change the input to the function to a value to SERVO lib understands
+    	int m1s = map(motor1s, 0, 100, 0, 180);
+		motor1.write(m1s);
+		motor2.write(m1s);
+		motor3.write(m1s);
+		motor4.write(m1s);
 
-      motor2s = motor1s;
-      motor3s = motor1s;
-      motor4s = motor1s;
-
-      delay(50);
+		motor2s = motor1s;
+		motor3s = motor1s;
+		motor4s = motor1s;
+		delay(50);
+		Serial.print(motor1s);
+		Serial.println("%");
     }
+
+	t2 = micros();
+	elaps = (t2 - t1)/1000;
+	Serial.print("Done!  Elapsed time (ms): ");
+	Serial.println(elaps,4);
+	Serial.println("");
 
     return true;
 };
@@ -228,11 +267,13 @@ void Quadcopter::update()
 		gyro.update();
 
 		ax = accelmag.ax() - io_ax;                         // Store Raw values from the sensor registers
-		Serial.println(ax);
 		ay = accelmag.ay() - io_ay;                         // and removes the initial offsets
 		az = accelmag.az() - io_az;
-		wx = gyro.y() - io_wy;
-		wy = gyro.x() - io_wx;
+		mx = accelmag.mx();
+		my = accelmag.my();
+		mz = accelmag.mz();
+		wx = (-gyro.x())- io_wx;
+		wy = gyro.y() - io_wy;
 		wz = gyro.z() - io_wz;
 
 		SI_convert();                                           // Convert to SI units from raw data type in gyro data
@@ -336,6 +377,7 @@ void Quadcopter :: mov_avg()
 
 		double foo[10];
 
+		// Sum each variable, in each set.
 		for(int var = 0; var <= 9; var++)				// Each variable
 		{
 			for (int set= 0; set<= 9; set++) 			// Each set
@@ -379,7 +421,7 @@ void Quadcopter::ERROR_LED(int LED_SEL)
 			digitalWrite(YELLOW_LED, LOW);
 			break;
 
-		case 2:
+		case 3:
 			//Red LED. Indicates critical errors
 			digitalWrite(RED_LED, HIGH);
 			digitalWrite(GREEN_LED, LOW);
@@ -387,7 +429,7 @@ void Quadcopter::ERROR_LED(int LED_SEL)
 			while(1);	// Stop everything
 			break;
 
-		case 3:
+		case 2:
 			// Yellow LED. Indicates warnings
 			digitalWrite(RED_LED, LOW);
 			digitalWrite(GREEN_LED, LOW);
