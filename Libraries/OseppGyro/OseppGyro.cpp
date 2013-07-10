@@ -93,6 +93,7 @@ void OseppGyro::xyz(int& x, int& y, int& z)
 void OseppGyro::dataMode(int dScaleRange,int dDLPF)
 {
     dScaleRange_ = dScaleRange;
+    byte x;
 
     if(dDLPF <= 6){dDLPF_ = dDLPF;}  // 0 to 6 (sets bandwidth of DLPF and sample rate)
     else if (dDLPF >6){dDLPF_ = 6;}    // 0 to 6 (sets bandwidth of DLPF and sample rate)
@@ -104,7 +105,8 @@ void OseppGyro::dataMode(int dScaleRange,int dDLPF)
 
 	//setup i2c
 	I2c.begin();
-
+	I2c.timeOut(1000);
+	I2c.scan();
 
 	if( dScaleRange_ <= 375){ dScaleRange_ = FULL_SCALE_RANGE_250; } //0-375 = 250d/s
 	else if( dScaleRange_ <= 750){ dScaleRange_ = FULL_SCALE_RANGE_500; } //375 - 750 = 500d/s
@@ -116,13 +118,16 @@ void OseppGyro::dataMode(int dScaleRange,int dDLPF)
     FS_DLPF = (FS_DLPF << 3) | byte(dDLPF_);
 
 
+	I2c.read(I2CAddr, WHO_AM_I, 1, &x);
+
+	Serial.println("debug 1");
 	I2c.write(I2CAddr,DLPF_FS_SYNC, FS_DLPF);
 
-
-
+	Serial.println("debug 2");
     //active Mode
     I2c.write(I2CAddr, PWR_MGM, statusCheck); // Sets standby off, activates all gyros, sets clock to x-gyro PLL
 
+	Serial.println("debug 3");
 
 
 }

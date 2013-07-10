@@ -2,6 +2,12 @@
 Name: QCopterMain.ino
 Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
 Date: May 2013
+
+
+TO- DO:
+1) Fix integration of gyro value. (data type?)
+2) Complementary filter. 
+3) Add PID outputs correctly to motors
         
 Copyright stuff from all included libraries that I didn't write
 
@@ -113,7 +119,7 @@ void setup()
   // just below take-off speed.
   Quadcopter.ERROR_LED(2);
   // Enter a %, from 0 - 100
-  Quadcopter.initMotors(2);
+  Quadcopter.initMotors(5);
   Quadcopter.ERROR_LED(1);  
   
   // Set both the alpha and beta setpoints to 0. 
@@ -153,12 +159,17 @@ void loop()
   // Adds the PID outputs to the motors, based on their current configuration
   Quadcopter.updateMotors(aPID_out, bPID_out);
   
-  Serial.println(Quadcopter.alpha);
-  // Some debug printing. 
+  
+  
+  /* Some debug printing. */
+  
+  
 //  Serial.print("M1s: "); Serial.print(Quadcopter.motor1s);
 //  Serial.print(" M2s: "); Serial.print(Quadcopter.motor2s);
 //  Serial.print(" M3s: "); Serial.print(Quadcopter.motor3s);
 //  Serial.print(" M4s: "); Serial.println(Quadcopter.motor4s);
+
+
 }
 // END MAIN CONTROL LOOP.
 

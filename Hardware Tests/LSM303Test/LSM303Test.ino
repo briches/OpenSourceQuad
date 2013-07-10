@@ -18,9 +18,6 @@ void setup()
 
 void loop()
 {
-  // Run at 10 Hz
-  delay(100);
-  
   // Update the values
   accelmag.update();
   
@@ -33,18 +30,32 @@ void loop()
   double my = accelmag.my();
   double mz = accelmag.mz();
   
-  Serial.print("ax: ");
-  Serial.print(ax);
-  Serial.print(" ay: ");
-  Serial.print(ay);
-  Serial.print(" az: ");
-  Serial.print(az);
+  float Pi = 3.14159;
   
-  Serial.print(" mx: ");
-  Serial.print(mx);
-  Serial.print(" my: ");
-  Serial.print(my);
-  Serial.print(" mz: ");
-  Serial.println(mz);
+  // Calculate the angle of the vector y,x
+  float heading = (atan2(my,mx) * 180) / Pi;
+  
+  // Normalize to 0-360
+  if (heading < 0)
+  {
+    heading = 360 + heading;
+  }
+  
+  Serial.print("Compass Heading: ");
+  Serial.print(heading);
+  
+//  Serial.print("  ax: ");
+//  Serial.print(ax);
+//  Serial.print(" ay: ");
+//  Serial.print(ay);
+//  Serial.print(" az: ");
+//  Serial.print(az);
+//  
+//  Serial.print(" mx: ");
+//  Serial.print(mx);
+//  Serial.print(" my: ");
+//  Serial.print(my);
+//  Serial.print(" mz: ");
+//  Serial.println(mz);
 }
 

@@ -93,6 +93,10 @@ class Quadcopter
 		double prev_data[10][10];  // Stores 9 previous data sets, 1 current.
 													// Prev_data is used for a moving average filter.
 
+		double alpha_gyro;
+		double beta_gyro;
+		double heading_gyro;
+
 		/*===============================================
 		Time keeping for polling and interrupts
 		-----------------------------------------------------------------------*/

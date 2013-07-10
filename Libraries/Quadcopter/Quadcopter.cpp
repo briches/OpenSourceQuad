@@ -128,17 +128,26 @@ bool Quadcopter :: initSensor()
 
 	byte x=0x0;
 	unsigned long t1 = micros();
-	Serial.print("Intializing gyro...    ");                      		// See OseppGyro.h
+	Serial.println("Intializing gyro...    ");                      		// See OseppGyro.h
 
+	Serial.println("Set I2c address.");
     gyro.setI2CAddr(Gyro_Address);                // Set the I2C address in OseppGyro class
 
+	Serial.println("Set ScaleRange and DLPF settings");
     gyro.dataMode(d_ScaleRange, DLPF);       // Set the dataMode in the OseppGyro Class
 
+	Serial.println("Set USER_CTRL register");
     while(x != B100000)
     {
-        gyro.regRead(USER_CTRL,&x);                            // See the data sheet for the MPU3050 gyro
-        gyro.regWrite(USER_CTRL,B00100000);             // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
+        gyro.regRead(USER_CTRL, &x, 1);                            // See the data sheet for the MPU3050 gyro
+        gyro.regWrite(USER_CTRL, B00100000);             // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
+        if(millis() >= 3000)
+        {
+        	Serial.println("Err: Unable to write to USER_CTRL. ");
+        	break;
+        }
     }
+
     unsigned long t2 = micros();
     double elaps = (t2 - t1);
     elaps /= 1000;
@@ -229,10 +238,13 @@ bool Quadcopter::initMotors(int speed)
 /**************************************************************************/
 void Quadcopter::update()
 {
-	double alpha_accel, alpha_gyro, beta_accel, beta_gyro;
+	double 	alpha_accel,
+					beta_accel,
+					heading_mag;
 	int poll_type;
-	unsigned long time;
-	float gcoeff = 0.9;
+	double time;
+	double 	a_gcoeff = 0.9,
+					h_gcoeff = 0.9;
 
 	// Check the type of interrupt. If the time elapsed is less than the interrupt latency for a
 	// certain device, it doesn't need to be updated.
@@ -242,7 +254,7 @@ void Quadcopter::update()
 	{
 		poll_type = 1;								// Only essential updates are needed.
 																// Update PID controllers based on accel/gyro/mag data,
-																// and motor logic
+
 	}
 	/* Important note about this interrupt: This interrupt may or may not be necessary, but
 	is here for future proofing */
@@ -263,11 +275,13 @@ void Quadcopter::update()
 	// Code in this block executes if any of the poll conditions are satisfied
 	if (poll_type == 1 || poll_type == 2 || poll_type ==3 )
 	{
-		accelmag.update();                                                 // Update the registers storing data INSIDE the sensors
+		// Update the registers storing data INSIDE the sensors
+		accelmag.update();
 		gyro.update();
 
-		ax = accelmag.ax() - io_ax;                         // Store Raw values from the sensor registers
-		ay = accelmag.ay() - io_ay;                         // and removes the initial offsets
+		// Store Raw values from the sensor registers, and remove initial offsets
+		ax = accelmag.ax() - io_ax;
+		ay = accelmag.ay() - io_ay;
 		az = accelmag.az() - io_az;
 		mx = accelmag.mx();
 		my = accelmag.my();
@@ -287,14 +301,45 @@ void Quadcopter::update()
 		{											// started and we dont want a massive integration to start
 			time = 0;
 		}
-		alpha_gyro += wy * time/1000;		// Time integration of wy gets rotation about y
-		beta_gyro += wx * time/1000;			// Time integration of wx gets rotation about x
 
-		alpha_accel = atan2(ax, az) *180/Pi ; // Arctan of the two values returns the angle,
-		beta_accel = atan2(ay, az) *180/Pi;   // in rads, and convert to degrees
+		/// Update pitch and roll
+		// Time integration of wy gets rotation about y
+		alpha_gyro += wy * time/1000;
+		beta_gyro += wx * time/1000;
 
-		alpha = gcoeff * alpha_gyro +   (1-gcoeff)*alpha_accel;
-		beta = gcoeff * beta_gyro +  (1-gcoeff)*beta_accel;
+		// Arctan of the two values returns the angle,
+		alpha_accel = atan2(ax, az) *180/Pi ;
+		beta_accel = atan2(ay, az) *180/Pi;
+
+		// Complementary filter
+		alpha = a_gcoeff * alpha_gyro +   (1-a_gcoeff)*alpha_accel;
+		beta = a_gcoeff * beta_gyro +  (1-a_gcoeff)*beta_accel;
+
+		/// Update heading
+		// Get the heading (in degrees) from the magnetometer.
+		heading_mag = ((atan2(my,mx))*180)/Pi;
+
+		// Normalize to 360 degrees
+		 if (heading_mag < 0)
+		  {
+			heading_mag += 360;
+		  }
+		// Debug
+		Serial.println(heading_mag);
+
+		// Integrate wz to get the heading from the gyro
+		heading_gyro += wz*(time)/1000000;
+
+		// Normalize to 360 degrees
+		 if (heading_gyro < 0)
+		  {
+			heading_gyro += 360;
+		  }
+
+		// Complementary filter the compass heading and the gyro heading
+		heading = h_gcoeff * heading_gyro + (1-h_gcoeff)*heading_mag;
+
+
 
 		tpoll1 = micros();						// Ready for the next poll
 	}

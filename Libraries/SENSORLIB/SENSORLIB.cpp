@@ -17,7 +17,7 @@ const double AX_SCALE = 0.15696;
 const double AY_SCALE = 0.15449;
 const double AZ_SCALE = 0.14115;
 
-const double M_SCALE  = 0.635;
+const double M_SCALE  = 0.635076;
 
 
 
