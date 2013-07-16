@@ -236,21 +236,31 @@ bool Quadcopter::initMotors(int speed)
     @brief Checks elapsed time and executes various tasks such as running PID controllers
 */
 /**************************************************************************/
-void Quadcopter::update()
+void Quadcopter::update(double aPID_out, double bPID_out)
 {
 	double 	alpha_accel,
 					beta_accel,
 					heading_mag;
-	int poll_type;
-	double time;
-	double 	a_gcoeff = 0.9,
-					h_gcoeff = 0.9;
+	int poll_type = 0;
+	double   time,
+					t_convert = 1000000,
+					time1,
+					time2,
+					time3;
+	double 	a_gcoeff = 0.8,
+					h_gcoeff = 0.99;
+
+	time = micros();
+
+	time1 = time - tpoll1;
+	time2 = time - tpoll2;
+	time3 = time - tpoll3;
 
 	// Check the type of interrupt. If the time elapsed is less than the interrupt latency for a
 	// certain device, it doesn't need to be updated.
 	// The updates and calculations for those devices are wrapped in if statements that check
 	// the value of poll_type, and thus determine if data is available.
-	if (micros() - tpoll1 >= 10000) /*microseconds*/
+	if (time1 >= 10000) /*microseconds*/
 	{
 		poll_type = 1;								// Only essential updates are needed.
 																// Update PID controllers based on accel/gyro/mag data,
@@ -258,13 +268,13 @@ void Quadcopter::update()
 	}
 	/* Important note about this interrupt: This interrupt may or may not be necessary, but
 	is here for future proofing */
-	if (micros() - tpoll2 >=  poll2_interrupt)
+	if (time2 >=  poll2_interrupt)
 	{
 		poll_type = 2;								// Essential updates + USRF updates needed
 																// Update PID contollers based on accel/gyro/mag data,
 																// motor logic, other sensors that fit this interrupt as decided.
 	}
-	if (micros() - tpoll3 >= poll3_interrupt)
+	if (time3 >= poll3_interrupt)
 	{
 		poll_type = 3;								// Essential updates + USRF + GPS updates needed
 																// Update PID contollers based on accel/gyro/mag data,
@@ -286,26 +296,23 @@ void Quadcopter::update()
 		mx = accelmag.mx();
 		my = accelmag.my();
 		mz = accelmag.mz();
-		wx = (-gyro.x())- io_wx;
-		wy = gyro.y() - io_wy;
+		wx = -(gyro.x()- io_wx);
+		wy = -(gyro.y() - io_wy);
 		wz = gyro.z() - io_wz;
 
-		SI_convert();                                           // Convert to SI units from raw data type in gyro data
+		// Convert to SI units from raw data type in gyro data
+		SI_convert();
 
-		mov_avg();					// Very important step!
-												// Runs a moving average with a circular buffer
+		// Runs a moving average with a circular buffer
+		mov_avg();
 
-		time = (micros() - tpoll1)/1000; // This is the elapsed time since poll1 ran
 
-		if (time <= 300000)			// For the begining of the program; It takes some time to get
-		{											// started and we dont want a massive integration to start
-			time = 0;
-		}
+		time = (micros() - tpoll1)/t_convert; // This is the elapsed time since poll1 ran
 
 		/// Update pitch and roll
 		// Time integration of wy gets rotation about y
-		alpha_gyro += wy * time/1000;
-		beta_gyro += wx * time/1000;
+		alpha_gyro += wy * time;
+		beta_gyro += wx * time;
 
 		// Arctan of the two values returns the angle,
 		alpha_accel = atan2(ax, az) *180/Pi ;
@@ -325,10 +332,9 @@ void Quadcopter::update()
 			heading_mag += 360;
 		  }
 		// Debug
-		Serial.println(heading_mag);
 
 		// Integrate wz to get the heading from the gyro
-		heading_gyro += wz*(time)/1000000;
+		heading_gyro += wz*0.01;
 
 		// Normalize to 360 degrees
 		 if (heading_gyro < 0)
@@ -336,18 +342,26 @@ void Quadcopter::update()
 			heading_gyro += 360;
 		  }
 
+		 //Serial.println(heading_gyro);
+
 		// Complementary filter the compass heading and the gyro heading
 		heading = h_gcoeff * heading_gyro + (1-h_gcoeff)*heading_mag;
 
-
-
-		tpoll1 = micros();						// Ready for the next poll
+		/// Read the time that poll1 was last executed.
+		tpoll1 = micros();
 	}
 
 	/**! 				@Poll type two 				*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
 	if (poll_type == 2)
 	{
+		/// Motor Logic takes place at a lower frequency.
+		// ESCs need several periods of signal to properly read motor speed,
+		// thus placing a upper limit on the frequency with which the ESCs can
+		// be updated.
+		updateMotors(aPID_out,  bPID_out);
+
+		/// Read the time that poll2 was last executed
 		tpoll2 = micros();
 	}
 
@@ -366,49 +380,69 @@ void Quadcopter::update()
 
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 {
-	motor1s -= aPID_out;
-	motor4s -= aPID_out;
 
-	motor2s += aPID_out;
-	motor3s += aPID_out;
-
-	motor4s -= bPID_out;
-	motor3s -= bPID_out;
-
-	motor2s += bPID_out;
-	motor1s += bPID_out;
-
-	motor1.write(motor1s);
-	motor2.write(motor2s);
-	motor3.write(motor3s);
-	motor4.write(motor4s);
 };
 
 void Quadcopter :: mov_avg()
 {
 		// Updates the prev_data by bumping up each data set
-
-		for(int set = 9; set >= 0; set --)					// Data set number
+		for (int i = 9; i >= 0; i--)
 		{
-			for (int var = 0; var <= 9; var++)				// Variable
-			{
-				prev_data[set][var] = prev_data[set-1][var];
-			}
+			prev_ax[i] = prev_ax[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_ay[i] = prev_ay[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_az[i] = prev_az[i-1];
+		}
+
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_wx[i] = prev_wx[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_wy[i] = prev_wy[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_wz[i] = prev_wz[i-1];
+		}
+
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_mx[i] = prev_mx[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_my[i] = prev_my[i-1];
+		}
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_mz[i] = prev_mz[i-1];
+		}
+
+		for (int i = 9; i >= 0; i--)
+		{
+			prev_elev[i] = prev_elev[i-1];
 		}
 
 		// Add new data sets to the first spot in the buffer
-		prev_data[0][0] = ax;
-		prev_data[0][1] = ay;
-		prev_data[0][2] = az;
-		prev_data[0][3] = wx;
-		prev_data[0][4] = wy;
-		prev_data[0][5] = wz;
-		prev_data[0][6] = mx;
-		prev_data[0][7] = my;
-		prev_data[0][8] = mz;
-		prev_data[0][9] = elev;
+		prev_ax[0] = ax;
+		prev_ay[0] = ay;
+		prev_az[0] = az;
+		prev_wx[0] = wx;
+		prev_wy[0] = wy;
+		prev_wz[0] = wz;
+		prev_mz[0] = mx;
+		prev_my[0] = my;
+		prev_mz[0] = mz;
+		prev_elev[0] = elev;
 
-		// Buffer is updated, now a moving average can be calculated,  If the buffer size has to be increased then we can do that.
+		//Set 0
 		ax = 0;
 		ay = 0;
 		az = 0;
@@ -418,31 +452,23 @@ void Quadcopter :: mov_avg()
 		mx = 0;
 		my = 0;
 		mz = 0;
-		elev = 0; // ready for average calculation
+		elev = 0;
 
-		double foo[10];
-
+		// Buffer is updated, now a moving average can be calculated
 		// Sum each variable, in each set.
-		for(int var = 0; var <= 9; var++)				// Each variable
-		{
-			for (int set= 0; set<= 9; set++) 			// Each set
-			{
-				foo[var] += prev_data[set][var];
-			}
-		}
 
-		ax = foo[0];
-		ay = foo[1];
-		az = foo[2];
-		wx = foo[3];
-		wy = foo[4];
-		wz = foo[5];
-		mx = foo[6];
-		my = foo[7];
-		mz = foo[8];
-		elev = foo[9];
+		for (int i = 0; i <= 9; i++) { ax += prev_ax[i]; }
+		for (int i = 0; i <= 9; i++) { ay += prev_ay[i]; }
+		for (int i = 0; i <= 9; i++) { az += prev_az[i]; }
+		for (int i = 0; i <= 9; i++) { wx += prev_wx[i]; }
+		for (int i = 0; i <= 9; i++) { wy += prev_wy[i]; }
+		for (int i = 0; i <= 9; i++) { wz += prev_wz[i]; }
+		for (int i = 0; i <= 9; i++) { mx += prev_mx[i]; }
+		for (int i = 0; i <= 9; i++) { my += prev_my[i]; }
+		for (int i = 0; i <= 9; i++) { mz += prev_mz[i]; }
+		for (int i = 0; i <= 9; i++) { elev += prev_elev[i]; }
 
-		ax /= 10;						// Finish off the calculation
+		ax /= 10;
 		ay /= 10;
 		az /= 10;
 		wx /= 10;
@@ -452,6 +478,24 @@ void Quadcopter :: mov_avg()
 		my /= 10;
 		mz /= 10;
 		elev /= 10;
+
+//		Serial.print(" ");
+//		Serial.print(ax);
+//
+//		Serial.print(" ");
+//		Serial.print(ay);
+//
+//		Serial.print(" ");
+//		Serial.print(az);
+//
+//		Serial.print(" ");
+//		Serial.print(wx);
+//
+//		Serial.print(" ");
+//		Serial.print(wy);
+//
+//		Serial.print(" ");
+//		Serial.println(wz);
 };
 
 
@@ -480,174 +524,4 @@ void Quadcopter::ERROR_LED(int LED_SEL)
 			digitalWrite(GREEN_LED, LOW);
 			digitalWrite(YELLOW_LED, HIGH);
 	}
-}
-
-
-// This function for debugging purposes
-//
-///**************************************************************************/
-///*!
-//    @brief Sets the motors to a new speed
-//*/
-///**************************************************************************/
-//void Control::setMotorSpeed(int motor, int speed)
-//{
-//	int m1d;		// Directions that motor speed needs to increment
-//	int m2d;		// +1 for increase, -1 for decrease
-//	int m3d;
-//	int m4d;
-//
-//	switch (motor)
-//	{
-//		/// MOTOR /
-//		case 1:
-//
-//			if (speed !=  MotorSpeeds.motor1s)										// Change required, not the same
-//			{
-//				if (speed > MotorSpeeds.motor1s)										// Need to go up
-//				{
-//					for (int x = MotorSpeeds.motor1s; x <= speed; x += 1)	// Ease into the new speed
-//					{
-//						motor1.write(x);
-//						MotorSpeeds.motor1s = x;
-//						delay(25);
-//					}
-//				}
-//				else																					// Need to decrease speed
-//				{
-//					for (int x = MotorSpeeds.motor1s; x >= speed; x -= 1)	// Ease into the new speed
-//					{
-//						motor1.write(x);
-//						MotorSpeeds.motor1s = x;
-//						delay(25);
-//					}
-//				}
-//			}
-//			break;
-//
-//			//MOTOR 2
-//			case 2:
-//
-//			if (speed !=  MotorSpeeds.motor2s)										// Change required, not the same
-//			{
-//				if (speed > MotorSpeeds.motor2s)										// Need to go up
-//				{
-//					for (int x = MotorSpeeds.motor2s; x <= speed; x += 1)	// Ease into the new speed
-//					{
-//						motor2.write(x);
-//						MotorSpeeds.motor2s = x;
-//						delay(25);
-//					}
-//				}
-//				else																					// Need to decrease speed
-//				{
-//					for (int x = MotorSpeeds.motor2s; x >= speed; x -= 1)	// Ease into the new speed
-//					{
-//						motor2.write(x);
-//						MotorSpeeds.motor2s = x;
-//						delay(25);
-//					}
-//				}
-//			}
-//			break;
-//			//MOTOR 3
-//			case 3:
-//
-//			if (speed !=  MotorSpeeds.motor3s)										// Change required, not the same
-//			{
-//				if (speed > MotorSpeeds.motor3s)										// Need to go up
-//				{
-//					for (int x = MotorSpeeds.motor3s; x <= speed; x += 1)	// Ease into the new speed
-//					{
-//						motor3.write(x);
-//						MotorSpeeds.motor3s = x;
-//						delay(25);
-//					}
-//				}
-//				else																					// Need to decrease speed
-//				{
-//					for (int x = MotorSpeeds.motor3s; x >= speed; x -= 1)	// Ease into the new speed
-//					{
-//						motor3.write(x);
-//						MotorSpeeds.motor3s = x;
-//						delay(25);
-//					}
-//				}
-//			}
-//			break;
-//
-//			// MOTOR 4
-//			case 4:
-//
-//			if (speed !=  MotorSpeeds.motor4s)										// Change required, not the same
-//			{
-//				if (speed > MotorSpeeds.motor4s)										// Need to go up
-//				{
-//					for (int x = MotorSpeeds.motor4s; x <= speed; x += 1)	// Ease into the new speed
-//					{
-//						motor4.write(x);
-//						MotorSpeeds.motor4s = x;
-//						delay(25);
-//					}
-//				}
-//				else																					// Need to decrease speed
-//				{
-//					for (int x = MotorSpeeds.motor4s; x >= speed; x -= 1)	// Ease into the new speed
-//					{
-//						motor4.write(x);
-//						MotorSpeeds.motor4s = x;
-//						delay(25);
-//					}
-//				}
-//			}
-//			break;
-//
-//			// ALL MOTORS REQUIRE CHANGE
-//			case 5:
-//
-//			if  ((speed > MotorSpeeds.motor1s )&& (speed != MotorSpeeds.motor1s)) {m1d = 1;}
-//			else {m1d = -1;}
-//
-//			if  ((speed > MotorSpeeds.motor2s )&& (speed != MotorSpeeds.motor2s)) {m2d = 1;}
-//			else {m2d = -1;}
-//
-//			if  ((speed > MotorSpeeds.motor3s )&& (speed != MotorSpeeds.motor3s)) {m3d = 1;}
-//			else {m3d= -1;}
-//
-//			if  ((speed > MotorSpeeds.motor4s )&& (speed != MotorSpeeds.motor4s)) {m4d = 1;}
-//			else {m4d= -1;}
-//
-//			while ( (MotorSpeeds.motor1s != speed)
-//				  ||  (MotorSpeeds.motor2s != speed)
-//				  ||  (MotorSpeeds.motor3s != speed)
-//				  ||  (MotorSpeeds.motor4s != speed) )
-//				  {
-//						if (MotorSpeeds.motor1s != speed )
-//						{
-//							MotorSpeeds.motor1s += m1d;
-//							motor1.write(MotorSpeeds.motor1s);
-//						}
-//						if (MotorSpeeds.motor2s != speed )
-//						{
-//							MotorSpeeds.motor2s += m2d;
-//							motor2.write(MotorSpeeds.motor2s);
-//						}
-//						if (MotorSpeeds.motor3s != speed )
-//						{
-//							MotorSpeeds.motor3s += m3d;
-//							motor3.write(MotorSpeeds.motor3s);
-//						}
-//						if (MotorSpeeds.motor4s != speed )
-//						{
-//							MotorSpeeds.motor4s += m4d;
-//							motor4.write(MotorSpeeds.motor4s);
-//						}
-//
-//						delay(25);
-//				  }
-//
-//
-//			break;
-//	}
-//}
-
+};

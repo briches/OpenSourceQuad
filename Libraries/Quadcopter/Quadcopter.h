@@ -52,7 +52,7 @@ Updated for compatability with main polling loop and GPS interrupts
     - Explaining these is kinda hard, go read the data sheets.
     -----------------------------------------------------------------------*/
 	const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
-	const int DLPF = 7;                 // 0,1,2,3,4,5,6,7 // See data sheet
+	const int DLPF = 6;                 // 0,1,2,3,4,5,6,7 // See data sheet
 	const bool HighDef = true;          // Is accel output 2byte or 1byte
     const double g_threshold = 0.05; //Upper threshold for set zero from accel data
 	const double d_threshold = 1;    //Upper threshold for set zero from gyro data
@@ -90,8 +90,17 @@ class Quadcopter
 		double my;
 		double mz;
 		double elev;
-		double prev_data[10][10];  // Stores 9 previous data sets, 1 current.
-													// Prev_data is used for a moving average filter.
+
+		double 	prev_ax[10],
+						prev_ay[10],
+						prev_az[10],
+						prev_wx[10],
+						prev_wy[10],
+						prev_wz[10],
+						prev_mx[10],
+						prev_my[10],
+						prev_mz[10],
+						prev_elev[10];
 
 		double alpha_gyro;
 		double beta_gyro;
@@ -129,8 +138,7 @@ class Quadcopter
 		 ***************************************************************************/
 		bool initSensor();                      							// Initializes the two sensors
 		bool initMotors(int speed);                     							// Initializes the 4 motors
-		void update();      // Updates the structure
-		void setMotorSpeed(int motor, int speed);		// Sets a motor to a new speed
+		void update(double aPID_out, double bPID_out);
 		bool updateMotors(double aPID_out, double bPID_out);
 
 		void ERROR_LED(int LED_SEL);

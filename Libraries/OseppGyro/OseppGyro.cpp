@@ -99,23 +99,17 @@ void OseppGyro::dataMode(int dScaleRange,int dDLPF)
     else if (dDLPF >6){dDLPF_ = 6;}    // 0 to 6 (sets bandwidth of DLPF and sample rate)
 	dataMode_ = true;
 
-	byte statusCheck = 0x1;
+	byte statusCheck = 0x01;
 
 	byte FS_DLPF; // Combined byte to go into the DLPF_FS_SYNC reg
 
 	//setup i2c
 	I2c.begin();
-	I2c.timeOut(1000);
-	I2c.scan();
-
-	if( dScaleRange_ <= 375){ dScaleRange_ = FULL_SCALE_RANGE_250; } //0-375 = 250d/s
-	else if( dScaleRange_ <= 750){ dScaleRange_ = FULL_SCALE_RANGE_500; } //375 - 750 = 500d/s
-	else if( dScaleRange_ <= 1500){ dScaleRange_ = FULL_SCALE_RANGE_1000; }// 750-1500 = 1000d/s
-	else if( dScaleRange_ > 1500) { dScaleRange_ = FULL_SCALE_RANGE_2000; } //boundary
-
 
     FS_DLPF = byte(dScaleRange_);
     FS_DLPF = (FS_DLPF << 3) | byte(dDLPF_);
+
+    Serial.println(FS_DLPF, BIN);
 
 
 	I2c.read(I2CAddr, WHO_AM_I, 1, &x);

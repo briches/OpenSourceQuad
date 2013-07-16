@@ -140,30 +140,27 @@ void setup()
     -----------------------------------------------------------------------*/
 void loop()                          
 {
-  // This is the main data gathering function included in the Quadcopter class.
+  // This is the main runtime function included in the Quadcopter class.
   //
   // It includes a number of different priorities, based on the time elapsed
   // since it was last called (This is because various sensors or events may
   // have different time intervals between them). 
+  // 
   // In the most basic priority, the function gathers new magnetometer, 
   // accelerometer, and gryo data. It then runs a basic moving average on these
   // data to smooth them. Then, it uses a complementary filter to help obtain 
   // more accurate readings of angle.
-  Quadcopter.update();  
+  Quadcopter.update(aPID_out, bPID_out);  
 
   // Updates the PID controllers. They return new outputs based on current
   // and past data. These outputs are used to decide what the motor speeds should be set to.
   aPID.Compute();
   bPID.Compute();
   
-  // Adds the PID outputs to the motors, based on their current configuration
-  Quadcopter.updateMotors(aPID_out, bPID_out);
-  
-  
-  
+
+
   /* Some debug printing. */
-  
-  
+  Serial.println(Quadcopter.beta);
 //  Serial.print("M1s: "); Serial.print(Quadcopter.motor1s);
 //  Serial.print(" M2s: "); Serial.print(Quadcopter.motor2s);
 //  Serial.print(" M3s: "); Serial.print(Quadcopter.motor3s);

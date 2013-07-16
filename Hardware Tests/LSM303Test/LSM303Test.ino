@@ -12,7 +12,7 @@ SENSORLIB accelmag;
 
 void setup()
 {
-  Serial.begin(19200);
+  Serial.begin(115200);
   accelmag.Easy_Start();
 }
 
@@ -42,7 +42,8 @@ void loop()
   }
   
   Serial.print("Compass Heading: ");
-  Serial.print(heading);
+  Serial.println(heading);
+  delay(250);
   
 //  Serial.print("  ax: ");
 //  Serial.print(ax);

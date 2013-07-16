@@ -101,7 +101,7 @@ const byte FULL_SCALE_RANGE_1000 = 0x2;
 const byte FULL_SCALE_RANGE_2000 = 0x3;
 
 const float SI_CONVERT_250 = 0.0076511;
-const float SI_CONVERT_500 = 0.00763; // WIP
+const float SI_CONVERT_500 = 0.01524; // WIP
 const float SI_CONVERT_1000 = 0.015259;
 const float SI_CONVERT_2000 = 0.030518;
 
