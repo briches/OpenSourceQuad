@@ -30,7 +30,10 @@ Copyright stuff from all included libraries that I didn't write
 #include <SD.h>
 
 
+File logfile;
 
+// Hardware SS pin on the ATmega2560
+const int chipSelect = 53;
 
 /*=========================================================================
     PID output variables and desired setpoints, and settings
@@ -50,7 +53,7 @@ int PID_SampleTime = 10;
 // Both the alpha and the beta controller use these limits.
 // They represent the maximum absolute value that the PID equation could reach,
 // regardless of what the gain coefficients are. 
-int PID_OutLims[] = {-10,10};
+int PID_OutLims[] = {-1000,1000};
 
 
 /*=========================================================================
@@ -86,6 +89,15 @@ void setup()
   
   t1 = micros();
   
+  // Initialize the main serial UART for output. 
+  Serial.begin(115200); 
+  // Wait for serial port to connect
+  // This isn't essential, but we might as well.
+  while(!Serial) {
+    ;                                      
+  }
+  Serial.println(" ");
+  
   // Initialize these pins (39,41,43) for digital output.
   // They are used in the ERROR_LED function
   // Use ERROR_LED(1) for success,
@@ -95,16 +107,30 @@ void setup()
   pinMode(YELLOW_LED,  OUTPUT);
   pinMode(RED_LED,     OUTPUT);
   
+  // Initialize SD card
+  Serial.print("Initializing SD card...");
   
-  // Initialize the main serial UART for output. 
-  Serial.begin(115200); 
+  // Hardware SS pin must be output. 
+  pinMode(SS, OUTPUT);
   
-  // Wait for serial port to connect
-  // This isn't essential, but we might as well.
-  while(!Serial) {
-    ;                                      
+  if (!SD.begin(chipSelect)) {
+    Serial.println("initialization failed!");
+    return;
   }
-  Serial.println(" ");
+  Serial.println("initialization done.");
+  
+  // Open the file for writing, here just for a title.
+  logfile = SD.open("run_log.txt", FILE_WRITE);
+  
+  // if the file opened okay, write to it:
+  if (logfile) {
+    Serial.print("Writing to run_log.txt...");
+    logfile.println("testing 1, 2, 3.");
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening run_log.txt");
+  }
   
   // Initialize the sensors.
   // Sensors include: 
@@ -120,6 +146,7 @@ void setup()
   Quadcopter.ERROR_LED(2);
   // Enter a %, from 0 - 100
   Quadcopter.initMotors(40);
+  while(micros() <= 5000000);
   Quadcopter.ERROR_LED(1);  
   
   // Set both the alpha and beta setpoints to 0. 
@@ -149,7 +176,8 @@ void loop()
   // In the most basic priority, the function gathers new magnetometer, 
   // accelerometer, and gryo data. It then runs a basic moving average on these
   // data to smooth them. Then, it uses a complementary filter to help obtain 
-  // more accurate readings of angle.
+  // more accurate readings of angle
+   
   Quadcopter.update(aPID_out, bPID_out);  
 
   // Updates the PID controllers. They return new outputs based on current
@@ -157,10 +185,45 @@ void loop()
   aPID.Compute();
   bPID.Compute();
   
+  logfile.print(micros());
+  logfile.print(",");
+  logfile.print(Quadcopter.ax);
+  logfile.print(",");
+  logfile.print(Quadcopter.ay);
+  logfile.print(",");
+  logfile.print(Quadcopter.az);
+  logfile.print(",");
+  logfile.print(Quadcopter.wx);
+  logfile.print(",");
+  logfile.print(Quadcopter.wy);
+  logfile.print(",");
+  logfile.print(Quadcopter.wz);
+  logfile.print(",");
+  logfile.print(Quadcopter.alpha);
+  logfile.print(",");
+  logfile.print(Quadcopter.beta);
+  logfile.print(",");
+  logfile.print(Quadcopter.motor1s);
+  logfile.print(",");
+  logfile.print(Quadcopter.motor2s);
+  logfile.print(",");
+  logfile.print(Quadcopter.motor3s);
+  logfile.print(",");
+  logfile.print(Quadcopter.motor4s);
+  logfile.print(",");
+  logfile.print(aPID_out);
+  logfile.print(",");
+  logfile.println(bPID_out);
+  
+  if (micros() >= 15000000)
+  {
+    logfile.close();
+    
+  }
+  
 
 
   /* Some debug printing. */
-  Serial.println(Quadcopter.beta);
 //  Serial.print("M1s: "); Serial.print(Quadcopter.motor1s);
 //  Serial.print(" M2s: "); Serial.print(Quadcopter.motor2s);
 //  Serial.print(" M3s: "); Serial.print(Quadcopter.motor3s);
