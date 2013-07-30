@@ -27,7 +27,7 @@ Copyright stuff from all included libraries that I didn't write
 #include <I2C.h>
 #include <Servo.h>
 #include <math.h>
-#include <SdFat.h>
+#include <SD.h>
 
 
 
@@ -69,8 +69,8 @@ Quadcopter Quadcopter;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   1,  2,  0,  DIRECT);
-PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   1,  2,  0,  DIRECT);
+PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   0.01,  0.02,  0,  DIRECT);
+PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   0.01,  0.02,  0,  DIRECT);
 
 // Function declaration, where many of the PID initialization functions have been moved.
 void PID_init();                           
@@ -119,7 +119,7 @@ void setup()
   // just below take-off speed.
   Quadcopter.ERROR_LED(2);
   // Enter a %, from 0 - 100
-  Quadcopter.initMotors(5);
+  Quadcopter.initMotors(40);
   Quadcopter.ERROR_LED(1);  
   
   // Set both the alpha and beta setpoints to 0. 

@@ -43,9 +43,9 @@ Updated for compatability with main polling loop and GPS interrupts
 /*=========================================================================
     STATUS LEDs
     -----------------------------------------------------------------------*/
-#define GREEN_LED 	43
-#define RED_LED 			41
-#define YELLOW_LED 	39
+#define GREEN_LED 	27
+#define RED_LED 			25
+#define YELLOW_LED 	23
 
 	/*===============================================
     Device settings (Options for sensors)

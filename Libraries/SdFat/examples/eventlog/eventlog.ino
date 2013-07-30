@@ -4,7 +4,7 @@
 #include <SdFat.h>
 
 // SD chip select pin
-const uint8_t chipSelect = SS;
+const uint8_t chipSelect = SOFT_SPI_CS_PIN;
 
 // file system object
 SdFat sd;

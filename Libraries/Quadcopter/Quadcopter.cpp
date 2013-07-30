@@ -198,10 +198,10 @@ bool Quadcopter::initMotors(int speed)
     motor3s = 0;
     motor4s = 0;
 
-    motor1.attach(11);                      // Attach motor 1 to D11
-    motor2.attach(10);                      // Attach motor 2 to D10
-    motor3.attach(9);                       // Attach motor 3 to D9
-    motor4.attach(6);                       // Attach motor 4 to D8
+    motor1.attach(2);                      // Attach motor 1 to D2
+    motor2.attach(3);                      // Attach motor 2 to D3
+    motor3.attach(4);                       // Attach motor 3 to D4
+    motor4.attach(5);                       // Attach motor 4 to D5
 
     // initializes motor1
     for(motor1s = 0; motor1s <= speed; motor1s += 1)
@@ -380,6 +380,39 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 {
+
+		int myMinSpeed = 50;
+
+		aPID_out = -aPID_out;
+		bPID_out = -bPID_out;
+
+		motor1s +=  aPID_out;
+		motor4s -= aPID_out;
+
+		motor2s += bPID_out;
+		motor3s -= bPID_out;
+
+		if (motor1s <= myMinSpeed)
+		{
+			motor1s = myMinSpeed;
+		}
+		if (motor2s <= myMinSpeed)
+		{
+			motor2s = myMinSpeed;
+		}
+		if (motor3s <= myMinSpeed)
+		{
+			motor3s = myMinSpeed;
+		}
+		if (motor4s <= myMinSpeed)
+		{
+			motor4s = myMinSpeed;
+		}
+
+		motor1.write(motor1s);
+		motor2.write(motor2s);
+		motor3.write(motor3s);
+		motor4.write(motor4s);
 
 };
 
