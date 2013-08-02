@@ -50,6 +50,8 @@ void Quadcopter :: get_Initial_Offsets()
         gyrodata[1] = gyro.y();
         gyrodata[2] = gyro.z();
 
+        //TODO: Possibly add in a z-offset.
+
         io_ax = (io_ax + acceldata[0] ); // Sum
         io_ay = (io_ay + acceldata[1] );
         io_az = (io_az + acceldata[2] );
@@ -66,10 +68,12 @@ void Quadcopter :: get_Initial_Offsets()
 
     io_ax /= offset_counter;
 	io_ay /= offset_counter;
-	io_az /= offset_counter + 256;
+	io_az /= offset_counter;
 	io_wx /= offset_counter;
 	io_wy /= offset_counter;
 	io_wz /= offset_counter;
+
+	io_az -= 256;
 
 	Serial.println(" ");
     Serial.println(io_ax);
@@ -204,18 +208,22 @@ bool Quadcopter::initMotors(int speed)
     motor4.attach(5);                       // Attach motor 4 to D5
 
     // initializes motor1
-    for(motor1s = 0; motor1s <= speed; motor1s += 1)
+    int m1s = map(speed, 0, 100, 0, 180);
+
+    // TODO: Map percentage to mus range of servo lib.
+    for(m1s = 0; m1s <= speed; m1s += 1)
     {
     	// Change the input to the function to a value to SERVO lib understands
-    	int m1s = map(motor1s, 0, 100, 0, 180);
+
 		motor1.write(m1s);
 		motor2.write(m1s);
 		motor3.write(m1s);
 		motor4.write(m1s);
 
-		motor2s = motor1s;
-		motor3s = motor1s;
-		motor4s = motor1s;
+		motor1s = m1s;
+		motor2s = m1s;
+		motor3s = m1s;
+		motor4s = m1s;
 		delay(50);
 		Serial.print(motor1s);
 		Serial.println("%");
@@ -247,7 +255,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 					time1,
 					time2,
 					time3;
-	double 	a_gcoeff = 0.8,
+	double 	a_gcoeff = 0,
 					h_gcoeff = 0.99;
 
 	time = micros();
@@ -292,7 +300,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		// Store Raw values from the sensor registers, and remove initial offsets
 		ax = accelmag.ax() - io_ax;
 		ay = accelmag.ay() - io_ay;
-		az = accelmag.az() - io_az;
+		az = (accelmag.az() - io_az)+256;
 		mx = accelmag.mx();
 		my = accelmag.my();
 		mz = accelmag.mz();
@@ -315,8 +323,17 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		beta_gyro += wx * time;
 
 		// Arctan of the two values returns the angle,
-		alpha_accel = atan2(ax, az) *180/Pi ;
-		beta_accel = atan2(ay, az) *180/Pi;
+
+		if (az >= 9.81)
+		{
+			double foobar = pow(9.81,2) - pow(ax,2) - pow(ay,2);
+			az = sqrt(foobar);
+		}
+
+		beta_accel = asin(ay/9.81)*180/Pi; // Beta is analogous to ROLL, or rotating about the x-axis
+
+		alpha_accel = -acos( az / ( 9.81 * cos(  asin(ay/9.81)  ) ) )* 180/Pi; // Alpha is analogous to PITCH, or rotating about the y-axis
+
 
 		// Complementary filter
 		alpha = a_gcoeff * alpha_gyro +   (1-a_gcoeff)*alpha_accel;
@@ -331,7 +348,6 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		  {
 			heading_mag += 360;
 		  }
-		// Debug
 
 		// Integrate wz to get the heading from the gyro
 		heading_gyro += wz*0.01;
@@ -341,8 +357,6 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		  {
 			heading_gyro += 360;
 		  }
-
-		 //Serial.println(heading_gyro);
 
 		// Complementary filter the compass heading and the gyro heading
 		heading = h_gcoeff * heading_gyro + (1-h_gcoeff)*heading_mag;
@@ -381,7 +395,8 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 {
 
-		int myMinSpeed = 50;
+		int myMinSpeed = 60;
+		int myMaxSpeed = 140;
 
 		aPID_out = -aPID_out;
 		bPID_out = -bPID_out;
@@ -392,6 +407,7 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 		motor2s += bPID_out;
 		motor3s -= bPID_out;
 
+		// Check if motors are going to be set to smaller than the minimum.
 		if (motor1s <= myMinSpeed)
 		{
 			motor1s = myMinSpeed;
@@ -409,6 +425,25 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 			motor4s = myMinSpeed;
 		}
 
+		// Check if motors are going to be set to higher than the maximum
+		if(motor1s >= myMaxSpeed)
+		{
+			motor1s = myMaxSpeed;
+		}
+		if(motor2s >= myMaxSpeed)
+		{
+			motor2s = myMaxSpeed;
+		}
+		if(motor3s >= myMaxSpeed)
+		{
+			motor3s = myMaxSpeed;
+		}
+		if(motor4s >= myMaxSpeed)
+		{
+			motor4s = myMaxSpeed;
+		}
+
+
 		motor1.write(motor1s);
 		motor2.write(motor2s);
 		motor3.write(motor3s);
@@ -418,117 +453,62 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 
 void Quadcopter :: mov_avg()
 {
-		// Updates the prev_data by bumping up each data set
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_ax[i] = prev_ax[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_ay[i] = prev_ay[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_az[i] = prev_az[i-1];
-		}
+    if (overwrite < DATA_POINTS && overwrite > -1)
+    {
+        //movave[10][10];
+        /*
+        0   1   2   3   4   5   6   7   8   9
+        ax  ay  az  wx  wy  wz  mx  my  mz  ele
+        */
 
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_wx[i] = prev_wx[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_wy[i] = prev_wy[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_wz[i] = prev_wz[i-1];
-		}
+        double ave[10] = {};
+        double total = 0;
 
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_mx[i] = prev_mx[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_my[i] = prev_my[i-1];
-		}
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_mz[i] = prev_mz[i-1];
-		}
+        movave[0][overwrite] = ax;   //ax
+        movave[1][overwrite] = ay;   //ay
+        movave[2][overwrite] = az;   //az
+        movave[3][overwrite] = wx;   //wx
+        movave[4][overwrite] = wy;   //wy
+        movave[5][overwrite] = wz;   //wz
+        movave[6][overwrite] = mx;   //mx
+        movave[7][overwrite] = my;   //my
+        movave[8][overwrite] = mz;   //mz
+        movave[9][overwrite] = elev; //ele
 
-		for (int i = 9; i >= 0; i--)
-		{
-			prev_elev[i] = prev_elev[i-1];
-		}
+        for (int i = 0; i < 10; i++)
+        {
+            total = 0;
+            for (int n = 0; n < DATA_POINTS; n++)
+            {
+                total += movave[i][n];
+            }
+            ave[i] = total / DATA_POINTS;
+        }
 
-		// Add new data sets to the first spot in the buffer
-		prev_ax[0] = ax;
-		prev_ay[0] = ay;
-		prev_az[0] = az;
-		prev_wx[0] = wx;
-		prev_wy[0] = wy;
-		prev_wz[0] = wz;
-		prev_mz[0] = mx;
-		prev_my[0] = my;
-		prev_mz[0] = mz;
-		prev_elev[0] = elev;
+        ax = ave[0];
+        ay = ave[1];
+        az = ave[2];
+        wx = ave[3];
+        wy = ave[4];
+        wz = ave[5];
+        mx = ave[6];
+        my = ave[7];
+        mz = ave[8];
+        elev = ave[9];
 
-		//Set 0
-		ax = 0;
-		ay = 0;
-		az = 0;
-		wx = 0;
-		wy = 0;
-		wz = 0;
-		mx = 0;
-		my = 0;
-		mz = 0;
-		elev = 0;
-
-		// Buffer is updated, now a moving average can be calculated
-		// Sum each variable, in each set.
-
-		for (int i = 0; i <= 9; i++) { ax += prev_ax[i]; }
-		for (int i = 0; i <= 9; i++) { ay += prev_ay[i]; }
-		for (int i = 0; i <= 9; i++) { az += prev_az[i]; }
-		for (int i = 0; i <= 9; i++) { wx += prev_wx[i]; }
-		for (int i = 0; i <= 9; i++) { wy += prev_wy[i]; }
-		for (int i = 0; i <= 9; i++) { wz += prev_wz[i]; }
-		for (int i = 0; i <= 9; i++) { mx += prev_mx[i]; }
-		for (int i = 0; i <= 9; i++) { my += prev_my[i]; }
-		for (int i = 0; i <= 9; i++) { mz += prev_mz[i]; }
-		for (int i = 0; i <= 9; i++) { elev += prev_elev[i]; }
-
-		ax /= 10;
-		ay /= 10;
-		az /= 10;
-		wx /= 10;
-		wy /= 10;
-		wz /= 10;
-		mx /= 10;
-		my /= 10;
-		mz /= 10;
-		elev /= 10;
-
-//		Serial.print(" ");
-//		Serial.print(ax);
-//
-//		Serial.print(" ");
-//		Serial.print(ay);
-//
-//		Serial.print(" ");
-//		Serial.print(az);
-//
-//		Serial.print(" ");
-//		Serial.print(wx);
-//
-//		Serial.print(" ");
-//		Serial.print(wy);
-//
-//		Serial.print(" ");
-//		Serial.println(wz);
+        if (overwrite > DATA_POINTS)
+        {
+            overwrite = 0;
+        }
+        else
+        {
+            overwrite++;
+        }
+    }
+    else
+    {
+        //ERROR!!!!!
+    }
 };
 
 

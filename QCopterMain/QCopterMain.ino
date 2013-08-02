@@ -6,8 +6,8 @@ Date: May 2013
 
 TO- DO:
 1) Fix integration of gyro value. (data type?)
-2) Complementary filter. 
-3) Add PID outputs correctly to motors
+2) Chebyshev filter. 
+3) Tune PID using Ziegler–Nichols method!
         
 Copyright stuff from all included libraries that I didn't write
 
@@ -72,8 +72,8 @@ Quadcopter Quadcopter;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   0.01,  0.02,  0,  DIRECT);
-PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   0.01,  0.02,  0,  DIRECT);
+PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   0.12,  0.02,  0,  DIRECT);
+PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   0.12,  0.02,  0,  DIRECT);
 
 // Function declaration, where many of the PID initialization functions have been moved.
 void PID_init();                           
@@ -115,6 +115,7 @@ void setup()
   
   if (!SD.begin(chipSelect)) {
     Serial.println("initialization failed!");
+    Quadcopter.ERROR_LED(3);
     return;
   }
   Serial.println("initialization done.");
@@ -125,13 +126,13 @@ void setup()
   // if the file opened okay, write to it:
   if (logfile) {
     Serial.print("Writing to run_log.txt...");
-    logfile.println("testing 1, 2, 3.");
+    logfile.println("Time,Ax,Ay,Az,Wx,Wy,Wz,Alpha,Beta,Motor 1,Motor 2,Motor 3,Motor 4,APID,BPID");
     Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening run_log.txt");
   }
-  
+    
   // Initialize the sensors.
   // Sensors include: 
   //   - Gyro (InvenSense MPU3050)

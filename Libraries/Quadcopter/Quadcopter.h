@@ -47,6 +47,14 @@ Updated for compatability with main polling loop and GPS interrupts
 #define RED_LED 			25
 #define YELLOW_LED 	23
 
+
+/*=========================================================================
+    mov avg
+    -----------------------------------------------------------------------*/
+#define DATA_POINTS  30
+
+
+
 	/*===============================================
     Device settings (Options for sensors)
     - Explaining these is kinda hard, go read the data sheets.
@@ -58,6 +66,7 @@ Updated for compatability with main polling loop and GPS interrupts
 	const double d_threshold = 1;    //Upper threshold for set zero from gyro data
 
 
+
 /***************************************************************************
  *! @QCopterData
  ***************************************************************************/
@@ -67,6 +76,9 @@ Updated for compatability with main polling loop and GPS interrupts
 class Quadcopter
 {
 	public:
+
+		double 	movave[10][DATA_POINTS];
+		int     overwrite;
 
 		/*===============================================
 		Current motor speeds
