@@ -25,13 +25,12 @@ Updated for compatability with main polling loop and GPS interrupts
 #include <PID_v1.h>
 
 
-/**************************************************************************/
-/*!
-    @brief Gets the initial offsets in both sensors to accomodate starting
-*/
-/**************************************************************************/
+
 void Quadcopter :: get_Initial_Offsets()
 {
+	/**************************************************************************/
+		//! @brief Gets the initial offsets in both sensors to accomodate starting non-level
+    /**************************************************************************/
 	ERROR_LED(2);										// Warning LED
     int offset_counter = 10;                       // # of data sets to consider when finding offsets
     int counter = 1;
@@ -85,13 +84,11 @@ void Quadcopter :: get_Initial_Offsets()
     ERROR_LED(1); 					// Success LED
 };
 
-/**************************************************************************/
-/*!
-    @brief Converts the raw data from sensors to SI units
-*/
-/**************************************************************************/
 void Quadcopter :: SI_convert()
 {
+	/**************************************************************************/
+		//! @brief Converts the raw data from sensors to SI units
+    /**************************************************************************/
     // Convert gyro readouts to degrees/s
     switch(d_ScaleRange) {
 
@@ -121,13 +118,11 @@ void Quadcopter :: SI_convert()
     }
 };
 
-/**************************************************************************/
-/*!
-    @brief Initializes the various sensors and instruments
-*/
-/**************************************************************************/
 bool Quadcopter :: initSensor()
 {
+	/**************************************************************************/
+		//! @brief Initializes the various sensors and instruments
+	/**************************************************************************/
 	ERROR_LED(2);												// Warning LED
 
 	byte x=0x0;
@@ -184,13 +179,12 @@ bool Quadcopter :: initSensor()
     return true;
 };
 
-/**************************************************************************/
-/*!
-    @brief Initializes the motors, code from Andrew's script
-*/
-/**************************************************************************/
+
 bool Quadcopter::initMotors(int speed)
 {
+	/**************************************************************************/
+		//! @brief Initializes the motors, code from Andrew's script
+	/**************************************************************************/
 	unsigned long t1, t2;
 	double elaps;
 
@@ -239,13 +233,12 @@ bool Quadcopter::initMotors(int speed)
 };
 
 
-/**************************************************************************/
-/*!
-    @brief Checks elapsed time and executes various tasks such as running PID controllers
-*/
-/**************************************************************************/
+
 void Quadcopter::update(double aPID_out, double bPID_out)
 {
+	/**************************************************************************/
+		//! @brief Checks elapsed time and executes various tasks such as running PID controllers
+	/**************************************************************************/
 	double 	alpha_accel,
 					beta_accel,
 					heading_mag;
@@ -297,21 +290,23 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		accelmag.update();
 		gyro.update();
 
-		// Store Raw values from the sensor registers, and remove initial offsets
+		/// Store Raw values from the sensor registers, and remove initial offsets
 		ax = accelmag.ax() - io_ax;
 		ay = accelmag.ay() - io_ay;
 		az = (accelmag.az() - io_az)+256;
 		mx = accelmag.mx();
 		my = accelmag.my();
 		mz = accelmag.mz();
-		wx = -(gyro.x()- io_wx);
-		wy = -(gyro.y() - io_wy);
-		wz = gyro.z() - io_wz;
+		wx = -(gyro.x()- io_wx) - time*GYRO_DRIFT_RATE_X;
+		wy = -(gyro.y() - io_wy) - time*GYRO_DRIFT_RATE_Y;
+		wz = gyro.z() - io_wz -time*GYRO_DRIFT_RATE_Z;
 
-		// Convert to SI units from raw data type in gyro data
+		/// Convert to SI units from raw data type in gyro data
 		SI_convert();
 
-		// Runs a moving average with a circular buffer
+		/// Runs a moving average with a circular buffer
+		// Working on a filter with better frequency response now.
+		// Soon, the Chebyshev 4th order LPF will be implemented.
 		mov_avg();
 
 
@@ -322,20 +317,45 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		alpha_gyro += wy * time;
 		beta_gyro += wx * time;
 
-		// Arctan of the two values returns the angle,
-
+		// This is my feeble first attempt to deal with NaN errors resulting from the vector calculations
+		// done below. Situations were arising where ax, ay, az were all > 0 and az was > 9.81. This screwed
+		// up the trig, giving the acos of a value > 1.
 		if (az >= 9.81)
 		{
 			double foobar = pow(9.81,2) - pow(ax,2) - pow(ay,2);
 			az = sqrt(foobar);
 		}
 
-		beta_accel = asin(ay/9.81)*180/Pi; // Beta is analogous to ROLL, or rotating about the x-axis
+		// Beta is analogous to ROLL, or rotating about the X-AXIS
+		beta_accel = asin(ay/9.81)*180/Pi;
 
-		alpha_accel = -acos( az / ( 9.81 * cos(  asin(ay/9.81)  ) ) )* 180/Pi; // Alpha is analogous to PITCH, or rotating about the y-axis
+		// Alpha is analogous to PITCH, or rotating about the Y-AXIS
+		alpha_accel = acos( az / ( 9.81 * cos(  asin(ay/9.81)  ) ) )* 180/Pi;
+
+		// Check the quadrant the angle is in. Switch the sign if necessary
+		if (ax < 0)
+		{
+			alpha_accel = -alpha_accel;
+		}
+
+		// Still getting NaNs, so this is a brutish way of fixing it.
+		// Seems to only happen at extreme angles or right at the begining or runtime,
+		// so likely it wont be a problem
+		if (isnan(alpha_accel))
+		{
+			alpha_accel = 0;
+		}
+		if (isnan(beta_accel))
+		{
+			beta_accel = 0;
+		}
 
 
-		// Complementary filter
+		/// Complementary filter
+		// Since both sensors have the ability to calculate angle, we take the advantages both sensors have
+		// into account:
+		// Gyro: Less prone to noise from mechanical oscillation, but responds slower and drifts over time
+		// Accel: Prone to noise from mechanical oscillation, but responds quickly and doesnt drift.
 		alpha = a_gcoeff * alpha_gyro +   (1-a_gcoeff)*alpha_accel;
 		beta = a_gcoeff * beta_gyro +  (1-a_gcoeff)*beta_accel;
 

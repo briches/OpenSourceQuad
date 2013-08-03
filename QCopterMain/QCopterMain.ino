@@ -4,10 +4,11 @@ Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
 Date: May 2013
 
 
-TO- DO:
-1) Fix integration of gyro value. (data type?)
-2) Chebyshev filter. 
-3) Tune PID using Ziegler–Nichols method!
+TODO:
+1) Chebyshev filter. 
+2) Fix gyro DC drift. (Measure over time, possibly)
+3) Tune PID using Ziegler–Nichols method
+  - http://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method .
         
 Copyright stuff from all included libraries that I didn't write
 
@@ -76,7 +77,16 @@ PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   0.12,  0.02,  0,  DIRECT);
 PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   0.12,  0.02,  0,  DIRECT);
 
 // Function declaration, where many of the PID initialization functions have been moved.
-void PID_init();                           
+void PID_init();           
+
+// Function declaration. This function 
+void XBee_read();
+
+// Radio transmitted instructions are stored in this character array.
+char XBeeArray[80];
+
+bool STOP_FLAG;
+bool START_FLAG;
 
 
 /*=========================================================================
@@ -86,16 +96,16 @@ void setup()
 { 
   unsigned long t1, t2;
   double elaps;
+  bool file_exists;
   
   t1 = micros();
   
   // Initialize the main serial UART for output. 
   Serial.begin(115200); 
-  // Wait for serial port to connect
-  // This isn't essential, but we might as well.
-  while(!Serial) {
-    ;                                      
-  }
+  
+  // Initialize the radio comms serial port for communication with the XBee radios
+  Serial1.begin(19200);
+  
   Serial.println(" ");
   
   // Initialize these pins (39,41,43) for digital output.
@@ -120,6 +130,12 @@ void setup()
   }
   Serial.println("initialization done.");
   
+  // If the file exists already, we remove it so that the new data doesnt just append
+  if (SD.exists("run_log.txt"))
+  {
+    SD.remove("run_log.txt");
+  }
+  
   // Open the file for writing, here just for a title.
   logfile = SD.open("run_log.txt", FILE_WRITE);
   
@@ -137,6 +153,8 @@ void setup()
   // Sensors include: 
   //   - Gyro (InvenSense MPU3050)
   //   - Accel/Magnetometer (LSM303)
+  //   - GPS module (Adafruit Ultimate)
+  //   - RTC Module
   while(!Quadcopter.initSensor());
   
   // Initialize the PID controllers. This is a sub-function, below loop.
@@ -186,6 +204,9 @@ void loop()
   aPID.Compute();
   bPID.Compute();
   
+  // We print all the data to the SD logfile, for debugging purposes. 
+  // Once a completely working build is finished, this may or may not be removed for
+  // the sake of speed.
   logfile.print(micros());
   logfile.print(",");
   logfile.print(Quadcopter.ax);
@@ -216,23 +237,49 @@ void loop()
   logfile.print(",");
   logfile.println(bPID_out);
   
-  if (micros() >= 15000000)
+  // Close the file after two minutes of logging.
+  if (millis() >= 120000)
   {
     logfile.close();
-    
   }
   
-
-
-  /* Some debug printing. */
-//  Serial.print("M1s: "); Serial.print(Quadcopter.motor1s);
-//  Serial.print(" M2s: "); Serial.print(Quadcopter.motor2s);
-//  Serial.print(" M3s: "); Serial.print(Quadcopter.motor3s);
-//  Serial.print(" M4s: "); Serial.println(Quadcopter.motor4s);
-
-
+  XBee_read();
+  if (XBeeArray[0] == 'S' || XBeeArray[0] == 's')
+  {
+    Quadcopter.initMotors(10);
+    while(1)
+    {
+      Quadcopter.ERROR_LED(2);
+      XBee_read();
+      if(XBeeArray[0] == 'g' || XBeeArray[0] == 'G')
+      {
+        Quadcopter.ERROR_LED(1);
+        break;
+        
+      }
+    }
+  }
+  
+  
 }
 // END MAIN CONTROL LOOP.
+
+/**
+
+**/
+void XBee_read()
+{
+  // Get the number of bytes available to read
+  int bytes = Serial1.available();
+  if (bytes > 0)
+  {
+    // Read the serial data from the modem into the array
+    for(int i = 0; i < bytes; i++)
+    {
+    XBeeArray[i] = (char)Serial1.read();
+    }
+  }  
+}
 
 
 // Initializes the PID controllers.

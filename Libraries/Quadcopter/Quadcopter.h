@@ -49,10 +49,9 @@ Updated for compatability with main polling loop and GPS interrupts
 
 
 /*=========================================================================
-    mov avg
+    mov avg (Soon to be Chebyshev 4th order LPF)
     -----------------------------------------------------------------------*/
 #define DATA_POINTS  30
-
 
 
 	/*===============================================
@@ -62,9 +61,11 @@ Updated for compatability with main polling loop and GPS interrupts
 	const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 	const int DLPF = 6;                 // 0,1,2,3,4,5,6,7 // See data sheet
 	const bool HighDef = true;          // Is accel output 2byte or 1byte
-    const double g_threshold = 0.05; //Upper threshold for set zero from accel data
-	const double d_threshold = 1;    //Upper threshold for set zero from gyro data
 
+// These are the drift rates in d/(s*mus)
+	#define GYRO_DRIFT_RATE_X   -9E-10
+	#define GYRO_DRIFT_RATE_Y     3E-10
+	#define GYRO_DRIFT_RATE_Z   -3E-11
 
 
 /***************************************************************************
