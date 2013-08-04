@@ -1,11 +1,11 @@
 /******************************************************
-Library designed to manage, update, and Control the
+Library designed to manage, my_update, and Control the
 state of quadcopter
 
 Author  : Brandon Riches
 Date     :	June 2013
 
-Updated for compatability with main polling loop and GPS interrupts
+my_updated for compatability with main polling loop and GPS interrupts
 
 
 ******************************************************/
@@ -34,6 +34,9 @@ Updated for compatability with main polling loop and GPS interrupts
 #define MOTOR_MIN   50
 #define MOTOR_MAX  105
 
+#define MIN_PULSE_WIDTH       544     // the shortest pulse sent to a servo
+#define MAX_PULSE_WIDTH      2400     // the longest pulse sent to a servo
+
 /*=========================================================================
     I2C Addresses
     -----------------------------------------------------------------------*/
@@ -51,7 +54,19 @@ Updated for compatability with main polling loop and GPS interrupts
 /*=========================================================================
     mov avg (Soon to be Chebyshev 4th order LPF)
     -----------------------------------------------------------------------*/
-#define DATA_POINTS  30
+#define ORDER 4
+
+#define _b0  0.001893594048567
+#define _b1 -0.002220262954039
+#define _b2  0.003389066536478
+#define _b3 -0.002220262954039
+#define _b4  0.001893594048567
+
+#define _a0  1
+#define _a1 -3.362256889209355
+#define _a2  4.282608240117919
+#define _a3 -2.444765517272841
+#define _a4  0.527149895089809
 
 
 	/*===============================================
@@ -77,10 +92,6 @@ Updated for compatability with main polling loop and GPS interrupts
 class Quadcopter
 {
 	public:
-
-		double 	movave[10][DATA_POINTS];
-		int     overwrite;
-
 		/*===============================================
 		Current motor speeds
 		// Given in percent.
@@ -104,16 +115,9 @@ class Quadcopter
 		double mz;
 		double elev;
 
-		double 	prev_ax[10],
-						prev_ay[10],
-						prev_az[10],
-						prev_wx[10],
-						prev_wy[10],
-						prev_wz[10],
-						prev_mx[10],
-						prev_my[10],
-						prev_mz[10],
-						prev_elev[10];
+		double 	NEW_DATA[5][10]; // Unfiltered data stored here.
+		double	FILTERED_DATA[5][10]; // Filtered data stored here.
+		int     		my_update;
 
 		double alpha_gyro;
 		double beta_gyro;
@@ -125,7 +129,7 @@ class Quadcopter
 		double tpoll1;
 		double tpoll2;
 		double tpoll3;
-		int freq;				    		// Frequency of calls to update();
+		int freq;				    		// Frequency of calls to my_update();
 
 
 		/*===============================================
@@ -169,7 +173,7 @@ class Quadcopter
 
 		private:
 		void SI_convert();                 							// Convert to SI
-		void mov_avg();												// Runs a moving average
+		void IIRF(double NEW_DATA[][10], double FILTERED_DATA[][10], int my_update);		// Runs a moving average
 		void get_Initial_Offsets();                           	// Gets the initial Offsets
 };
 

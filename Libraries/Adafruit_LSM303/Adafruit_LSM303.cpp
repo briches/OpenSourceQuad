@@ -115,6 +115,12 @@ void Adafruit_LSM303_Accel::read()
     uint8_t zhi = Wire.receive();
   #endif
 
+  Serial.print(xlo);
+  Serial.print(" ");
+  Serial.print(xhi);
+  Serial.println(" ");
+
+
   // Shift values to create properly formed integer (low byte first)
   _accelData.x = (xlo | (xhi << 8)) >> 4;
   _accelData.y = (ylo | (yhi << 8)) >> 4;

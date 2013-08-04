@@ -30,7 +30,6 @@ Copyright stuff from all included libraries that I didn't write
 #include <math.h>
 #include <SD.h>
 
-
 File logfile;
 
 // Hardware SS pin on the ATmega2560
@@ -73,8 +72,11 @@ Quadcopter Quadcopter;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   0.12,  0.02,  0,  DIRECT);
-PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   0.12,  0.02,  0,  DIRECT);
+#define Kp 1.4
+#define Ki 0.014
+#define Kd 0
+PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
+PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
 // Function declaration, where many of the PID initialization functions have been moved.
 void PID_init();           
@@ -96,7 +98,6 @@ void setup()
 { 
   unsigned long t1, t2;
   double elaps;
-  bool file_exists;
   
   t1 = micros();
   
@@ -104,7 +105,7 @@ void setup()
   Serial.begin(115200); 
   
   // Initialize the radio comms serial port for communication with the XBee radios
-  Serial1.begin(19200);
+  //Serial1.begin(19200);
   
   Serial.println(" ");
   
@@ -129,12 +130,6 @@ void setup()
     return;
   }
   Serial.println("initialization done.");
-  
-  // If the file exists already, we remove it so that the new data doesnt just append
-  if (SD.exists("run_log.txt"))
-  {
-    SD.remove("run_log.txt");
-  }
   
   // Open the file for writing, here just for a title.
   logfile = SD.open("run_log.txt", FILE_WRITE);
@@ -164,8 +159,8 @@ void setup()
   // just below take-off speed.
   Quadcopter.ERROR_LED(2);
   // Enter a %, from 0 - 100
-  Quadcopter.initMotors(40);
-  while(micros() <= 5000000);
+  Quadcopter.initMotors(20);
+  while(millis() <= 5000);
   Quadcopter.ERROR_LED(1);  
   
   // Set both the alpha and beta setpoints to 0. 
@@ -179,6 +174,8 @@ void setup()
   Serial.print("Setup complete!  Total time (ms): ");
   Serial.println(elaps,4);
   Serial.println("");
+  
+  logfile.close();
 }
 
 /*=========================================================================
@@ -207,43 +204,48 @@ void loop()
   // We print all the data to the SD logfile, for debugging purposes. 
   // Once a completely working build is finished, this may or may not be removed for
   // the sake of speed.
-  logfile.print(micros());
-  logfile.print(",");
-  logfile.print(Quadcopter.ax);
-  logfile.print(",");
-  logfile.print(Quadcopter.ay);
-  logfile.print(",");
-  logfile.print(Quadcopter.az);
-  logfile.print(",");
-  logfile.print(Quadcopter.wx);
-  logfile.print(",");
-  logfile.print(Quadcopter.wy);
-  logfile.print(",");
-  logfile.print(Quadcopter.wz);
-  logfile.print(",");
-  logfile.print(Quadcopter.alpha);
-  logfile.print(",");
-  logfile.print(Quadcopter.beta);
-  logfile.print(",");
-  logfile.print(Quadcopter.motor1s);
-  logfile.print(",");
-  logfile.print(Quadcopter.motor2s);
-  logfile.print(",");
-  logfile.print(Quadcopter.motor3s);
-  logfile.print(",");
-  logfile.print(Quadcopter.motor4s);
-  logfile.print(",");
-  logfile.print(aPID_out);
-  logfile.print(",");
-  logfile.println(bPID_out);
+  logfile = SD.open("run_log.txt", FILE_WRITE);
+  if (logfile)
+  {
+    logfile.print(micros());
+    logfile.print(",");
+    logfile.print(Quadcopter.ax);
+    logfile.print(",");
+    logfile.print(Quadcopter.ay);
+    logfile.print(",");
+    logfile.print(Quadcopter.az);
+    logfile.print(",");
+    logfile.print(Quadcopter.wx);
+    logfile.print(",");
+    logfile.print(Quadcopter.wy);
+    logfile.print(",");
+    logfile.print(Quadcopter.wz);
+    logfile.print(",");
+    logfile.print(Quadcopter.alpha);
+    logfile.print(",");
+    logfile.print(Quadcopter.beta);
+    logfile.print(",");
+    logfile.print(Quadcopter.motor1s);
+    logfile.print(",");
+    logfile.print(Quadcopter.motor2s);
+    logfile.print(",");
+    logfile.print(Quadcopter.motor3s);
+    logfile.print(",");
+    logfile.print(Quadcopter.motor4s);
+    logfile.print(",");
+    logfile.print(aPID_out);
+    logfile.print(",");
+    logfile.println(bPID_out);
+  }
+  logfile.close();
   
   // Close the file after two minutes of logging.
-  if (millis() >= 120000)
+  if (millis() >= 60000)
   {
-    logfile.close();
+    while(1);
   }
   
-  XBee_read();
+  //XBee_read();
   if (XBeeArray[0] == 'S' || XBeeArray[0] == 's')
   {
     Quadcopter.initMotors(10);

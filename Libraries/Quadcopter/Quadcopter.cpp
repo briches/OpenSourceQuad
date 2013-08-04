@@ -1,11 +1,11 @@
 /******************************************************
-Library designed to manage, update, and Control the
+Library designed to manage, my_update, and Control the
 state of quadcopter
 
 Author  : Brandon Riches
 Date     :	June 2013
 
-Updated for compatability with main polling loop and GPS interrupts
+my_updated for compatability with main polling loop and GPS interrupts
 
 
 ******************************************************/
@@ -39,12 +39,12 @@ void Quadcopter :: get_Initial_Offsets()
 
     while(counter <= offset_counter)
     {
-        accelmag.update();                            // Updates the accelerometer registers
+        accelmag.update();                            // my_updates the accelerometer registers
         acceldata[0] = accelmag.ax();
         acceldata[1] = accelmag.ay();
         acceldata[2] = accelmag.az();
 
-        gyro.update();                             // Updates the gyro output registers
+        gyro.update();                             // my_updates the gyro output registers
         gyrodata[0] = gyro.x();
         gyrodata[1] = gyro.y();
         gyrodata[2] = gyro.z();
@@ -72,7 +72,7 @@ void Quadcopter :: get_Initial_Offsets()
 	io_wy /= offset_counter;
 	io_wz /= offset_counter;
 
-	io_az -= 256;
+	io_wz -= 9.81;
 
 	Serial.println(" ");
     Serial.println(io_ax);
@@ -191,10 +191,10 @@ bool Quadcopter::initMotors(int speed)
 	t1 = micros();
 	Serial.println("Initializing motors...");
 
-    motor1s = 0;                         // Initialize all motor speeds to 0% speed
-    motor2s = 0;                         // This might be useful, later
-    motor3s = 0;
-    motor4s = 0;
+    motor1s = MIN_PULSE_WIDTH;                         // Initialize all motor speeds to 0% speed
+    motor2s = MIN_PULSE_WIDTH;                         // This might be useful, later
+    motor3s = MIN_PULSE_WIDTH;
+    motor4s = MIN_PULSE_WIDTH;
 
     motor1.attach(2);                      // Attach motor 1 to D2
     motor2.attach(3);                      // Attach motor 2 to D3
@@ -202,7 +202,7 @@ bool Quadcopter::initMotors(int speed)
     motor4.attach(5);                       // Attach motor 4 to D5
 
     // initializes motor1
-    int m1s = map(speed, 0, 100, 0, 180);
+    int m1s = map(speed, 0, 100, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
     // TODO: Map percentage to mus range of servo lib.
     for(m1s = 0; m1s <= speed; m1s += 1)
@@ -258,27 +258,27 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 	time3 = time - tpoll3;
 
 	// Check the type of interrupt. If the time elapsed is less than the interrupt latency for a
-	// certain device, it doesn't need to be updated.
-	// The updates and calculations for those devices are wrapped in if statements that check
+	// certain device, it doesn't need to be my_updated.
+	// The my_updates and calculations for those devices are wrapped in if statements that check
 	// the value of poll_type, and thus determine if data is available.
 	if (time1 >= 10000) /*microseconds*/
 	{
-		poll_type = 1;								// Only essential updates are needed.
-																// Update PID controllers based on accel/gyro/mag data,
+		poll_type = 1;								// Only essential my_updates are needed.
+																// my_update PID controllers based on accel/gyro/mag data,
 
 	}
 	/* Important note about this interrupt: This interrupt may or may not be necessary, but
 	is here for future proofing */
 	if (time2 >=  poll2_interrupt)
 	{
-		poll_type = 2;								// Essential updates + USRF updates needed
-																// Update PID contollers based on accel/gyro/mag data,
+		poll_type = 2;								// Essential my_updates + USRF my_updates needed
+																// my_update PID contollers based on accel/gyro/mag data,
 																// motor logic, other sensors that fit this interrupt as decided.
 	}
 	if (time3 >= poll3_interrupt)
 	{
-		poll_type = 3;								// Essential updates + USRF + GPS updates needed
-																// Update PID contollers based on accel/gyro/mag data,
+		poll_type = 3;								// Essential my_updates + USRF + GPS my_updates needed
+																// my_update PID contollers based on accel/gyro/mag data,
 																// motor logic, other sensors that fit this interrupt as decided.
 	}
 
@@ -286,14 +286,14 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 	// Code in this block executes if any of the poll conditions are satisfied
 	if (poll_type == 1 || poll_type == 2 || poll_type ==3 )
 	{
-		// Update the registers storing data INSIDE the sensors
+		// my_update the registers storing data INSIDE the sensors
 		accelmag.update();
 		gyro.update();
 
 		/// Store Raw values from the sensor registers, and remove initial offsets
 		ax = accelmag.ax() - io_ax;
 		ay = accelmag.ay() - io_ay;
-		az = (accelmag.az() - io_az)+256;
+		az = (accelmag.az() - io_az);
 		mx = accelmag.mx();
 		my = accelmag.my();
 		mz = accelmag.mz();
@@ -304,15 +304,44 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		/// Convert to SI units from raw data type in gyro data
 		SI_convert();
 
-		/// Runs a moving average with a circular buffer
+		/// Move the new data into the array to prepare for the LPF
+		NEW_DATA[my_update][0] = ax;
+		NEW_DATA[my_update][1] = ay;
+		NEW_DATA[my_update][2] = az;
+		NEW_DATA[my_update][3] = wx;
+		NEW_DATA[my_update][4] = wy;
+		NEW_DATA[my_update][5] = wz;
+		NEW_DATA[my_update][6] = mx;
+		NEW_DATA[my_update][7] = my;
+		NEW_DATA[my_update][8] = mz;
+		NEW_DATA[my_update][9] = elev;
+
+		/// Runs a Chebyshev 4th order filter with a circular buffer
 		// Working on a filter with better frequency response now.
 		// Soon, the Chebyshev 4th order LPF will be implemented.
-		mov_avg();
+		IIRF(NEW_DATA, FILTERED_DATA, my_update);
+
+		ax = FILTERED_DATA[my_update][0];
+		ay = FILTERED_DATA[my_update][1];
+		az = FILTERED_DATA[my_update][2];
+		wx = FILTERED_DATA[my_update][3];
+		wy = FILTERED_DATA[my_update][4];
+		wz = FILTERED_DATA[my_update][5];
+		mx = FILTERED_DATA[my_update][6];
+		my = FILTERED_DATA[my_update][7];
+		mz = FILTERED_DATA[my_update][8];
+		elev = FILTERED_DATA[my_update][9];
+
+		my_update++;
+		if (my_update > 4)
+		{
+			my_update = 0;
+		}
 
 
 		time = (micros() - tpoll1)/t_convert; // This is the elapsed time since poll1 ran
 
-		/// Update pitch and roll
+		/// my_update pitch and roll
 		// Time integration of wy gets rotation about y
 		alpha_gyro += wy * time;
 		beta_gyro += wx * time;
@@ -359,7 +388,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		alpha = a_gcoeff * alpha_gyro +   (1-a_gcoeff)*alpha_accel;
 		beta = a_gcoeff * beta_gyro +  (1-a_gcoeff)*beta_accel;
 
-		/// Update heading
+		/// my_update heading
 		// Get the heading (in degrees) from the magnetometer.
 		heading_mag = ((atan2(my,mx))*180)/Pi;
 
@@ -392,7 +421,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		/// Motor Logic takes place at a lower frequency.
 		// ESCs need several periods of signal to properly read motor speed,
 		// thus placing a upper limit on the frequency with which the ESCs can
-		// be updated.
+		// be my_updated.
 		updateMotors(aPID_out,  bPID_out);
 
 		/// Read the time that poll2 was last executed
@@ -415,8 +444,8 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 {
 
-		int myMinSpeed = 60;
-		int myMaxSpeed = 140;
+		int myMinSpeed = MIN_PULSE_WIDTH;
+		int myMaxSpeed = MAX_PULSE_WIDTH;
 
 		aPID_out = -aPID_out;
 		bPID_out = -bPID_out;
@@ -471,64 +500,20 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 
 };
 
-void Quadcopter :: mov_avg()
+void Quadcopter :: IIRF(double NEW_DATA[][10], double FILTERED_DATA[][10], int my_update)
 {
-    if (overwrite < DATA_POINTS && overwrite > -1)
-    {
-        //movave[10][10];
-        /*
-        0   1   2   3   4   5   6   7   8   9
-        ax  ay  az  wx  wy  wz  mx  my  mz  ele
-        */
+	int index1 = (my_update + 1)- (((my_update + 0)/4)*5);
+	int index2 = (my_update + 2)- (((my_update + 1)/4)*5);
+	int index3 = (my_update + 3)- (((my_update + 2)/4)*5);
+	int index4 = (my_update + 4)- (((my_update + 3)/4)*5);
 
-        double ave[10] = {};
-        double total = 0;
-
-        movave[0][overwrite] = ax;   //ax
-        movave[1][overwrite] = ay;   //ay
-        movave[2][overwrite] = az;   //az
-        movave[3][overwrite] = wx;   //wx
-        movave[4][overwrite] = wy;   //wy
-        movave[5][overwrite] = wz;   //wz
-        movave[6][overwrite] = mx;   //mx
-        movave[7][overwrite] = my;   //my
-        movave[8][overwrite] = mz;   //mz
-        movave[9][overwrite] = elev; //ele
-
-        for (int i = 0; i < 10; i++)
-        {
-            total = 0;
-            for (int n = 0; n < DATA_POINTS; n++)
-            {
-                total += movave[i][n];
-            }
-            ave[i] = total / DATA_POINTS;
-        }
-
-        ax = ave[0];
-        ay = ave[1];
-        az = ave[2];
-        wx = ave[3];
-        wy = ave[4];
-        wz = ave[5];
-        mx = ave[6];
-        my = ave[7];
-        mz = ave[8];
-        elev = ave[9];
-
-        if (overwrite > DATA_POINTS)
-        {
-            overwrite = 0;
-        }
-        else
-        {
-            overwrite++;
-        }
-    }
-    else
-    {
-        //ERROR!!!!!
-    }
+	for (int i = 0; i < 10; i++)
+	{
+		FILTERED_DATA [my_update][i] =
+		(1/_a0) * ((_b0 * NEW_DATA[my_update][i]) +
+        (_b1 * NEW_DATA     [index1][i]) + (_b2 * NEW_DATA     [index2][i]) + (_b3 * NEW_DATA     [index3][i]) + (_b4 * NEW_DATA     [index4][i]) -
+        (_a1 * FILTERED_DATA[index1][i]) - (_a2 * FILTERED_DATA[index2][i]) - (_a3 * FILTERED_DATA[index3][i]) - (_a4 * FILTERED_DATA[index4][i]) );
+	}
 };
 
 

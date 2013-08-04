@@ -1,4 +1,4 @@
-function [A,B] = cheby2Setup(n, r, Wst)
+0function [A,B] = cheby2Setup(n, r, Wst)
 %
 %       function [] = cheby2Setup(n, r, Wst)
 %            - returns the A and B coefficients for a digital low pass 

@@ -141,6 +141,15 @@ void SENSORLIB::update()
 	// Data is initially stored in this byte buffer
     byte ByteBuffer[6];
 
+	I2c.write(ACCEL_ADDR, ACCEL_OUT_X_L_A, 1, 0x80)
+
+    uint8_t	xhi,
+					xlo,
+					yhi,
+					ylo,
+					zhi,
+					zlo;
+
 	// Read all 6 registers.
 
 	//Method 1
@@ -150,24 +159,30 @@ void SENSORLIB::update()
     }
 
 	// The HIGH registers for each value. for some reason, the low ones are empty.
-    signed char    x = (ByteBuffer[1]),
-					y = (ByteBuffer[3]),
-					z = (ByteBuffer[5]);
+    xlo = (ByteBuffer[0]);
+	xhi = (ByteBuffer[1]);
+	ylo = (ByteBuffer[2]);
+	yhi = (ByteBuffer[3]);
+	zlo = (ByteBuffer[4]);
+	zhi = (ByteBuffer[5]);
+
+	Serial.print(xlo);
+    Serial.print(" ");
+    Serial.print(xhi);
+    Serial.println(" ");
+
+	ax_data = (xlo | (xhi << 8)) >> 4;
+	ay_data = (ylo | (yhi << 8)) >> 4;
+	az_data = (zlo | (zhi << 8)) >> 4;
+
 
 	// Convert the byte to m/s^2 double
-    ax_data = x * AX_SCALE;
-    ay_data = y * AY_SCALE;
-    az_data = z * AZ_SCALE;
+    ax_data *= AX_SCALE;
+    ay_data *= AY_SCALE;
+    az_data *= AZ_SCALE;
 
     /// Read Magnetometer Data
     // Read the raw data from the registers
-    uint8_t	xhi,
-					xlo,
-					yhi,
-					ylo,
-					zhi,
-					zlo;
-
 	I2c.read(MAG_ADDR_R, MAG_OUT_X_H_M , 1, &xhi);
 	I2c.read(MAG_ADDR_R, MAG_OUT_X_L_M , 1, &xlo);
 	I2c.read(MAG_ADDR_R, MAG_OUT_Y_H_M , 1, &yhi);
@@ -176,9 +191,9 @@ void SENSORLIB::update()
 	I2c.read(MAG_ADDR_R, MAG_OUT_Z_L_M , 1, &zlo);
 
 	// Concatenate the two bytes
-	x = (xlo | (xhi << 8));
-	y = (ylo | (yhi << 8));
-	z = (zlo | (zhi << 8));
+	uint8_t x = (xlo | (xhi << 8));
+	uint8_t y = (ylo | (yhi << 8));
+	uint8_t z = (zlo | (zhi << 8));
 
 
 	// Convert the byte to gauss

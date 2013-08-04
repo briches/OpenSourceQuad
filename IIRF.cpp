@@ -9,6 +9,8 @@ The string is composed of three sine waves, with random noise.
 #include <iostream>
 #include <math.h>
 #include <fstream>
+#include <ctime>
+#include <cstdlib>
 
 using namespace std;
 
@@ -37,22 +39,23 @@ using namespace std;
 #define pi  3.141593
 
 
+
 double FILTERED_DATA[512];
-double data[512];
+double NEW_DATA[512];
 double sample_freq = 100;
 
-int overwrite = 4;
+int overwrite = 3;
 
-double IIRF(double data[], double FILTERED_DATA[], int *UPDATE)
+double IIRF(double NEW_DATA[], double FILTERED_DATA[], int UPDATE)
 {
+	double result = (1 / _a0) *
 
+       ((_b0 * NEW_DATA     [UPDATE - 0]) +
 
-	double result = (1 / _a0) *( (_b0 * data[overwrite]) + (_b1 * data[overwrite - 1]) + (_b2 * data[overwrite - 2]) + (_b3 * data[overwrite - 4]) + (_b4 * data[overwrite - 4]) - (_a1 * FILTERED_DATA[overwrite - 1]) - (_a2 * FILTERED_DATA[overwrite - 2]) - (_a3 * FILTERED_DATA[overwrite - 3]) - (_a4 * FILTERED_DATA[overwrite - 4]) );
-
-	UPDATE++;
+        (_b1 * NEW_DATA     [UPDATE - 1]) + (_b2 * NEW_DATA     [UPDATE - 2]) + (_b3 * NEW_DATA     [UPDATE - 4]) + (_b4 * NEW_DATA     [UPDATE - 4]) -
+        (_a1 * FILTERED_DATA[UPDATE - 1]) - (_a2 * FILTERED_DATA[UPDATE - 2]) - (_a3 * FILTERED_DATA[UPDATE - 3]) - (_a4 * FILTERED_DATA[UPDATE - 4]) );
 
 	return result;
-
 }
 
 void generate_data(int num_data, int noise_level, int num_sines)
@@ -73,21 +76,21 @@ void generate_data(int num_data, int noise_level, int num_sines)
 	{
 		for (int i = 0; i <= 512; i++)
 		{
-			data[i] = SIN_1_MAG * sin(2*pi*t[i]*SIN_1_FREQ);
+			NEW_DATA[i] = SIN_1_MAG * sin(2*pi*t[i]*SIN_1_FREQ) + (rand() % 10 - 5);
 		}
 	}
 	if (num_sines > 1)
 	{
 		for (int i = 0; i <= 512; i++)
 		{
-			data[i] = data[i] + SIN_2_MAG * sin(2*pi*t[i]*SIN_2_FREQ);
+			NEW_DATA[i] = NEW_DATA[i] + SIN_2_MAG * sin(2*pi*t[i]*SIN_2_FREQ);
 		}
 	}
 	if (num_sines > 2)
 	{
 		for (int i = 0; i <= 512; i++)
 		{
-			data[i] = data[i] + SIN_3_MAG * sin(2*pi*t[i]*SIN_3_FREQ);
+			NEW_DATA[i] = NEW_DATA[i] + SIN_3_MAG * sin(2*pi*t[i]*SIN_3_FREQ);
 		}
 	}
 
@@ -97,21 +100,28 @@ void generate_data(int num_data, int noise_level, int num_sines)
 
 int main()
 {
+    srand (time(NULL));
+
 	ofstream myfile;
 	myfile.open("Data.csv");
-	myfile << "Time, Unfiltered, Filtered \n";
-	generate_data(512,0,3);
+	myfile << "Time, Unfiltered, Filtered \n";srand (time(NULL));
 
+	generate_data(512,0,1);
 
-	for (int i = 0; i < 507; i ++ )
-	{
-		FILTERED_DATA[i+ORDER+1] = IIRF(data, FILTERED_DATA, &overwrite);
-	}
+    for (int i = 15; i < 512; i++)
+    {
+        FILTERED_DATA[i] = IIRF(NEW_DATA, FILTERED_DATA, i);
+    }
 
-	for (int i = 0; i <= 512; i++)\
-	{
-		myfile << i/sample_freq << "," << data[i] << "," <<  FILTERED_DATA[i] <<"\n";
-	}
+    for (int i = 0; i < 16; i++)
+    {
+        FILTERED_DATA[i] = NEW_DATA[i];
+    }
+
+    for (int i = 0; i < 512; i++)
+    {
+        myfile << i << "," << NEW_DATA[i] << "," << FILTERED_DATA[i] << '\n';
+    }
 
 	myfile.close();
 
