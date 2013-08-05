@@ -8,9 +8,14 @@ Version: 0.6 <br />
 Description
 -----------
 
-The code contained within this repository is intended to act as the complete control system for a + configuration
-quadcopter with 9-DOF sensor capability. Specifically, the code is written for compatability with the LSM303DLHC 
-Accel+Compass and the Osepp MPU3000/MPU3050 gyro.
+Its quadcopter flight software!  
+<br />
+Current sensors lineup:
+ - LSM303 Accelerometer / Magnetometer 
+ - MPU3050 Gyro
+ - Adafruit ultimate GPS module
+ - RTC Module
+ 
 
 Under development currently:
 ----------------------------
