@@ -157,7 +157,7 @@ bool Quadcopter :: initSensor()
 	t1 = micros();
 	Serial.print("Initializing accel and magnetometer...	");
 	// Same as the gyro initialization, but the accel isnt an ass
-    accelmag.Easy_Start();
+    accelmag.Easy_Start(ACCEL_ODR_100_74, ACCEL_FULL_SCALE_2g, MAG_ODR_75_0, MAG_GAIN_1_3);
 
     t2 = micros();
     elaps = (t2 - t1);

@@ -47,27 +47,57 @@ my_updated for compatability with main polling loop and GPS interrupts
     STATUS LEDs
     -----------------------------------------------------------------------*/
 #define GREEN_LED 	27
-#define RED_LED 			25
+#define RED_LED 	25
 #define YELLOW_LED 	23
 
 
 /*=========================================================================
     mov avg (Soon to be Chebyshev 4th order LPF)
     -----------------------------------------------------------------------*/
+
 #define ORDER 4
 
-#define _b0  0.001893594048567
-#define _b1 -0.002220262954039
-#define _b2  0.003389066536478
-#define _b3 -0.002220262954039
-#define _b4  0.001893594048567
+// Comment out one of these defines to select the coefficent set to use.
+// "BrandonCoeffs" uses n = 4, r = 10, Wst = 0.1
+// AeroQuad filter specs unknown.
 
-#define _a0  1
-#define _a1 -3.362256889209355
-#define _a2  4.282608240117919
-#define _a3 -2.444765517272841
-#define _a4  0.527149895089809
+// #define AeroQuad     1
+#define BrandonCoeffs    1
 
+#ifdef AeroQuad
+
+	#define ORDER 4
+
+	#define _b0  0.001893594048567
+	#define _b1 -0.002220262954039
+	#define _b2  0.003389066536478
+	#define _b3 -0.002220262954039
+	#define _b4  0.001893594048567
+
+	#define _a0  1
+	#define _a1 -3.362256889209355
+	#define _a2  4.282608240117919
+	#define _a3 -2.444765517272841
+	#define _a4  0.527149895089809
+#endif
+
+#ifdef BrandonCoeffs
+
+	#define ORDER 4
+
+	#define _b0  0.267411759560506
+	#define _b1 -1.018535973364803
+	#define _b2  1.503499251793105
+	#define _b3 -1.018535973364804
+	#define _b4  0.267411759560506
+
+	#define _a0   1.000000000000000
+	#define _a1 -3.561271663800053
+	#define _a2  4.788976593687705
+	#define _a3 -2.881867760094174
+	#define _a4  0.655413654391032
+
+#endif
 
 	/*===============================================
     Device settings (Options for sensors)

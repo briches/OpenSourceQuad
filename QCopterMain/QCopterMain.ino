@@ -27,7 +27,6 @@ Copyright stuff from all included libraries that I didn't write
 #include <OseppGyro.h>
 #include <I2C.h>
 #include <Servo.h>
-#include <math.h>
 #include <SD.h>
 
 File logfile;
@@ -98,7 +97,6 @@ void setup()
 { 
   unsigned long t1, t2;
   double elaps;
-  
   t1 = micros();
   
   // Initialize the main serial UART for output. 
@@ -130,6 +128,12 @@ void setup()
     return;
   }
   Serial.println("initialization done.");
+  
+  // If the file exists, we want to delete it. 
+  if (SD.exists("run_log.txt"))
+  {
+    SD.remove("run_log.txt");
+  }
   
   // Open the file for writing, here just for a title.
   logfile = SD.open("run_log.txt", FILE_WRITE);

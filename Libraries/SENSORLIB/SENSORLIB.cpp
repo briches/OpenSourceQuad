@@ -1,6 +1,6 @@
 /**
     Sensor Library
-    Author: Brandon Yue and MEEEEEEEEEEE
+    Author: Brandon Yue and Brandon Riches
 
     Replacement for the Adafruit LSM303 library. Uses I2C.
 **/
@@ -11,111 +11,31 @@
 
 SENSORLIB::SENSORLIB() {};
 
-void SENSORLIB::Easy_Start()
+void SENSORLIB::Easy_Start(byte ACCEL_ODR, byte ACCEL_FS, byte MAG_ODR, byte MAG_GAIN)
 {
-		uint8_t	before,
-						after;
-
         I2c.begin();
 
         ///ACCEL OPTIONS
         //CONTROL REG 1:    DATA RATES + SENSOR ENABLES
         //[n/a] [n/a] [n/a] [DATA RATE 1] [DATA RATE 2] [X] [Y] [Z]
-        //DEFAULT 0x03
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 1, &before);
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x2F);
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 1, &after);
-
-        Serial.println(" ");
-        Serial.print("ACCEL_CTRL_REG1_A:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
-
-        //CONTROL REG 2:    HIGH PASS FILTER
-        //
-        //DEFAULT 0x00
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 1, &before);
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 0x00);
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 1, &after);
-
-        Serial.print("ACCEL_CTRL_REG2_A,:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
-
-        //CONTROL REG 3:    INTERRUPTS
-        //
-        //DEFAULT 0x00
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG3_A, 1, &before);
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG3_A, 0x00);
-		I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG3_A, 1, &after);
-
-        Serial.print("ACCEL_CTRL_REG3_A,:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after, BIN);
+        // Set the accelerometer ODR
+        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG1_A, (ACCEL_ODR << 3));
 
         //CONTROL REG 4:    BLOCK UPDATE PARAMS, SCALE SELECTION, SELF TEST
         //
-        //DEFAULT 0x00
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG4_A, 1, &before);
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG4_A, 0x00);
-        I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG4_A, 1, &before);
-
-        Serial.print("ACCEL_CTRL_REG4_A:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
-
-        //CONTROL REG 5:    SLEEP-TO-WAKE
-        //
-        //DEFAULT 0x00
-		I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG5_A, 1, &before);
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG5_A, 0x00);
-		I2c.read(ACCEL_ADDR, ACCEL_CTRL_REG5_A, 1, &after);
-
-		Serial.print("ACCEL_CTRL_REG5_A:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
+        // Set the full-scale selection + sensitivity
+        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG4_A, (ACCEL_FS << 4));
 
         ///MAG OPTIONS
-        //MR_REG
-        //
-        I2c.read(MAG_ADDR_R, MAG_MR_REG_M, 1, &before);
-        I2c.write(MAG_ADDR_W, MAG_MR_REG_M, 0x00);
-        I2c.read(MAG_ADDR_R, MAG_MR_REG_M, 1, &after);
-
-  		Serial.print("MAG_MR_REG_M:	    \n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
-
         //MAG CONTROL A
         // DATA RATE
         // DEFAULT 0x00
-        I2c.read(MAG_ADDR_R, MAG_CRA_REG_M, 1, &before);
-        I2c.write(MAG_ADDR_W, MAG_CRA_REG_M, 0x18);
-        I2c.read(MAG_ADDR_R, MAG_CRA_REG_M, 1, &after);
-
-		Serial.print("MAG_CRA_REG_M:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
+        I2c.write(MAG_ADDR_W, MAG_CRA_REG_M, (MAG_ODR << 2));
 
         //MAG CONTROL B
         //GAIN SETTINGS
         //DEFAULT 0x01
-        I2c.read(MAG_ADDR_R, MAG_CRB_REG_M, 1, &before);
-        I2c.write(MAG_ADDR_W, MAG_CRB_REG_M, 0x20);
-        I2c.read(MAG_ADDR_R, MAG_CRB_REG_M, 1, &after);
-
-		Serial.print("MAG_CRB_REG_M:		\n	Prior to write: ");
-        Serial.print(before, BIN);
-        Serial.print(" After write: ");
-        Serial.println(after,BIN);
-
+        I2c.write(MAG_ADDR_W, MAG_CRB_REG_M, (MAG_GAIN << 5));
 
 
 };
@@ -141,9 +61,7 @@ void SENSORLIB::update()
 	// Data is initially stored in this byte buffer
     byte ByteBuffer[6];
 
-	I2c.write(ACCEL_ADDR, ACCEL_OUT_X_L_A, 1, 0x80)
-
-    uint8_t	xhi,
+    uint8_t		xhi,
 					xlo,
 					yhi,
 					ylo,
@@ -165,11 +83,6 @@ void SENSORLIB::update()
 	yhi = (ByteBuffer[3]);
 	zlo = (ByteBuffer[4]);
 	zhi = (ByteBuffer[5]);
-
-	Serial.print(xlo);
-    Serial.print(" ");
-    Serial.print(xhi);
-    Serial.println(" ");
 
 	ax_data = (xlo | (xhi << 8)) >> 4;
 	ay_data = (ylo | (yhi << 8)) >> 4;
@@ -197,9 +110,9 @@ void SENSORLIB::update()
 
 
 	// Convert the byte to gauss
-    mx_data = x * MXY_SCALE * GRAV_STANDARD;
-    my_data = y * MXY_SCALE * GRAV_STANDARD;
-    mz_data = z * MZ_SCALE * GRAV_STANDARD;
+    mx_data = x * MAG_GAIN_LSB_xy_1_3 * GRAV_STANDARD;
+    my_data = y * MAG_GAIN_LSB_xy_1_3 * GRAV_STANDARD;
+    mz_data = z * MAG_GAIN_LSB_z_1_3 * GRAV_STANDARD;
 
 };
 
