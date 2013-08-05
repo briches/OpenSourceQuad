@@ -1,0 +1,15 @@
+Test ID: 1.0
+
+Total Mass: 1.1
+Moments of Inertia: [0.0089, 0.0098, 0.0187]
+Thrust: 0.15
+Current Draw: [5, 18]
+Battery Capacity: 2450
+Rotational DoF axis: [0, 1, 0]
+Translational DoF axis: [0, 0, 0]
+
+
+
+This test is constrained to have only rotation about the y-axis,
+as in our test apparatus. 
+Most of these values are guesses still. 
