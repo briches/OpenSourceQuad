@@ -14,7 +14,9 @@ Current sensors lineup:
  - LSM303 Accelerometer / Magnetometer 
  - MPU3050 Gyro
  - Adafruit ultimate GPS module
- - RTC Module
+ - RTC Module (DS1307)
+ - Maxbotix USRF (LV-EZ1)
+ - BMP085 Barometeric Pressure/Temperature/Altitude
  
 
 Under development currently:
