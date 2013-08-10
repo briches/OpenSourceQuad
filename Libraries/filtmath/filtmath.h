@@ -30,29 +30,40 @@
 
 #ifndef FILTMATH_H_INCLUDED
 #define FILTMATH_H_INCLUDED
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 
-void filtcheby2(double A[], double B[], double x[], double y[]);
+void filtcheby2(double A[], double B[], double x[], double y[],int SIZE_A, int SIZE_B, int SIZE_X);
 
-float vectorDotProduct(int length, float vector1[], float vector2[]);
+double matrixDeterminant4x4(double m[]);
 
-void vectorCrossProduct(float vectorC[3], float vectorA[3], float vectorB[3]);
+void matrixInverse4x4(double final_mat[], double adj_mat[], double old_mat[]);
 
-void vectorScale(int length, float scaledVector[], float inputVector[], float scalar);
+void sparse_matrix(int rows[], int cols[], double data[], double sparse[], double A[], int nfilt);
 
-void vectorAdd(int length, float vectorC[], float vectorA[], float vectorB[]);
+double vectorDotProduct(int length, double vector1[], double vector2[]);
 
-void vectorSubtract(int length, float vectorC[], float vectorA[], float vectorB[]);
+void vectorCrossProduct(double vectorC[3], double vectorA[3], double vectorB[3]);
 
-void matrixMultiply(int aRows, int aCols_bRows, int bCols, float matrixC[], float matrixA[], float matrixB[]);
+void vectorScale(int length, double scaledVector[], double inputVector[], double scalar);
 
-void matrixAdd(int rows, int cols, float matrixC[], float matrixA[], float matrixB[]);
+void vectorAdd(int length, double vectorC[], double vectorA[], double vectorB[]);
 
-void matrixSubtract(int rows, int cols, float matrixC[], float matrixA[], float matrixB[]);
+void vectorSubtract(int length, double vectorC[], double vectorA[], double vectorB[]);
 
-void matrixScale(int rows, int cols, float matrixC[], float scaler, float matrixA[]);
+void matrixMultiply(int aRows, int aCols_bRows, int bCols, double matrixC[], double matrixA[], double matrixB[]);
 
-void matrixTranspose3x3(float matrixC[9], float matrixA[9]);
+void matrixAdd(int rows, int cols, double matrixC[], double matrixA[], double matrixB[]);
 
-void matrixInverse3x3(float matrixC[9], float matrixA[9]);
+void matrixSubtract(int rows, int cols, double matrixC[], double matrixA[], double matrixB[]);
+
+void matrixScale(int rows, int cols, double matrixC[], double scaler, double matrixA[]);
+
+void matrixTranspose3x3(double matrixC[9], double matrixA[9]);
+
+void matrixInverse3x3(double matrixC[9], double matrixA[9]);
 
 #endif // FILTMATH_H_INCLUDED

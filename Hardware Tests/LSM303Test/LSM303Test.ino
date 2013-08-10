@@ -13,13 +13,14 @@ SENSORLIB accelmag;
 void setup()
 {
   Serial.begin(115200);
-  accelmag.Easy_Start();
+  accelmag.Easy_Start(ACCEL_ODR_100_74, ACCEL_FULL_SCALE_2g, MAG_ODR_75_0, MAG_GAIN_1_3);
 }
 
 void loop()
 {
   // Update the values
-  accelmag.update();
+  accelmag.update_accel();
+  accelmag.update_mag();
   
   // Fetch the values from the class
   double ax = accelmag.ax();
@@ -41,22 +42,22 @@ void loop()
     heading = 360 + heading;
   }
   
-  Serial.print("Compass Heading: ");
-  Serial.println(heading);
+//  Serial.print("Compass Heading: ");
+//  Serial.println(heading);
   delay(250);
   
-//  Serial.print("  ax: ");
-//  Serial.print(ax);
-//  Serial.print(" ay: ");
-//  Serial.print(ay);
-//  Serial.print(" az: ");
-//  Serial.print(az);
-//  
-//  Serial.print(" mx: ");
-//  Serial.print(mx);
-//  Serial.print(" my: ");
-//  Serial.print(my);
-//  Serial.print(" mz: ");
-//  Serial.println(mz);
+  Serial.print("  ax: ");
+  Serial.print(ax);
+  Serial.print(" ay: ");
+  Serial.print(ay);
+  Serial.print(" az: ");
+  Serial.print(az);
+  
+  Serial.print(" mx: ");
+  Serial.print(mx);
+  Serial.print(" my: ");
+  Serial.print(my);
+  Serial.print(" mz: ");
+  Serial.println(mz);
 }
 

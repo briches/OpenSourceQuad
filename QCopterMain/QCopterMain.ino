@@ -20,12 +20,21 @@ Copyright stuff from all included libraries that I didn't write
   
   PID Library
   Brett Beauregard, br3ttb@gmail.com
+  
+  Adafruit_GPS
+  
+  Servo
+  
+  SoftwareSerial
     -----------------------------------------------------------------------*/
+#include <Adafruit_GPS.h>
+#include <SoftwareSerial.h>
 #include <SENSORLIB.h>
 #include <Quadcopter.h>
 #include <PID_v1.h>
 #include <OseppGyro.h>
 #include <I2C.h>
+#include <Wire.h>
 #include <Servo.h>
 #include <SD.h>
 
@@ -56,7 +65,7 @@ int PID_OutLims[] = {-1000,1000};
 
 
 /*=========================================================================
-    Classes that need to be initialized
+    Classes etc
     -----------------------------------------------------------------------*/
     
 // This is the main class for the Quadcopter driver. 
@@ -77,17 +86,30 @@ Quadcopter Quadcopter;
 PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
 PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
-// Function declaration, where many of the PID initialization functions have been moved.
+
+/*=========================================================================
+    Function declarations
+    -----------------------------------------------------------------------*/
 void PID_init();           
+void XBee_read(double* set_a, double* set_b);
+void get_telemetry();
+void logfileStart();
+void(* resetFunc) (void) = 0;
 
-// Function declaration. This function 
-void XBee_read();
 
+/*=========================================================================
+    Telemetry vars and codes
+    -----------------------------------------------------------------------*/
 // Radio transmitted instructions are stored in this character array.
 char XBeeArray[80];
 
-bool STOP_FLAG;
-bool START_FLAG;
+boolean   STOP_FLAG;
+boolean   START_FLAG;
+int       dataInXBA;
+
+// Telemetry codes
+String    STOP_MSG =   "!SS";
+String    START_MSG =  "!GG";
 
 
 /*=========================================================================
@@ -116,37 +138,11 @@ void setup()
   pinMode(YELLOW_LED,  OUTPUT);
   pinMode(RED_LED,     OUTPUT);
   
-  // Initialize SD card
-  Serial.print("Initializing SD card...");
+  // Turn on the yellow LED to signify start of setup
+  Quadcopter.ERROR_LED(2);
   
-  // Hardware SS pin must be output. 
-  pinMode(SS, OUTPUT);
-  
-  if (!SD.begin(chipSelect)) {
-    Serial.println("initialization failed!");
-    Quadcopter.ERROR_LED(3);
-    return;
-  }
-  Serial.println("initialization done.");
-  
-  // If the file exists, we want to delete it. 
-  if (SD.exists("run_log.txt"))
-  {
-    SD.remove("run_log.txt");
-  }
-  
-  // Open the file for writing, here just for a title.
-  logfile = SD.open("run_log.txt", FILE_WRITE);
-  
-  // if the file opened okay, write to it:
-  if (logfile) {
-    Serial.print("Writing to run_log.txt...");
-    logfile.println("Time,Ax,Ay,Az,Wx,Wy,Wz,Alpha,Beta,Motor 1,Motor 2,Motor 3,Motor 4,APID,BPID");
-    Serial.println("done.");
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening run_log.txt");
-  }
+  // Open a .txt file for data logging and debugging
+  logfileStart();
     
   // Initialize the sensors.
   // Sensors include: 
@@ -157,15 +153,15 @@ void setup()
   while(!Quadcopter.initSensor());
   
   // Initialize the PID controllers. This is a sub-function, below loop.
-  PID_init();                        
+  PID_init();   
   
   // Initialize motors. This turns the motors on, and sets them all to a speed
   // just below take-off speed.
-  Quadcopter.ERROR_LED(2);
   // Enter a %, from 0 - 100
-  Quadcopter.initMotors(20);
-  while(millis() <= 5000);
-  Quadcopter.ERROR_LED(1);  
+  // If you enter more than 40%, thats pushing it. 
+  Quadcopter.initMotors(30);
+  while(millis() <= 1000);
+  
   
   // Set both the alpha and beta setpoints to 0. 
   // This is just for starters, eventually, pathing will modify the
@@ -173,13 +169,43 @@ void setup()
   set_a = 0;		               
   set_b = 0;  
   
+  
+  // Wait for start confirmation from computer
+  START_FLAG = false;
+  
+  // Play wav file
+  
+  // Scan for start code
+  while(~START_FLAG)
+  {
+    String myStr = " ";
+    
+    XBee_read();
+    
+    for (int i = 0; i < 3; i++)
+    {
+      myStr += XBeeArray[i];
+    }
+    
+    if (myStr == START_MSG)
+    {
+      START_FLAG = true;
+    }
+    
+  }
+    
+  
+  // Turn on the green LED to signify end of setup. 
+  Quadcopter.ERROR_LED(1);  
+  
+  
+  // Timekeeping
   t2 = micros();
   elaps = (t2 - t1)/1000;
   Serial.print("Setup complete!  Total time (ms): ");
   Serial.println(elaps,4);
   Serial.println("");
   
-  logfile.close();
 }
 
 /*=========================================================================
@@ -219,72 +245,166 @@ void loop()
     logfile.print(",");
     logfile.print(Quadcopter.az);
     logfile.print(",");
-    logfile.print(Quadcopter.wx);
-    logfile.print(",");
-    logfile.print(Quadcopter.wy);
-    logfile.print(",");
-    logfile.print(Quadcopter.wz);
-    logfile.print(",");
+//    logfile.print(Quadcopter.wx);
+//    logfile.print(",");
+//    logfile.print(Quadcopter.wy);
+//    logfile.print(",");
+//    logfile.print(Quadcopter.wz);
+//    logfile.print(",");
     logfile.print(Quadcopter.alpha);
     logfile.print(",");
     logfile.print(Quadcopter.beta);
     logfile.print(",");
-    logfile.print(Quadcopter.motor1s);
-    logfile.print(",");
-    logfile.print(Quadcopter.motor2s);
-    logfile.print(",");
-    logfile.print(Quadcopter.motor3s);
-    logfile.print(",");
-    logfile.print(Quadcopter.motor4s);
-    logfile.print(",");
+//    logfile.print(Quadcopter.motor1s);
+//    logfile.print(",");
+//    logfile.print(Quadcopter.motor2s);
+//    logfile.print(",");
+//    logfile.print(Quadcopter.motor3s);
+//    logfile.print(",");
+//    logfile.print(Quadcopter.motor4s);
+//    logfile.print(",");
     logfile.print(aPID_out);
     logfile.print(",");
     logfile.println(bPID_out);
   }
   logfile.close();
   
-  // Close the file after two minutes of logging.
+  // Close the file after sometime  of logging.
   if (millis() >= 60000)
   {
     while(1);
   }
   
-  //XBee_read();
-  if (XBeeArray[0] == 'S' || XBeeArray[0] == 's')
-  {
-    Quadcopter.initMotors(10);
-    while(1)
-    {
-      Quadcopter.ERROR_LED(2);
-      XBee_read();
-      if(XBeeArray[0] == 'g' || XBeeArray[0] == 'G')
-      {
-        Quadcopter.ERROR_LED(1);
-        break;
-        
-      }
-    }
-  }
+  // Scan for available wireless instructions.
+  // These could be instructions regarding setpoints, or critical emergency stop instructions
+  get_telemetry(&set_a, &set_b);
+  
   
   
 }
-// END MAIN CONTROL LOOP.
+/**! @ END MAIN CONTROL LOOP. @ !**/
 
-/**
 
-**/
-void XBee_read()
+/*=========================================================================
+    logfileStart
+    - Initializes a .txt on the uSD
+    -----------------------------------------------------------------------*/
+void logfileStart()
 {
+  // Initialize SD card
+  Serial.print("Initializing SD card...");
+  
+  // Hardware SS pin must be output. 
+  pinMode(SS, OUTPUT);
+  
+  if (!SD.begin(chipSelect)) {
+    Serial.println("initialization failed!");
+    Quadcopter.ERROR_LED(3);
+    return;
+  }
+  Serial.println("initialization done.");
+  
+  // If the file exists, we want to delete it. 
+  if (SD.exists("run_log.txt"))
+  {
+    SD.remove("run_log.txt");
+  }
+  
+  // Open the file for writing, here just for a title.
+  logfile = SD.open("run_log.txt", FILE_WRITE);
+  
+  // if the file opened okay, write to it:
+  if (logfile) {
+    Serial.print("Writing to run_log.txt...");
+    logfile.println("Time,Ax,Ay,Az,Wx,Wy,Wz,Alpha,Beta,Motor 1,Motor 2,Motor 3,Motor 4,APID,BPID");
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening run_log.txt");
+  }
+  
+  logfile.close();
+
+}
+
+/*=========================================================================
+    get_telemetry
+    - Retrieves the latest serial data available on the buffer
+    - Parses the data if enough bytes are available
+    -----------------------------------------------------------------------*/
+void get_telemetry(double* set_a, double* set_b)
+{
+  String myMsg = "";
+  Quadcopter.ERROR_LED(2);
+  // If there is data: read, interpret and act on it
+  if(XBee_read())
+  {
+    // Interpret data
+    for (int i = 0; i < 3; i++)
+    {
+      myMsg += XBeeArray[i];
+      dataInXBA--;
+    }
+    
+    if (myMsg == STOP_MSG)
+    {
+      Quadcopter.initMotors(0);
+      STOP_FLAG = true;
+      
+      // STOP Message recieved. This is the software implementation of a safety switch
+      while (STOP_FLAG)
+      {
+        Quadcopter.ERROR_LED(2);
+        // Scan for more messages.
+        if(XBee_read())
+        {   
+          // Interpret data
+          for (int i = 0; i < 3; i++)
+          {
+            myMsg += XBeeArray[i];
+            dataInXBA--;
+          }
+          if (myMsg == START_MSG)
+          {
+            // Reset the quadcopter MCU
+            // Starts the software from the begining, reinitialize.
+            resetFunc();
+          }
+        }
+      }
+    }
+    
+    
+    
+    
+    
+  }
+  
+  // Done interpreting and reading. 
+  Quadcopter.ERROR_LED(1);
+}
+
+/*=========================================================================
+    XBee_read    
+    - Reads serialdata from the modem into a storage buffer
+    -----------------------------------------------------------------------*/
+boolean XBee_read()
+{
+  boolean check = false;
   // Get the number of bytes available to read
   int bytes = Serial1.available();
-  if (bytes > 0)
+  if (bytes >= 3)
   {
+    check = true;
     // Read the serial data from the modem into the array
-    for(int i = 0; i < bytes; i++)
+    // Read three bytes at a time (message length = 3)
+    for(int i = 0; i < 3; i++)
     {
-    XBeeArray[i] = (char)Serial1.read();
+      XBeeArray[dataInXBA] = Serial1.read();
+      dataInXBA = i+1;
     }
   }  
+  return check;
 }
 
 

@@ -17,12 +17,9 @@ my_updated for compatability with main polling loop and GPS interrupts
 #endif
 
 #include <Quadcopter.h>
-#include <SENSORLIB.h>
-#include <OseppGyro.h>
-#include <I2C.h>
-#include <math.h>
-#include <Servo.h>
-#include <PID_v1.h>
+#include <Wire.h>
+#include <I2c.h>
+
 
 
 
@@ -39,10 +36,11 @@ void Quadcopter :: get_Initial_Offsets()
 
     while(counter <= offset_counter)
     {
-        accelmag.update();                            // my_updates the accelerometer registers
-        acceldata[0] = accelmag.ax();
-        acceldata[1] = accelmag.ay();
-        acceldata[2] = accelmag.az();
+    	sensors_event_t accel_event;
+        accel.getEvent(&accel_event);                            // my_updates the accelerometer registers
+        acceldata[0] = accel_event.acceleration.x;
+        acceldata[1] = accel_event.acceleration.y;
+        acceldata[2] = accel_event.acceleration.z;
 
         gyro.update();                             // my_updates the gyro output registers
         gyrodata[0] = gyro.x();
@@ -72,7 +70,7 @@ void Quadcopter :: get_Initial_Offsets()
 	io_wy /= offset_counter;
 	io_wz /= offset_counter;
 
-	io_wz -= 9.81;
+	io_wz -= 9.8065;
 
 	Serial.println(" ");
     Serial.println(io_ax);
@@ -125,6 +123,9 @@ bool Quadcopter :: initSensor()
 	/**************************************************************************/
 	ERROR_LED(2);												// Warning LED
 
+	// Initialize the fourth order struct
+	setupFourthOrder();
+
 	byte x=0x0;
 	unsigned long t1 = micros();
 	Serial.println("Intializing gyro...    ");                      		// See OseppGyro.h
@@ -157,7 +158,8 @@ bool Quadcopter :: initSensor()
 	t1 = micros();
 	Serial.print("Initializing accel and magnetometer...	");
 	// Same as the gyro initialization, but the accel isnt an ass
-    accelmag.Easy_Start(ACCEL_ODR_100_74, ACCEL_FULL_SCALE_2g, MAG_ODR_75_0, MAG_GAIN_1_3);
+	accel.begin();
+	mag.begin();
 
     t2 = micros();
     elaps = (t2 - t1);
@@ -191,21 +193,20 @@ bool Quadcopter::initMotors(int speed)
 	t1 = micros();
 	Serial.println("Initializing motors...");
 
-    motor1s = MIN_PULSE_WIDTH;                         // Initialize all motor speeds to 0% speed
-    motor2s = MIN_PULSE_WIDTH;                         // This might be useful, later
+    motor1s = MIN_PULSE_WIDTH;            	// Initialize all motor speeds to 0% speed
+    motor2s = MIN_PULSE_WIDTH;          	// This might be useful, later
     motor3s = MIN_PULSE_WIDTH;
     motor4s = MIN_PULSE_WIDTH;
 
-    motor1.attach(2);                      // Attach motor 1 to D2
-    motor2.attach(3);                      // Attach motor 2 to D3
+    motor1.attach(2);                      	// Attach motor 1 to D2
+    motor2.attach(3);                      	// Attach motor 2 to D3
     motor3.attach(4);                       // Attach motor 3 to D4
     motor4.attach(5);                       // Attach motor 4 to D5
 
     // initializes motor1
     int m1s = map(speed, 0, 100, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
 
-    // TODO: Map percentage to mus range of servo lib.
-    for(m1s = 0; m1s <= speed; m1s += 1)
+    for(m1s = MIN_PULSE_WIDTH; m1s <= speed; m1s += 1)
     {
     	// Change the input to the function to a value to SERVO lib understands
 
@@ -239,105 +240,108 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 	/**************************************************************************/
 		//! @brief Checks elapsed time and executes various tasks such as running PID controllers
 	/**************************************************************************/
-	double 	alpha_accel,
+	double 		alpha_accel,
 					beta_accel,
 					heading_mag;
-	int poll_type = 0;
-	double   time,
+	int 			poll_type = 0;
+	double   		time,
 					t_convert = 1000000,
 					time1,
 					time2,
-					time3;
-	double 	a_gcoeff = 0,
+					time3,
+					time4;
+	double 		a_gcoeff = 0,
 					h_gcoeff = 0.99;
+	sensors_event_t	accel_event,
+					mag_event;
 
 	time = micros();
 
 	time1 = time - tpoll1;
 	time2 = time - tpoll2;
 	time3 = time - tpoll3;
+	time4 = time - tpoll4;
 
 	// Check the type of interrupt. If the time elapsed is less than the interrupt latency for a
-	// certain device, it doesn't need to be my_updated.
-	// The my_updates and calculations for those devices are wrapped in if statements that check
+	// certain device, it doesn't need to be updated.
+	// The updates and calculations for those devices are wrapped in if statements that check
 	// the value of poll_type, and thus determine if data is available.
-	if (time1 >= 10000) /*microseconds*/
+	if (time1 >= _100HzPoll) /*microseconds*/
 	{
-		poll_type = 1;								// Only essential my_updates are needed.
-																// my_update PID controllers based on accel/gyro/mag data,
+		poll_type++;								// Only essential updates are needed.
+													// update PID controllers based on accel/gyro data,
 
 	}
-	/* Important note about this interrupt: This interrupt may or may not be necessary, but
-	is here for future proofing */
-	if (time2 >=  poll2_interrupt)
+	if (time2 >=  _75HzPoll)
 	{
-		poll_type = 2;								// Essential my_updates + USRF my_updates needed
-																// my_update PID contollers based on accel/gyro/mag data,
-																// motor logic, other sensors that fit this interrupt as decided.
+		poll_type++;								// USRF update
+
+
 	}
-	if (time3 >= poll3_interrupt)
+	if (time3 >= _20HzPoll)
 	{
-		poll_type = 3;								// Essential my_updates + USRF + GPS my_updates needed
-																// my_update PID contollers based on accel/gyro/mag data,
-																// motor logic, other sensors that fit this interrupt as decided.
+		poll_type++;								// Apply error function output to motor speeds
+
+
+	}
+
+	if (time4 >= _10HzPoll)
+	{
+		poll_type++;								// GPS update
+
+
 	}
 
 	/**!					@Poll type one 				*/
 	// Code in this block executes if any of the poll conditions are satisfied
-	if (poll_type == 1 || poll_type == 2 || poll_type ==3 )
+	if (poll_type > 0)
 	{
-		// my_update the registers storing data INSIDE the sensors
-		accelmag.update();
+		// update the registers storing data INSIDE the sensors
+		accel.getEvent(&accel_event);
 		gyro.update();
 
 		/// Store Raw values from the sensor registers, and remove initial offsets
-		ax = accelmag.ax() - io_ax;
-		ay = accelmag.ay() - io_ay;
-		az = (accelmag.az() - io_az);
-		mx = accelmag.mx();
-		my = accelmag.my();
-		mz = accelmag.mz();
-		wx = -(gyro.x()- io_wx) - time*GYRO_DRIFT_RATE_X;
-		wy = -(gyro.y() - io_wy) - time*GYRO_DRIFT_RATE_Y;
-		wz = gyro.z() - io_wz -time*GYRO_DRIFT_RATE_Z;
+		ax = accel_event.acceleration.x - io_ax;
+		ay = accel_event.acceleration.y - io_ay;
+		az = accel_event.acceleration.z - io_az;
+
+		/**! 				@Poll type two - 75 Hz			*/
+		// Code in this block executes if the conditions for poll_type == 2 are satisfied.
+		if (poll_type == 2)
+		{
+			/// The fastest we can update the magnetometer is 75Hz
+			mag.getEvent(&mag_event);
+
+			mx[1] = mx[0];
+			my[1] = my[0];
+			mz[1] = mz[0];
+
+			mx[0] = mag_event.magnetic.x;
+			my[0] = mag_event.magnetic.y;
+			mz[0] = mag_event.magnetic.z;
+
+			// Read the time that poll2 was last executed
+			tpoll2 = micros();
+		}
+		else
+		{
+			mx[0] = mx[1];
+			my[0] = my[1];
+			my[0] = my[1];
+		}
+
+
+		wx =  -(gyro.x() - io_wx) - time * GYRO_DRIFT_RATE_X;
+		wy =  -(gyro.y() - io_wy) - time * GYRO_DRIFT_RATE_Y;
+		wz = 	gyro.z() - io_wz  - time * GYRO_DRIFT_RATE_Z;
 
 		/// Convert to SI units from raw data type in gyro data
 		SI_convert();
 
-		/// Move the new data into the array to prepare for the LPF
-		NEW_DATA[my_update][0] = ax;
-		NEW_DATA[my_update][1] = ay;
-		NEW_DATA[my_update][2] = az;
-		NEW_DATA[my_update][3] = wx;
-		NEW_DATA[my_update][4] = wy;
-		NEW_DATA[my_update][5] = wz;
-		NEW_DATA[my_update][6] = mx;
-		NEW_DATA[my_update][7] = my;
-		NEW_DATA[my_update][8] = mz;
-		NEW_DATA[my_update][9] = elev;
-
-		/// Runs a Chebyshev 4th order filter with a circular buffer
-		// Working on a filter with better frequency response now.
-		// Soon, the Chebyshev 4th order LPF will be implemented.
-		IIRF(NEW_DATA, FILTERED_DATA, my_update);
-
-		ax = FILTERED_DATA[my_update][0];
-		ay = FILTERED_DATA[my_update][1];
-		az = FILTERED_DATA[my_update][2];
-		wx = FILTERED_DATA[my_update][3];
-		wy = FILTERED_DATA[my_update][4];
-		wz = FILTERED_DATA[my_update][5];
-		mx = FILTERED_DATA[my_update][6];
-		my = FILTERED_DATA[my_update][7];
-		mz = FILTERED_DATA[my_update][8];
-		elev = FILTERED_DATA[my_update][9];
-
-		my_update++;
-		if (my_update > 4)
-		{
-			my_update = 0;
-		}
-
+		/// Runs a Chebyshev 4th order filter
+		ax = computeFourthOrder(ax, &fourthOrderXAXIS);
+		ay = computeFourthOrder(ay, &fourthOrderYAXIS);
+		az = computeFourthOrder(az, &fourthOrderZAXIS);
 
 		time = (micros() - tpoll1)/t_convert; // This is the elapsed time since poll1 ran
 
@@ -390,7 +394,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 
 		/// my_update heading
 		// Get the heading (in degrees) from the magnetometer.
-		heading_mag = ((atan2(my,mx))*180)/Pi;
+		heading_mag = ((atan2(my[0],mx[0]))*180)/Pi;
 
 		// Normalize to 360 degrees
 		 if (heading_mag < 0)
@@ -410,13 +414,14 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		// Complementary filter the compass heading and the gyro heading
 		heading = h_gcoeff * heading_gyro + (1-h_gcoeff)*heading_mag;
 
-		/// Read the time that poll1 was last executed.
+		// Read the time that poll1 was last executed.
 		tpoll1 = micros();
 	}
 
-	/**! 				@Poll type two 				*/
+
+	/**! 				@Poll type three - 20 Hz			*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
-	if (poll_type == 2)
+	if (poll_type == 3)
 	{
 		/// Motor Logic takes place at a lower frequency.
 		// ESCs need several periods of signal to properly read motor speed,
@@ -424,21 +429,100 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		// be my_updated.
 		updateMotors(aPID_out,  bPID_out);
 
-		/// Read the time that poll2 was last executed
-		tpoll2 = micros();
+		// Read the time that poll3 was last executed
+		tpoll3 = micros();
 	}
 
-	/**! 				@Poll type three 				*/
+	/**! 				@Poll type four - 10 Hz				*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
-	if (poll_type == 3)
+	if (poll_type == 4)
 	{
+		/// Update GPS data using RMC
+
+
+		/// Read battery voltage
+		vbatt = (double)analogRead(15);
+		vbatt *= 11;
+		// Read the time that poll3 was last executed
 		tpoll3 = micros();
 	}
 
 
-// Chebyshev IIR low pass filter formula
-// incl. here, maybe
+};
 
+float Quadcopter::computeFourthOrder(float currentInput, struct fourthOrderData *filterParameters)
+{
+  // cheby2(4,60,12.5/50)
+  #define _b0  0.001893594048567
+  #define _b1 -0.002220262954039
+  #define _b2  0.003389066536478
+  #define _b3 -0.002220262954039
+  #define _b4  0.001893594048567
+
+  #define _a1 -3.362256889209355
+  #define _a2  4.282608240117919
+  #define _a3 -2.444765517272841
+  #define _a4  0.527149895089809
+
+  float output;
+
+  output = _b0 * currentInput                +
+           _b1 * filterParameters->inputTm1  +
+           _b2 * filterParameters->inputTm2  +
+           _b3 * filterParameters->inputTm3  +
+           _b4 * filterParameters->inputTm4  -
+           _a1 * filterParameters->outputTm1 -
+           _a2 * filterParameters->outputTm2 -
+           _a3 * filterParameters->outputTm3 -
+           _a4 * filterParameters->outputTm4;
+
+  filterParameters->inputTm4 = filterParameters->inputTm3;
+  filterParameters->inputTm3 = filterParameters->inputTm2;
+  filterParameters->inputTm2 = filterParameters->inputTm1;
+  filterParameters->inputTm1 = currentInput;
+
+  filterParameters->outputTm4 = filterParameters->outputTm3;
+  filterParameters->outputTm3 = filterParameters->outputTm2;
+  filterParameters->outputTm2 = filterParameters->outputTm1;
+  filterParameters->outputTm1 = output;
+
+  return output;
+};
+
+
+void Quadcopter::setupFourthOrder()
+{
+  fourthOrderXAXIS.inputTm1 = 0.0;
+  fourthOrderXAXIS.inputTm2 = 0.0;
+  fourthOrderXAXIS.inputTm3 = 0.0;
+  fourthOrderXAXIS.inputTm4 = 0.0;
+
+  fourthOrderXAXIS.outputTm1 = 0.0;
+  fourthOrderXAXIS.outputTm2 = 0.0;
+  fourthOrderXAXIS.outputTm3 = 0.0;
+  fourthOrderXAXIS.outputTm4 = 0.0;
+
+  //////////
+  fourthOrderYAXIS.inputTm1 = 0.0;
+  fourthOrderYAXIS.inputTm2 = 0.0;
+  fourthOrderYAXIS.inputTm3 = 0.0;
+  fourthOrderYAXIS.inputTm4 = 0.0;
+
+  fourthOrderYAXIS.outputTm1 = 0.0;
+  fourthOrderYAXIS.outputTm2 = 0.0;
+  fourthOrderYAXIS.outputTm3 = 0.0;
+  fourthOrderYAXIS.outputTm4 = 0.0;
+
+  //////////
+  fourthOrderZAXIS.inputTm1 = -9.8065;
+  fourthOrderZAXIS.inputTm2 = -9.8065;
+  fourthOrderZAXIS.inputTm3 = -9.8065;
+  fourthOrderZAXIS.inputTm4 = -9.8065;
+
+  fourthOrderZAXIS.outputTm1 = -9.8065;
+  fourthOrderZAXIS.outputTm2 = -9.8065;
+  fourthOrderZAXIS.outputTm3 = -9.8065;
+  fourthOrderZAXIS.outputTm4 = -9.8065;
 };
 
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
@@ -498,22 +582,6 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 		motor3.write(motor3s);
 		motor4.write(motor4s);
 
-};
-
-void Quadcopter :: IIRF(double NEW_DATA[][10], double FILTERED_DATA[][10], int my_update)
-{
-	int index1 = (my_update + 1)- (((my_update + 0)/4)*5);
-	int index2 = (my_update + 2)- (((my_update + 1)/4)*5);
-	int index3 = (my_update + 3)- (((my_update + 2)/4)*5);
-	int index4 = (my_update + 4)- (((my_update + 3)/4)*5);
-
-	for (int i = 0; i < 10; i++)
-	{
-		FILTERED_DATA [my_update][i] =
-		(1/_a0) * ((_b0 * NEW_DATA[my_update][i]) +
-        (_b1 * NEW_DATA     [index1][i]) + (_b2 * NEW_DATA     [index2][i]) + (_b3 * NEW_DATA     [index3][i]) + (_b4 * NEW_DATA     [index4][i]) -
-        (_a1 * FILTERED_DATA[index1][i]) - (_a2 * FILTERED_DATA[index2][i]) - (_a3 * FILTERED_DATA[index3][i]) - (_a4 * FILTERED_DATA[index4][i]) );
-	}
 };
 
 

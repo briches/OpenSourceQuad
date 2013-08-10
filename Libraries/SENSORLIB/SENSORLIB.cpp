@@ -2,161 +2,370 @@
     Sensor Library
     Author: Brandon Yue and Brandon Riches
 
-    Replacement for the Adafruit LSM303 library. Uses I2C.
+    Replacement for the Adafruit LSM303 library. Uses Wire.
 **/
 
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+#include <Wire.h>
+#include <limits.h>
+
 #include <SENSORLIB.h>
-#include <I2c.h>
-#include <math.h>
 
-SENSORLIB::SENSORLIB() {};
-
-void SENSORLIB::Easy_Start(byte ACCEL_ODR, byte ACCEL_FS, byte MAG_ODR, byte MAG_GAIN)
-{
-        I2c.begin();
-
-        ///ACCEL OPTIONS
-        //CONTROL REG 1:    DATA RATES + SENSOR ENABLES
-        //[n/a] [n/a] [n/a] [DATA RATE 1] [DATA RATE 2] [X] [Y] [Z]
-        // Set the accelerometer ODR
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG1_A, (ACCEL_ODR << 3));
-
-        //CONTROL REG 4:    BLOCK UPDATE PARAMS, SCALE SELECTION, SELF TEST
-        //
-        // Set the full-scale selection + sensitivity
-        I2c.write(ACCEL_ADDR, ACCEL_CTRL_REG4_A, (ACCEL_FS << 4));
-
-        ///MAG OPTIONS
-        //MAG CONTROL A
-        // DATA RATE
-        // DEFAULT 0x00
-        I2c.write(MAG_ADDR_W, MAG_CRA_REG_M, (MAG_ODR << 2));
-
-        //MAG CONTROL B
-        //GAIN SETTINGS
-        //DEFAULT 0x01
-        I2c.write(MAG_ADDR_W, MAG_CRB_REG_M, (MAG_GAIN << 5));
+static float _lsm303Accel_MG_LSB     = 0.001F;   // 1, 2, 4 or 12 mg per lsb
+static float _lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
+static float _lsm303Mag_Gauss_LSB_Z  = 980.0F;   // Varies with gain
 
 
-};
+/***************************************************************************
+ ACCELEROMETER
+ ***************************************************************************/
+/***************************************************************************
+ PRIVATE FUNCTIONS
+ ***************************************************************************/
 
+/***************************************************************************
+ CONSTRUCTOR
+ ***************************************************************************/
 
-
-
-
-/**
-    update()
-
-    Reads the accelerometer data from the LSM303 registers. Converts the bytes
-    to floating point numbers automatically.
-
-    Reads the magnetometer data from the LSM303 registers. Converts the two byte
-    values to milligauss floating point values.
-
-    Stores the read values into the members "x_data, y_data, z_data"
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new Adafruit_LSM303 class
 */
-void SENSORLIB::update()
+/**************************************************************************/
+SENSORLIB_accel::SENSORLIB_accel(int32_t sensorID) {
+  _sensorID = sensorID;
+}
+
+
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+void SENSORLIB_accel::write8(byte address, byte reg, byte value)
 {
-	/// Read Accelerometer data
-	// Data is initially stored in this byte buffer
-    byte ByteBuffer[6];
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)value);
+  #else
+    Wire.send(reg);
+    Wire.send(value);
+  #endif
+  Wire.endTransmission();
+};
 
-    uint8_t		xhi,
-					xlo,
-					yhi,
-					ylo,
-					zhi,
-					zlo;
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+byte SENSORLIB_accel::read8(byte address, byte reg)
+{
+  byte value;
 
-	// Read all 6 registers.
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+  #else
+    Wire.send(reg);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom(address, (byte)1);
+  #if ARDUINO >= 100
+    value = Wire.read();
+  #else
+    value = Wire.receive();
+  #endif
+  Wire.endTransmission();
 
-	//Method 1
-    for (int i = 0; i < 6; i++)
-    {
-        I2c.read(ACCEL_ADDR, ACCEL_OUT_X_L_A + i, 1, &ByteBuffer[i]);
-    }
+  return value;
+};
 
-	// The HIGH registers for each value. for some reason, the low ones are empty.
-    xlo = (ByteBuffer[0]);
-	xhi = (ByteBuffer[1]);
-	ylo = (ByteBuffer[2]);
-	yhi = (ByteBuffer[3]);
-	zlo = (ByteBuffer[4]);
-	zhi = (ByteBuffer[5]);
+/**************************************************************************/
+/*!
+    @brief  Reads the raw data from the sensor
+*/
+/**************************************************************************/
+void SENSORLIB_accel::read()
+{
+  // Read the accelerometer
+  Wire.beginTransmission((byte)ACCEL_ADDR);
+  #if ARDUINO >= 100
+    Wire.write(ACCEL_OUT_X_L_A | 0x80);
+  #else
+    Wire.send(ACCEL_OUT_X_L_A | 0x80);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom((byte)ACCEL_ADDR, (byte)6);
 
-	ax_data = (xlo | (xhi << 8)) >> 4;
-	ay_data = (ylo | (yhi << 8)) >> 4;
-	az_data = (zlo | (zhi << 8)) >> 4;
+  // Wait around until enough data is available
+  while (Wire.available() < 6);
 
+  #if ARDUINO >= 100
+    uint8_t xlo = Wire.read();
+    uint8_t xhi = Wire.read();
+    uint8_t ylo = Wire.read();
+    uint8_t yhi = Wire.read();
+    uint8_t zlo = Wire.read();
+    uint8_t zhi = Wire.read();
+  #else
+    uint8_t xlo = Wire.receive();
+    uint8_t xhi = Wire.receive();
+    uint8_t ylo = Wire.receive();
+    uint8_t yhi = Wire.receive();
+    uint8_t zlo = Wire.receive();
+    uint8_t zhi = Wire.receive();
+  #endif
 
-	// Convert the byte to m/s^2 double
-    ax_data *= AX_SCALE;
-    ay_data *= AY_SCALE;
-    az_data *= AZ_SCALE;
+  // Shift values to create properly formed integer (low byte first)
+  _accelData.x = (xlo | (xhi << 8)) >> 4;
+  _accelData.y = (ylo | (yhi << 8)) >> 4;
+  _accelData.z = (zlo | (zhi << 8)) >> 4;
+};
 
-    /// Read Magnetometer Data
-    // Read the raw data from the registers
-	I2c.read(MAG_ADDR_R, MAG_OUT_X_H_M , 1, &xhi);
-	I2c.read(MAG_ADDR_R, MAG_OUT_X_L_M , 1, &xlo);
-	I2c.read(MAG_ADDR_R, MAG_OUT_Y_H_M , 1, &yhi);
-	I2c.read(MAG_ADDR_R, MAG_OUT_Y_L_M , 1, &ylo);
-	I2c.read(MAG_ADDR_R, MAG_OUT_Z_H_M , 1, &zhi);
-	I2c.read(MAG_ADDR_R, MAG_OUT_Z_L_M , 1, &zlo);
+/***************************************************************************
+ PUBLIC FUNCTIONS
+ ***************************************************************************/
 
-	// Concatenate the two bytes
-	uint8_t x = (xlo | (xhi << 8));
-	uint8_t y = (ylo | (yhi << 8));
-	uint8_t z = (zlo | (zhi << 8));
+/**************************************************************************/
+/*!
+    @brief  Setups the HW
+*/
+/**************************************************************************/
+bool SENSORLIB_accel::begin()
+{
+  // Enable I2C
+  Wire.begin();
 
+  // Enable the accelerometer
+  write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x27);
 
-	// Convert the byte to gauss
-    mx_data = x * MAG_GAIN_LSB_xy_1_3 * GRAV_STANDARD;
-    my_data = y * MAG_GAIN_LSB_xy_1_3 * GRAV_STANDARD;
-    mz_data = z * MAG_GAIN_LSB_z_1_3 * GRAV_STANDARD;
+  return true;
+};
 
+/**************************************************************************/
+/*!
+    @brief  Gets the most recent sensor event
+*/
+/**************************************************************************/
+void SENSORLIB_accel::getEvent(sensors_event_t *event) {
+  /* Clear the event */
+  memset(event, 0, sizeof(sensors_event_t));
+
+  /* Read new data */
+  read();
+
+  event->version   = sizeof(sensors_event_t);
+  event->sensor_id = 2;
+  event->type      = 1;
+  event->timestamp = 0;
+  event->acceleration.x = _accelData.x * AX_SCALE;
+  event->acceleration.y = _accelData.y * AY_SCALE;
+  event->acceleration.z = _accelData.z * AZ_SCALE;
+};
+
+/***************************************************************************
+ MAGNETOMETER
+ ***************************************************************************/
+/***************************************************************************
+ PRIVATE FUNCTIONS
+ ***************************************************************************/
+
+/***************************************************************************
+ CONSTRUCTOR
+ ***************************************************************************/
+
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new Adafruit_LSM303 class
+*/
+/**************************************************************************/
+SENSORLIB_mag::SENSORLIB_mag(int32_t sensorID) {
+  _sensorID = sensorID;
+}
+
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+void SENSORLIB_mag::write8(byte address, byte reg, byte value)
+{
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)value);
+  #else
+    Wire.send(reg);
+    Wire.send(value);
+  #endif
+  Wire.endTransmission();
+};
+
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+byte SENSORLIB_mag::read8(byte address, byte reg)
+{
+  byte value;
+
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+  #else
+    Wire.send(reg);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom(address, (byte)1);
+  #if ARDUINO >= 100
+    value = Wire.read();
+  #else
+    value = Wire.receive();
+  #endif
+  Wire.endTransmission();
+
+  return value;
+};
+
+/**************************************************************************/
+/*!
+    @brief  Reads the raw data from the sensor
+*/
+/**************************************************************************/
+void SENSORLIB_mag::read()
+{
+  // Read the magnetometer
+  Wire.beginTransmission((byte)MAG_ADDR);
+  #if ARDUINO >= 100
+    Wire.write(MAG_OUT_X_H_M);
+  #else
+    Wire.send(MAG_OUT_X_H_M);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom((byte)MAG_ADDR, (byte)6);
+
+  // Wait around until enough data is available
+  while (Wire.available() < 6);
+
+  // Note high before low (different than accel)
+  #if ARDUINO >= 100
+    uint8_t xhi = Wire.read();
+    uint8_t xlo = Wire.read();
+    uint8_t zhi = Wire.read();
+    uint8_t zlo = Wire.read();
+    uint8_t yhi = Wire.read();
+    uint8_t ylo = Wire.read();
+  #else
+    uint8_t xhi = Wire.receive();
+    uint8_t xlo = Wire.receive();
+    uint8_t zhi = Wire.receive();
+    uint8_t zlo = Wire.receive();
+    uint8_t yhi = Wire.receive();
+    uint8_t ylo = Wire.receive();
+  #endif
+
+  // Shift values to create properly formed integer (low byte first)
+  _magData.x = (xlo | (xhi << 8));
+  _magData.y = (ylo | (yhi << 8));
+  _magData.z = (zlo | (zhi << 8));
+
+  // TODO: Calculate orientation
+  _magData.orientation = 0.0;
 };
 
 
-/**
-		double ax();
-		- 	Call to return the most recent read value of ax
- */
-double SENSORLIB::ax()
+/***************************************************************************
+ PUBLIC FUNCTIONS
+ ***************************************************************************/
+
+/**************************************************************************/
+/*!
+    @brief  Setups the HW
+*/
+/**************************************************************************/
+bool SENSORLIB_mag::begin()
 {
-	return ax_data;
+  // Enable I2C
+  Wire.begin();
+
+  // Enable the magnetometer
+  write8(MAG_ADDR, MAG_MR_REG_M, 0x00);
+
+  // Set the gain to a known level
+  setMagGain(LSM303_MAGGAIN_1_3);
+
+  return true;
 };
 
-// Call to return the most recent value of ay
-double SENSORLIB::ay()
+/**************************************************************************/
+/*!
+    @brief  Sets the magnetometer's gain
+*/
+/**************************************************************************/
+void SENSORLIB_mag::setMagGain(lsm303MagGain gain)
 {
-	return ay_data;
+  write8(MAG_ADDR, MAG_CRB_REG_M, gain);
+
+  _magGain = gain;
+
+  switch(gain)
+  {
+    case LSM303_MAGGAIN_1_3:
+      _lsm303Mag_Gauss_LSB_XY = 1100;
+      _lsm303Mag_Gauss_LSB_Z  = 980;
+      break;
+    case LSM303_MAGGAIN_1_9:
+      _lsm303Mag_Gauss_LSB_XY = 855;
+      _lsm303Mag_Gauss_LSB_Z  = 760;
+      break;
+    case LSM303_MAGGAIN_2_5:
+      _lsm303Mag_Gauss_LSB_XY = 670;
+      _lsm303Mag_Gauss_LSB_Z  = 600;
+      break;
+    case LSM303_MAGGAIN_4_0:
+      _lsm303Mag_Gauss_LSB_XY = 450;
+      _lsm303Mag_Gauss_LSB_Z  = 400;
+      break;
+    case LSM303_MAGGAIN_4_7:
+      _lsm303Mag_Gauss_LSB_XY = 400;
+      _lsm303Mag_Gauss_LSB_Z  = 255;
+      break;
+    case LSM303_MAGGAIN_5_6:
+      _lsm303Mag_Gauss_LSB_XY = 330;
+      _lsm303Mag_Gauss_LSB_Z  = 295;
+      break;
+    case LSM303_MAGGAIN_8_1:
+      _lsm303Mag_Gauss_LSB_XY = 230;
+      _lsm303Mag_Gauss_LSB_Z  = 205;
+      break;
+  }
 };
 
-// Call to return the most recent value of az
-double SENSORLIB::az()
-{
-	return az_data;
-};
+/**************************************************************************/
+/*!
+    @brief  Gets the most recent sensor event
+*/
+/**************************************************************************/
+void SENSORLIB_mag::getEvent(sensors_event_t *event) {
+  /* Clear the event */
+  memset(event, 0, sizeof(sensors_event_t));
 
-// Call to return the most recent value of mx
-double SENSORLIB::mx()
-{
-	return mx_data;
-};
+  /* Read new data */
+  read();
 
-// Call to return the most recent value of my
-double SENSORLIB::my()
-{
-	return my_data;
-};
-
-// Call to return the most recent value of mz
-double SENSORLIB::mz()
-{
-	return mz_data;
-};
-
-void SENSORLIB::Cleanup()
-{
-    I2c.end();
+  event->version   = sizeof(sensors_event_t);
+  event->sensor_id = 1;
+  event->type      = 2;
+  event->timestamp = micros();
+  event->magnetic.x = _magData.x / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+  event->magnetic.y = _magData.y / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
+  event->magnetic.z = _magData.z / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
 };

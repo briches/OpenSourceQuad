@@ -176,9 +176,9 @@ void Adafruit_LSM303_Accel::getEvent(sensors_event_t *event) {
   event->sensor_id = _sensorID;
   event->type      = SENSOR_TYPE_ACCELEROMETER;
   event->timestamp = 0;
-  event->acceleration.x = _accelData.x * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
-  event->acceleration.y = _accelData.y * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
-  event->acceleration.z = _accelData.z * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+  event->acceleration.x = _accelData.x * AX_SCALE;
+  event->acceleration.y = _accelData.y * AY_SCALE;
+  event->acceleration.z = _accelData.z * AZ_SCALE;
 }
 
 /**************************************************************************/

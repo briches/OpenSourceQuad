@@ -22,6 +22,8 @@ Brandon
 
 #include <I2c.h>
 
+#define WHATTHEFUCK		(0x00)
+
 const byte WHO_AM_I = 0x0;
 const byte PRODUCT_ID = 0x1;
 

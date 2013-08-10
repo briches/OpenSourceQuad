@@ -2,7 +2,7 @@
     Sensor Library
     Author: Brandon Yue and Brandon Riches
 
-    Replacement for the Adafruit LSM303 library. Uses I2C.
+    Replacement for the Adafruit LSM303 library. Uses Wire.
 **/
 
 #ifndef SENSORLIB_H_INCLUDED
@@ -10,20 +10,20 @@
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
+#include <Print.h>
 #else
 #include "WProgram.h"
 #endif
 
-#include <I2c.h>
+#include <Wire.h>
 
 #define GRAV_STANDARD 	(9.80665)
 
 /*=========================================================================
      Network I2c Addresses
     -----------------------------------------------------------------------*/
-#define ACCEL_ADDR  	(0x19)
-#define MAG_ADDR_W   	(0x3C >> 1)
-#define MAG_ADDR_R    	(0x3C >> 1)
+#define ACCEL_ADDR  	(0x32 >> 1)
+#define MAG_ADDR  		(0x3C >> 1)
 
 #define AX_SCALE  		(0.15696)
 #define AY_SCALE  		(0.15449)
@@ -112,75 +112,143 @@
 #define MAG_ODR_30_0				(0x05)
 #define MAG_ODR_75_0				(0x06)
 
-// Sets the gain for the device
-#define MAG_GAIN_1_3				(0x01)
-#define MAG_GAIN_1_9				(0x02)
-#define MAG_GAIN_2_5				(0x03)
-#define MAG_GAIN_4_0				(0x04)
-#define MAG_GAIN_4_7				(0x05)
-#define MAG_GAIN_5_6				(0x06)
-#define MAG_GAIN_8_1				(0x07)
-
-// LSB/Gauss conversion factor
-#define MAG_GAIN_LSB_xy_1_3			(1055)
-#define MAG_GAIN_LSB_z_1_3			(950)
-
-#define MAG_GAIN_LSB_xy_1_9			(795)
-#define MAG_GAIN_LSB_z_1_9			(710)
-
-#define MAG_GAIN_LSB_xy_2_5			(635)
-#define MAG_GAIN_LSB_z_2_5			(570)
-
-#define MAG_GAIN_LSB_xy_4_0			(430)
-#define MAG_GAIN_LSB_z_4_0			(385)
-
-#define MAG_GAIN_LSB_xy_4_7			(375)
-#define MAG_GAIN_LSB_z_4_7			(335)
-
-#define MAG_GAIN_LSB_xy_5_6			(320)
-#define MAG_GAIN_LSB_z_5_6			(285)
-
-#define MAG_GAIN_LSB_xy_8_1			(230)
-#define MAG_GAIN_LSB_z_8_1			(205)
+/*=========================================================================
+    MAGNETOMETER GAIN SETTINGS
+    -----------------------------------------------------------------------*/
+    typedef enum
+    {
+      LSM303_MAGGAIN_1_3                        = 0x20,  // +/- 1.3
+      LSM303_MAGGAIN_1_9                        = 0x40,  // +/- 1.9
+      LSM303_MAGGAIN_2_5                        = 0x60,  // +/- 2.5
+      LSM303_MAGGAIN_4_0                        = 0x80,  // +/- 4.0
+      LSM303_MAGGAIN_4_7                        = 0xA0,  // +/- 4.7
+      LSM303_MAGGAIN_5_6                        = 0xC0,  // +/- 5.6
+      LSM303_MAGGAIN_8_1                        = 0xE0   // +/- 8.1
+    } lsm303MagGain;
 
 
+#define SENSORS_GAUSS_TO_MICROTESLA       (100)
 
 
-class SENSORLIB
+/*=========================================================================
+    INTERNAL VECTOR DATA TYPE
+    -----------------------------------------------------------------------*/
+/** struct sensors_vec_s is used to return a vector in a common format. */
+typedef struct {
+    union {
+        float v[3];
+        struct {
+            float x;
+            float y;
+            float z;
+        };
+        /* Orientation sensors */
+        struct {
+            float azimuth;    /**< Angle between the magnetic north direction and the Y axis, around the Z axis (0<=azimuth<360).  0=North, 90=East, 180=South, 270=West */
+            float pitch;      /**< Rotation around X axis (-180<=pitch<=180), with positive values when the z-axis moves toward the y-axis. */
+            float roll;       /**< Rotation around Y axis (-90<=roll<=90), with positive values when the x-axis moves towards the z-axis. */
+        };
+    };
+    int8_t status;
+    uint8_t reserved[3];
+} sensors_vec_t;
+
+/*=========================================================================
+    INTERNAL SENSOR EVENT DATA TYPE
+    -----------------------------------------------------------------------*/
+/* Sensor event (36 bytes) */
+/** struct sensor_event_s is used to provide a single sensor event in a common format. */
+typedef struct
 {
-public:
+    int32_t version;                          /**< must be sizeof(struct sensors_event_t) */
+    int32_t sensor_id;                        /**< unique sensor identifier */
+    int32_t type;                             /**< sensor type */
+    int32_t reserved0;                        /**< reserved */
+    int32_t timestamp;                        /**< time is in milliseconds */
+    union
+    {
+        float           data[4];
+        sensors_vec_t   acceleration;         /**< acceleration values are in meter per second per second (m/s^2) */
+        sensors_vec_t   magnetic;             /**< magnetic vector values are in micro-Tesla (uT) */
+        sensors_vec_t   orientation;          /**< orientation values are in degrees */
+        sensors_vec_t   gyro;                 /**< gyroscope values are in rad/s */
+        float           temperature;          /**< temperature is in degrees centigrade (Celsius) */
+        float           distance;             /**< distance in centimeters */
+        float           light;                /**< light in SI lux units */
+        float           pressure;             /**< pressure in hectopascal (hPa) */
+        float           relative_humidity;    /**< relative humidity in percent */
+        float           current;              /**< current in milliamps (mA) */
+        float           voltage;              /**< voltage in volts (V) */
+    };
+} sensors_event_t;
 
-	// Constructor
-    SENSORLIB();
+/*=========================================================================
+    INTERNAL MAGNETOMETER DATA TYPE
+    -----------------------------------------------------------------------*/
+    typedef struct lsm303MagData_s
+    {
+        float x;
+        float y;
+        float z;
+      float orientation;
+    } lsm303MagData;
 
-    // Initializes the sensors
-    void Easy_Start(byte ACCEL_ODR, byte ACCEL_FS, byte MAG_ODR, byte MAG_GAIN);
+/*=========================================================================
+    INTERNAL ACCELERATION DATA TYPE
+    -----------------------------------------------------------------------*/
+    typedef struct lsm303AccelData_s
+    {
+      float x;
+      float y;
+      float z;
+    } lsm303AccelData;
 
-    // Fetches the newest data from the sensors
-    void update();
+/*=========================================================================
+    CHIP ID
+    -----------------------------------------------------------------------*/
+    #define LSM303_ID                     (0b11010100)
 
-    // Closes the I2C bus (not necessary)
-    void Cleanup();
 
-	// Returns the double stored in ax_data
-	double ax();
+/* Unified sensor driver for the accelerometer */
+class SENSORLIB_accel
+{
+	public:
 
-	// Returns the double stored in ay_data
-	double ay();
+		SENSORLIB_accel(int32_t sensorID = -1);
+		bool begin(void);
+		void getEvent(sensors_event_t*);
 
-	// Returns the double stored in az_data
-	double az();
+	private:
 
-	double ax_data;
-	double ay_data;
-	double az_data;
+		int32_t	_sensorID;
 
-	double mx();
-	double my();
-	double mz();
+		lsm303AccelData	_accelData;		// Last read accelerometer data here
 
-	double mx_data;
-	double my_data;
-	double mz_data;
+		void write8(byte address, byte reg, byte value);
+		byte read8(byte address, byte reg);
+		void read(void);
+};
+
+/* Unified sensor driver for the magnetometer */
+class SENSORLIB_mag
+{
+	public:
+
+
+		SENSORLIB_mag(int32_t sensorID = -1);
+		bool begin(void);
+		void setMagGain(lsm303MagGain gain);
+		void getEvent(sensors_event_t*);
+
+	private:
+
+		int32_t	_sensorID;
+
+		lsm303MagGain   _magGain;
+		lsm303MagData   _magData;     // Last read magnetometer data will be available here
+
+		void write8(byte address, byte reg, byte value);
+		byte read8(byte address, byte reg);
+		void read(void);
 };
 #endif
