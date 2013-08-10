@@ -9,6 +9,11 @@ Description
 -----------
 
 Its quadcopter flight software!  
+<br /><br />
+
+MCU: Osepp Mega 2560 R3   
+(Soon switching to the chipKIT uC32 with the PIC32)
+
 <br />
 Current sensors lineup:
  - LSM303 Accelerometer / Magnetometer 
