@@ -3,7 +3,7 @@ Quadcopter
 
 Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
 Date   : May 2013 <br />
-Version: 0.6 <br />
+Version: 0.7 <br />
 
 Description
 -----------
@@ -12,7 +12,8 @@ Its quadcopter flight software!
 <br /><br />
 
 MCU: Osepp Mega 2560 R3   
-(Soon switching to the chipKIT uC32 with the PIC32)
+(Soon switching to the chipKIT uC32 with the PIC32)  
+
 
 <br />
 Current sensors lineup:
