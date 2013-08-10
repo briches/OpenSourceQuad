@@ -10,6 +10,7 @@ Brandon
 
 
 #include "OseppGyro.h"
+
 OseppGyro* OseppGyro::pOseppGyro = 0;
 
 OseppGyro::OseppGyro()
@@ -115,11 +116,11 @@ void OseppGyro::dataMode(int dScaleRange,int dDLPF)
 	I2c.read(I2CAddr, WHO_AM_I, 1, &x);
 
 	Serial.println("debug 1");
-	I2c.write(I2CAddr,DLPF_FS_SYNC, FS_DLPF);
+	I2c.write((byte)I2CAddr,(byte)DLPF_FS_SYNC, (byte)FS_DLPF);
 
 	Serial.println("debug 2");
     //active Mode
-    I2c.write(I2CAddr, PWR_MGM, statusCheck); // Sets standby off, activates all gyros, sets clock to x-gyro PLL
+    I2c.write((byte)I2CAddr, (byte)PWR_MGM, (byte)statusCheck); // Sets standby off, activates all gyros, sets clock to x-gyro PLL
 
 	Serial.println("debug 3");
 

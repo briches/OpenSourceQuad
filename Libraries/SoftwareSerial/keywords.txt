@@ -1,35 +1,25 @@
 #######################################
-# Syntax Coloring Map For LiquidCrystal
+# Syntax Coloring Map for NewSoftSerial
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-LiquidCrystal	KEYWORD1
+NewSoftSerial	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
 begin	KEYWORD2
-clear	KEYWORD2
-home	KEYWORD2
-print	KEYWORD2
-setCursor	KEYWORD2
-cursor	KEYWORD2
-noCursor	KEYWORD2
-blink	KEYWORD2
-noBlink	KEYWORD2
-display	KEYWORD2
-noDisplay	KEYWORD2
-autoscroll	KEYWORD2
-noAutoscroll	KEYWORD2
-leftToRight	KEYWORD2
-rightToLeft	KEYWORD2
-scrollDisplayLeft	KEYWORD2
-scrollDisplayRight	KEYWORD2
-createChar	KEYWORD2
+end	KEYWORD2
+read	KEYWORD2
+available	KEYWORD2
+isListening	KEYWORD2
+overflow	KEYWORD2
+flush	KEYWORD2
+listen	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

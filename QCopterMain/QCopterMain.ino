@@ -15,9 +15,6 @@ Copyright stuff from all included libraries that I didn't write
   I2C.h   - I2C library
   Copyright (c) 2011-2012 Wayne Truchsess.  All right reserved.
   
-  MMA8453_n0m1 Library
-  Noah Shibley, Michael Grant, NoMi Design Ltd. http://n0m1.com .
-  
   PID Library
   Brett Beauregard, br3ttb@gmail.com
   
@@ -26,7 +23,12 @@ Copyright stuff from all included libraries that I didn't write
   Servo
   
   SoftwareSerial
+  
+  Wire
+  
+  SD
     -----------------------------------------------------------------------*/
+#include <QuadGlobalDefined.h>
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
 #include <SENSORLIB.h>
@@ -39,9 +41,6 @@ Copyright stuff from all included libraries that I didn't write
 #include <SD.h>
 
 File logfile;
-
-// Hardware SS pin on the ATmega2560
-const int chipSelect = 53;
 
 /*=========================================================================
     PID output variables and desired setpoints, and settings
