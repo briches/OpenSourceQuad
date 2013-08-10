@@ -109,7 +109,7 @@ struct fourthOrderData
     SD logging definitions
     -----------------------------------------------------------------------*/
 // Hardware SS pin on the ATmega2560
-#define chipSelect = 53;
+#define chipSelect  (53)
 
 
 /***************************************************************************
