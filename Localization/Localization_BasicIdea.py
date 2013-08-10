@@ -1,3 +1,6 @@
+# Playing around with localization and probability
+
+
 p=[0.2, 0.2, 0.2, 0.2, 0.2]
 world=['green', 'red', 'red', 'green', 'green']
 measurements = ['red', 'red']
