@@ -1,13 +1,13 @@
  /*=========================================================================
 Name: QCopterMain.ino
-Authors: Brandon Riches, Patrick Fairbanks, Andrew Coulthard
-Date: May 2013
+Authors: Brandon Riches, Branden Yue, Andrew Coulthard
+Date: 2013
 
 
 TODO:
 1) Chebyshev filter. 
 2) Fix gyro DC drift. (Measure over time, possibly)
-3) Tune PID using Ziegler–Nichols method
+3) Tune PID using Zieglerâ€“Nichols method
   - http://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method .
         
 Copyright stuff from all included libraries that I didn't write
@@ -79,8 +79,8 @@ Quadcopter Quadcopter;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-#define Kp 1.4
-#define Ki 0.014
+#define Kp 25
+#define Ki 0
 #define Kd 0
 PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
 PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
@@ -90,25 +90,27 @@ PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
     Function declarations
     -----------------------------------------------------------------------*/
 void PID_init();           
-void XBee_read(double* set_a, double* set_b);
-void get_telemetry();
+boolean XBee_read();
+int XBee_send(String data);
+void get_telemetry(double* set_a, double* set_b);
 void logfileStart();
-void(* resetFunc) (void) = 0;
 
 
 /*=========================================================================
     Telemetry vars and codes
     -----------------------------------------------------------------------*/
+    
+SoftwareSerial XBeeSerial =  SoftwareSerial(43, 41);
 // Radio transmitted instructions are stored in this character array.
-char XBeeArray[80];
+char XBeeArray[3];
 
 boolean   STOP_FLAG;
 boolean   START_FLAG;
 int       dataInXBA;
 
 // Telemetry codes
-String    STOP_MSG =   "!SS";
-String    START_MSG =  "!GG";
+String      STOP_MSG  =    "!SS";
+String      START_MSG =    "!GG";
 
 
 /*=========================================================================
@@ -121,14 +123,14 @@ void setup()
   t1 = micros();
   
   // Initialize the main serial UART for output. 
-  Serial.begin(115200); 
+  Serial.begin(19200); 
   
   // Initialize the radio comms serial port for communication with the XBee radios
-  //Serial1.begin(19200);
+  //XBeeSerial.begin(19200);
   
   Serial.println(" ");
   
-  // Initialize these pins (39,41,43) for digital output.
+  // Initialize these pins for digital output.
   // They are used in the ERROR_LED function
   // Use ERROR_LED(1) for success,
   //     ERROR_LED(2) for warnings,
@@ -158,8 +160,8 @@ void setup()
   // just below take-off speed.
   // Enter a %, from 0 - 100
   // If you enter more than 40%, thats pushing it. 
-  Quadcopter.initMotors(30);
-  while(millis() <= 1000);
+  Quadcopter.initMotors(40);
+  delay(1000);
   
   
   // Set both the alpha and beta setpoints to 0. 
@@ -171,28 +173,8 @@ void setup()
   
   // Wait for start confirmation from computer
   START_FLAG = false;
-  
-  // Play wav file
-  
-  // Scan for start code
-  while(~START_FLAG)
-  {
-    String myStr = " ";
-    
-    XBee_read();
-    
-    for (int i = 0; i < 3; i++)
-    {
-      myStr += XBeeArray[i];
-    }
-    
-    if (myStr == START_MSG)
-    {
-      START_FLAG = true;
-    }
-    
-  }
-    
+
+  Serial.println("Got past here no problem");
   
   // Turn on the green LED to signify end of setup. 
   Quadcopter.ERROR_LED(1);  
@@ -222,14 +204,16 @@ void loop()
   // accelerometer, and gryo data. It then runs a basic moving average on these
   // data to smooth them. Then, it uses a complementary filter to help obtain 
   // more accurate readings of angle
-   
   Quadcopter.update(aPID_out, bPID_out);  
 
   // Updates the PID controllers. They return new outputs based on current
   // and past data. These outputs are used to decide what the motor speeds should be set to.
-  aPID.Compute();
-  bPID.Compute();
   
+  if (millis() > 10000)
+  {
+    aPID.Compute();
+    bPID.Compute();
+  }  
   // We print all the data to the SD logfile, for debugging purposes. 
   // Once a completely working build is finished, this may or may not be removed for
   // the sake of speed.
@@ -273,13 +257,8 @@ void loop()
   {
     while(1);
   }
-  
-  // Scan for available wireless instructions.
-  // These could be instructions regarding setpoints, or critical emergency stop instructions
-  get_telemetry(&set_a, &set_b);
-  
-  
-  
+
+  Serial.println(Quadcopter.alpha);
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
 
@@ -342,7 +321,6 @@ void get_telemetry(double* set_a, double* set_b)
     for (int i = 0; i < 3; i++)
     {
       myMsg += XBeeArray[i];
-      dataInXBA--;
     }
     
     if (myMsg == STOP_MSG)
@@ -353,23 +331,6 @@ void get_telemetry(double* set_a, double* set_b)
       // STOP Message recieved. This is the software implementation of a safety switch
       while (STOP_FLAG)
       {
-        Quadcopter.ERROR_LED(2);
-        // Scan for more messages.
-        if(XBee_read())
-        {   
-          // Interpret data
-          for (int i = 0; i < 3; i++)
-          {
-            myMsg += XBeeArray[i];
-            dataInXBA--;
-          }
-          if (myMsg == START_MSG)
-          {
-            // Reset the quadcopter MCU
-            // Starts the software from the begining, reinitialize.
-            resetFunc();
-          }
-        }
       }
     }
     
@@ -382,16 +343,25 @@ void get_telemetry(double* set_a, double* set_b)
   // Done interpreting and reading. 
   Quadcopter.ERROR_LED(1);
 }
+/*=========================================================================
+    XBee_send(String data)
+    ----------------------------------------------------------------------*/
+int XBee_send(String data)
+{
+  int bytesSent = XBeeSerial.print(data);
+  
+  return bytesSent;
+}
 
 /*=========================================================================
-    XBee_read    
+    XBee_read()
     - Reads serialdata from the modem into a storage buffer
     -----------------------------------------------------------------------*/
 boolean XBee_read()
 {
   boolean check = false;
   // Get the number of bytes available to read
-  int bytes = Serial1.available();
+  int bytes = XBeeSerial.available();
   if (bytes >= 3)
   {
     check = true;
@@ -399,10 +369,28 @@ boolean XBee_read()
     // Read three bytes at a time (message length = 3)
     for(int i = 0; i < 3; i++)
     {
-      XBeeArray[dataInXBA] = Serial1.read();
-      dataInXBA = i+1;
+      XBeeArray[i] = XBeeSerial.read();
     }
-  }  
+  }
+  // The first char has to be '!'
+  
+  for (int i = 0; i < 3; i++)
+  {
+    if (XBeeArray[i] == '!')
+    {
+      char reorganize[3];
+      int start_msg_pos = i;
+      
+      reorganize[0] = '!';
+      reorganize[1] = XBeeArray[(start_msg_pos + 1) % 3];
+      reorganize[2] = XBeeArray[(start_msg_pos + 2) % 3];
+      
+      XBeeArray[0] = reorganize[0];
+      XBeeArray[1] = reorganize[1];
+      XBeeArray[2] = reorganize[2];
+    }
+  } 
+  
   return check;
 }
 
@@ -428,7 +416,7 @@ void PID_init()
   elaps = (t2-t1);
   Serial.print("Done! Elapsed time (us): ");
   Serial.println(elaps,6);
-  Serial.println("");
 }
+
 
 

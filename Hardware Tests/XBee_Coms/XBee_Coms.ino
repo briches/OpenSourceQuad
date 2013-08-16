@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial =  SoftwareSerial(3, 2);
+SoftwareSerial mySerial =  SoftwareSerial(43, 41);
 
 
 void setup()  {
@@ -19,8 +19,7 @@ void loop()                     // run over and over again
   if (mySerial.available() > 0) {
       Serial.print((char)mySerial.read());
   }
-  if (Serial.available()) {
+  if (Serial.available() > 0) {
       mySerial.print((char)Serial.read());
   }
-  delay(10);
 }

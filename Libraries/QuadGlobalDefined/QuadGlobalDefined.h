@@ -1,6 +1,7 @@
 /**=========================================================================
 
 	QuadGlobalDefined.h
+	August 2013
 
 	A comprehensive functional list of all (most) variables used in any of
 	the libraries written by our team.
@@ -30,7 +31,7 @@
 /*=========================================================================
     Math related definitions
     -----------------------------------------------------------------------*/
-#define Pi  			(3.14159F)			// Its pi.
+#define Pi  			(3.14159265359F)			// Its pi.
 
 /*=========================================================================
     Chebyshev 4th order LPF
@@ -104,6 +105,11 @@ struct fourthOrderData
     -----------------------------------------------------------------------*/
 #define MIN_PULSE_WIDTH       544     		// the shortest pulse sent to a servo
 #define MAX_PULSE_WIDTH      2400     		// the longest pulse sent to a servo
+
+#define MOTOR1PIN			2
+#define MOTOR2PIN			3
+#define MOTOR3PIN			4
+#define MOTOR4PIN			5
 
 /*=========================================================================
     SD logging definitions
@@ -187,12 +193,12 @@ struct fourthOrderData
 
 #define AX_SCALE  		(0.15696)
 #define AY_SCALE  		(0.15449)
-#define AZ_SCALE  		(0.14115)
+#define AZ_SCALE  		(0.9036550534)
 
 #define MXY_SCALE  		(1055)
 #define MZ_SCALE    	(950)
 
-#define GRAV_STANDARD 						(9.80665)
+#define SENSORS_GRAVITY_STANDARD 			(9.81369388)
 #define SENSORS_GAUSS_TO_MICROTESLA       	(100)
 
 /*=========================================================================
@@ -325,18 +331,18 @@ typedef struct
     int32_t timestamp;                        /**< time is in milliseconds */
     union
     {
-        float           data[4];
+        float          data[4];
         sensors_vec_t   acceleration;         /**< acceleration values are in meter per second per second (m/s^2) */
         sensors_vec_t   magnetic;             /**< magnetic vector values are in micro-Tesla (uT) */
         sensors_vec_t   orientation;          /**< orientation values are in degrees */
         sensors_vec_t   gyro;                 /**< gyroscope values are in rad/s */
-        float           temperature;          /**< temperature is in degrees centigrade (Celsius) */
-        float           distance;             /**< distance in centimeters */
-        float           light;                /**< light in SI lux units */
-        float           pressure;             /**< pressure in hectopascal (hPa) */
-        float           relative_humidity;    /**< relative humidity in percent */
-        float           current;              /**< current in milliamps (mA) */
-        float           voltage;              /**< voltage in volts (V) */
+        float          temperature;          /**< temperature is in degrees centigrade (Celsius) */
+        float          distance;             /**< distance in centimeters */
+        float          light;                /**< light in SI lux units */
+        float          pressure;             /**< pressure in hectopascal (hPa) */
+        float          relative_humidity;    /**< relative humidity in percent */
+        float          current;              /**< current in milliamps (mA) */
+        float          voltage;              /**< voltage in volts (V) */
     };
 } sensors_event_t;
 

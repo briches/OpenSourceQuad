@@ -26,7 +26,7 @@ my_updated for compatability with main polling loop and GPS interrupts
 void Quadcopter :: get_Initial_Offsets()
 {
 	/**************************************************************************/
-		//! @brief Gets the initial offsets in both sensors to accomodate starting non-level
+		//! @brief Gets the initial offsets in both sensors to accomodate board mount
     /**************************************************************************/
 	ERROR_LED(2);										// Warning LED
     int offset_counter = 10;                       // # of data sets to consider when finding offsets
@@ -61,6 +61,8 @@ void Quadcopter :: get_Initial_Offsets()
 			ERROR_LED(3);						// Critical error, accelerometer is NOT working
 		}
         counter = counter + 1 ;
+
+        delay(1);
     }
 
     io_ax /= offset_counter;
@@ -70,7 +72,7 @@ void Quadcopter :: get_Initial_Offsets()
 	io_wy /= offset_counter;
 	io_wz /= offset_counter;
 
-	io_wz -= 9.8065;
+
 
 	Serial.println(" ");
     Serial.println(io_ax);
@@ -198,15 +200,15 @@ bool Quadcopter::initMotors(int speed)
     motor3s = MIN_PULSE_WIDTH;
     motor4s = MIN_PULSE_WIDTH;
 
-    motor1.attach(2);                      	// Attach motor 1 to D2
-    motor2.attach(3);                      	// Attach motor 2 to D3
-    motor3.attach(4);                       // Attach motor 3 to D4
-    motor4.attach(5);                       // Attach motor 4 to D5
+    motor1.attach(MOTOR1PIN);                      	// Attach motor 1 to D2
+    motor2.attach(MOTOR2PIN);                      	// Attach motor 2 to D3
+    motor3.attach(MOTOR3PIN);                       // Attach motor 3 to D4
+    motor4.attach(MOTOR4PIN);                       // Attach motor 4 to D5
 
     // initializes motor1
-    int m1s = map(speed, 0, 100, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-
-    for(m1s = MIN_PULSE_WIDTH; m1s <= speed; m1s += 1)
+    speed = map(speed, 0, 100, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+	Serial.println(speed);
+    for(int m1s = MIN_PULSE_WIDTH; m1s <= speed; m1s += 5)
     {
     	// Change the input to the function to a value to SERVO lib understands
 
@@ -250,7 +252,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 					time2,
 					time3,
 					time4;
-	double 		a_gcoeff = 0,
+	double 		a_gcoeff = 0.95,
 					h_gcoeff = 0.99;
 	sensors_event_t	accel_event,
 					mag_event;
@@ -268,26 +270,26 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 	// the value of poll_type, and thus determine if data is available.
 	if (time1 >= _100HzPoll) /*microseconds*/
 	{
-		poll_type++;								// Only essential updates are needed.
+		poll_type = 1;								// Only essential updates are needed.
 													// update PID controllers based on accel/gyro data,
 
 	}
 	if (time2 >=  _75HzPoll)
 	{
-		poll_type++;								// USRF update
+		poll_type = 2;								// USRF update
 
 
 	}
 	if (time3 >= _20HzPoll)
 	{
-		poll_type++;								// Apply error function output to motor speeds
+		poll_type = 3;								// Apply error function output to motor speeds
 
 
 	}
 
 	if (time4 >= _10HzPoll)
 	{
-		poll_type++;								// GPS update
+		poll_type = 4;								// GPS update
 
 
 	}
@@ -303,11 +305,13 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		/// Store Raw values from the sensor registers, and remove initial offsets
 		ax = accel_event.acceleration.x - io_ax;
 		ay = accel_event.acceleration.y - io_ay;
-		az = accel_event.acceleration.z - io_az;
+		az = accel_event.acceleration.z - io_az + SENSORS_GRAVITY_STANDARD;
+
+
 
 		/**! 				@Poll type two - 75 Hz			*/
 		// Code in this block executes if the conditions for poll_type == 2 are satisfied.
-		if (poll_type == 2)
+		if (poll_type > 1)
 		{
 			/// The fastest we can update the magnetometer is 75Hz
 			mag.getEvent(&mag_event);
@@ -331,9 +335,9 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		}
 
 
-		wx =  -(gyro.x() - io_wx) - time * GYRO_DRIFT_RATE_X;
-		wy =  -(gyro.y() - io_wy) - time * GYRO_DRIFT_RATE_Y;
-		wz = 	gyro.z() - io_wz  - time * GYRO_DRIFT_RATE_Z;
+		wx =  -(gyro.x() - io_wx);//- time * GYRO_DRIFT_RATE_X;
+		wy =  -(gyro.y() - io_wy);//- time * GYRO_DRIFT_RATE_Y;
+		wz = 	gyro.z() - io_wz;//- time * GYRO_DRIFT_RATE_Z;
 
 		/// Convert to SI units from raw data type in gyro data
 		SI_convert();
@@ -353,17 +357,17 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		// This is my feeble first attempt to deal with NaN errors resulting from the vector calculations
 		// done below. Situations were arising where ax, ay, az were all > 0 and az was > 9.81. This screwed
 		// up the trig, giving the acos of a value > 1.
-		if (az >= 9.81)
+		if (az >= SENSORS_GRAVITY_STANDARD)
 		{
-			double foobar = pow(9.81,2) - pow(ax,2) - pow(ay,2);
+			double foobar = pow(SENSORS_GRAVITY_STANDARD,2) - pow(ax,2) - pow(ay,2);
 			az = sqrt(foobar);
 		}
 
 		// Beta is analogous to ROLL, or rotating about the X-AXIS
-		beta_accel = asin(ay/9.81)*180/Pi;
+		beta_accel = asin(ay/SENSORS_GRAVITY_STANDARD)*180/Pi;
 
 		// Alpha is analogous to PITCH, or rotating about the Y-AXIS
-		alpha_accel = acos( az / ( 9.81 * cos(  asin(ay/9.81)  ) ) )* 180/Pi;
+		alpha_accel = acos( az / ( SENSORS_GRAVITY_STANDARD * cos(  asin(ay/SENSORS_GRAVITY_STANDARD)  ) ) )* 180/Pi;
 
 		// Check the quadrant the angle is in. Switch the sign if necessary
 		if (ax < 0)
@@ -389,8 +393,8 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 		// into account:
 		// Gyro: Less prone to noise from mechanical oscillation, but responds slower and drifts over time
 		// Accel: Prone to noise from mechanical oscillation, but responds quickly and doesnt drift.
-		alpha = a_gcoeff * alpha_gyro +   (1-a_gcoeff)*alpha_accel;
-		beta = a_gcoeff * beta_gyro +  (1-a_gcoeff)*beta_accel;
+		alpha 	= a_gcoeff * alpha_gyro +   (1-a_gcoeff) *	alpha_accel;
+		beta 	= a_gcoeff * beta_gyro 	+  	(1-a_gcoeff) *	beta_accel;
 
 		/// my_update heading
 		// Get the heading (in degrees) from the magnetometer.
@@ -421,12 +425,13 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 
 	/**! 				@Poll type three - 20 Hz			*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
-	if (poll_type == 3)
+	if (poll_type > 2)
 	{
 		/// Motor Logic takes place at a lower frequency.
 		// ESCs need several periods of signal to properly read motor speed,
 		// thus placing a upper limit on the frequency with which the ESCs can
 		// be my_updated.
+
 		updateMotors(aPID_out,  bPID_out);
 
 		// Read the time that poll3 was last executed
@@ -435,7 +440,7 @@ void Quadcopter::update(double aPID_out, double bPID_out)
 
 	/**! 				@Poll type four - 10 Hz				*/
 	// Code in this block executes if the conditions for poll_type == 2 are satisfied.
-	if (poll_type == 4)
+	if (poll_type > 3)
 	{
 		/// Update GPS data using RMC
 
@@ -528,8 +533,8 @@ void Quadcopter::setupFourthOrder()
 bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 {
 
-		int myMinSpeed = MIN_PULSE_WIDTH;
-		int myMaxSpeed = MAX_PULSE_WIDTH;
+		int myMinSpeed = 1200;
+		int myMaxSpeed = 1500;
 
 		aPID_out = -aPID_out;
 		bPID_out = -bPID_out;
@@ -540,41 +545,10 @@ bool Quadcopter::updateMotors(double aPID_out, double bPID_out)
 		motor2s += bPID_out;
 		motor3s -= bPID_out;
 
-		// Check if motors are going to be set to smaller than the minimum.
-		if (motor1s <= myMinSpeed)
-		{
-			motor1s = myMinSpeed;
-		}
-		if (motor2s <= myMinSpeed)
-		{
-			motor2s = myMinSpeed;
-		}
-		if (motor3s <= myMinSpeed)
-		{
-			motor3s = myMinSpeed;
-		}
-		if (motor4s <= myMinSpeed)
-		{
-			motor4s = myMinSpeed;
-		}
-
-		// Check if motors are going to be set to higher than the maximum
-		if(motor1s >= myMaxSpeed)
-		{
-			motor1s = myMaxSpeed;
-		}
-		if(motor2s >= myMaxSpeed)
-		{
-			motor2s = myMaxSpeed;
-		}
-		if(motor3s >= myMaxSpeed)
-		{
-			motor3s = myMaxSpeed;
-		}
-		if(motor4s >= myMaxSpeed)
-		{
-			motor4s = myMaxSpeed;
-		}
+		motor1s = constrain(motor1s, myMinSpeed, myMaxSpeed);
+		motor2s = constrain(motor2s, myMinSpeed, myMaxSpeed);
+		motor3s = constrain(motor3s, myMinSpeed, myMaxSpeed);
+		motor4s = constrain(motor4s, myMinSpeed, myMaxSpeed);
 
 
 		motor1.write(motor1s);

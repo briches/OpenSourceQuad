@@ -1,9 +1,25 @@
-/**
+/******************************************************************************
     Sensor Library
     Author: Brandon Yue and Brandon Riches
 
     Replacement for the Adafruit LSM303 library. Uses Wire.
-**/
+    Uses the same format as the Adafruit_LSM303 library
+
+    /***************************************************************************
+	  This is a library for the LSM303 Accelerometer and magnentometer/compass
+
+	  Designed specifically to work with the Adafruit LSM303DLHC Breakout
+
+	  These displays use I2C to communicate, 2 pins are required to interface.
+
+	  Adafruit invests time and resources providing this open source code,
+	  please support Adafruit andopen-source hardware by purchasing products
+	  from Adafruit!
+
+	  Written by Kevin Townsend for Adafruit Industries.
+	  BSD license, all text above must be included in any redistribution
+	 ***************************************************************************/
+/******************************************************************************/
 
 #if ARDUINO >= 100
  #include "Arduino.h"
@@ -127,6 +143,7 @@ void SENSORLIB_accel::read()
   _accelData.x = (xlo | (xhi << 8)) >> 4;
   _accelData.y = (ylo | (yhi << 8)) >> 4;
   _accelData.z = (zlo | (zhi << 8)) >> 4;
+
 };
 
 /***************************************************************************
@@ -165,9 +182,9 @@ void SENSORLIB_accel::getEvent(sensors_event_t *event) {
   event->sensor_id = 2;
   event->type      = 1;
   event->timestamp = 0;
-  event->acceleration.x = _accelData.x * AX_SCALE;
-  event->acceleration.y = _accelData.y * AY_SCALE;
-  event->acceleration.z = _accelData.z * AZ_SCALE;
+  event->acceleration.x = _accelData.x * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+  event->acceleration.y = _accelData.y * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD;
+  event->acceleration.z = _accelData.z * _lsm303Accel_MG_LSB * SENSORS_GRAVITY_STANDARD * AZ_SCALE;
 };
 
 /***************************************************************************
