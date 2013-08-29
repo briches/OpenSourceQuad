@@ -12,7 +12,7 @@ Its quadcopter flight software!
 <br /><br />
 
 MCU: Osepp Mega 2560 R3   
-(Soon switching to the chipKIT uC32 with the PIC32)  
+(A port the chipKIT uC32 with the PIC32 is underway)
 
 
 <br />
