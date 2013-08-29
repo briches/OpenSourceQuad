@@ -29,6 +29,7 @@ Copyright stuff from all included libraries that I didn't write
   SD
     -----------------------------------------------------------------------*/
 #include <QuadGlobalDefined.h>
+#include <Kinematics.h>
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
 #include <SENSORLIB.h>
@@ -64,8 +65,20 @@ int PID_OutLims[] = {-1000,1000};
 
 
 /*=========================================================================
-    Classes etc
+    Classes and important structures
     -----------------------------------------------------------------------*/
+SENSORLIB_accel   accel;       		// Accel class
+SENSORLIB_mag	  mag;			// Mag class
+OseppGyro         gyro;			// Gyro class
+Servo             motor1;		// Motor 1
+Servo             motor2;		// Motor 2
+Servo             motor3;		// Motor 3
+Servo             motor4;		// Motor 4
+fourthOrderData   fourthOrderXAXIS,
+		  fourthOrderYAXIS,
+		  fourthOrderZAXIS;
+
+kinematicData	  kinematics;
     
 // This is the main class for the Quadcopter driver. 
 // Contains most of the methods, variables and other information about state. 
@@ -73,17 +86,15 @@ int PID_OutLims[] = {-1000,1000};
 Quadcopter Quadcopter;
 
 // Constructors for the PID controllers
-// As it stands right now, there are only two. There will eventually be more, as we
-// begin to implement more control on pathing and related controllable variables.
 // The 4th, 5th, and 6th args in the constructors are, respectively:
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-#define Kp 25
-#define Ki 0
-#define Kd 0
-PID aPID(&Quadcopter.alpha,  &aPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
-PID bPID(&Quadcopter.beta,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
+#define Kp 24    // Was 24, 48, 0.75
+#define Ki 48    // 5, 1, 1
+#define Kd 0.75  // Classic PID Z-N method
+PID aPID(&kinematics.pitch,  &aPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
+PID bPID(&kinematics.roll,   &bPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
 
 /*=========================================================================
@@ -160,7 +171,8 @@ void setup()
   // just below take-off speed.
   // Enter a %, from 0 - 100
   // If you enter more than 40%, thats pushing it. 
-  Quadcopter.initMotors(40);
+  Quadcopter.ERROR_LED(2);
+  Quadcopter.initMotors(20);
   delay(1000);
   
   
@@ -170,6 +182,8 @@ void setup()
   set_a = 0;		               
   set_b = 0;  
   
+  // Initialize the fourth order struct
+  setupFourthOrder();
   
   // Wait for start confirmation from computer
   START_FLAG = false;
@@ -234,9 +248,9 @@ void loop()
 //    logfile.print(",");
 //    logfile.print(Quadcopter.wz);
 //    logfile.print(",");
-    logfile.print(Quadcopter.alpha);
+    logfile.print(kinematics.pitch);
     logfile.print(",");
-    logfile.print(Quadcopter.beta);
+    logfile.print(kinematics.roll);
     logfile.print(",");
 //    logfile.print(Quadcopter.motor1s);
 //    logfile.print(",");
@@ -258,7 +272,14 @@ void loop()
     while(1);
   }
 
-  Serial.println(Quadcopter.alpha);
+  Serial.print(kinematics.pitch);
+  Serial.print(" ");
+  Serial.print(kinematics.roll);
+  Serial.print(" ");
+  Serial.print(Quadcopter.az);
+  Serial.print(" ");
+  Serial.println(Quadcopter.ay);
+  
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
 

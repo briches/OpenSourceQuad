@@ -17,8 +17,12 @@
 
 #if (ARDUINO >= 100)
  #include "Arduino.h"
-#else
- #include "WProgram.h"
+#endif
+
+/* For PIC32 */
+#if defined(__PIC32MX__)
+    #include <p32xxxx.h>    /* this gives all the CPU/hardware definitions */
+    #include <plib.h>       /* this gives the i/o definitions */
 #endif
 
 
@@ -86,7 +90,6 @@ struct fourthOrderData
   float  inputTm1,  inputTm2,  inputTm3,  inputTm4;
   float outputTm1, outputTm2, outputTm3, outputTm4;
 };
-
 
 /*=========================================================================
     Battery Monitor
@@ -204,15 +207,15 @@ struct fourthOrderData
 /*=========================================================================
     Accelerometer Register Addresses
     -----------------------------------------------------------------------*/
-											// DEFAULT    TYPE
-#define ACCEL_CTRL_REG1_A           (0x20)  // 00000111   rw
-#define ACCEL_CTRL_REG2_A          	(0x21)    // 00000000   rw
-#define ACCEL_CTRL_REG3_A          	(0x22)    // 00000000   rw
-#define ACCEL_CTRL_REG4_A          	(0x23)    // 00000000   rw
-#define ACCEL_CTRL_REG5_A          	(0x24)   // 00000000   rw
-#define ACCEL_CTRL_REG6_A          	(0x25)    // 00000000   rw
-#define ACCEL_REFERENCE_A          	(0x26)    // 00000000   r
-#define ACCEL_STATUS_REG_A         	(0x27)    // 00000000   r
+												// DEFAULT    TYPE
+#define ACCEL_CTRL_REG1_A           (0x20)  	// 00000111   rw
+#define ACCEL_CTRL_REG2_A          	(0x21)  	// 00000000   rw
+#define ACCEL_CTRL_REG3_A          	(0x22)   	// 00000000   rw
+#define ACCEL_CTRL_REG4_A          	(0x23)   	// 00000000   rw
+#define ACCEL_CTRL_REG5_A          	(0x24)   	// 00000000   rw
+#define ACCEL_CTRL_REG6_A          	(0x25)   	// 00000000   rw
+#define ACCEL_REFERENCE_A          	(0x26)   	// 00000000   r
+#define ACCEL_STATUS_REG_A         	(0x27)   	// 00000000   r
 #define ACCEL_OUT_X_L_A            	(0x28)
 #define ACCEL_OUT_X_H_A            	(0x29)
 #define ACCEL_OUT_Y_L_A            	(0x2A)
@@ -366,6 +369,32 @@ typedef struct lsm303AccelData_s
   float y;
   float z;
 } lsm303AccelData;
+
+/*=========================================================================
+    Kinematics Data Type
+    -----------------------------------------------------------------------*/
+struct kinematicData
+{
+	double pitch,
+			roll,
+			yaw,
+
+			io_ax,
+			io_ay,
+			io_az,
+			io_wx,
+			io_wy,
+			io_wz,
+
+			pitch_gyro,
+			roll_gyro,
+			yaw_gyro,
+
+			yaw_mag;
+
+	unsigned long timestamp;
+
+};
 
 /*=========================================================================
     CHIP ID

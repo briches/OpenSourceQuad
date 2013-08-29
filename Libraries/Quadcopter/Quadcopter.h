@@ -1,11 +1,10 @@
 /******************************************************
-Library designed to manage, my_update, and Control the
+Library designed to manage, update, and control the
 state of quadcopter
 
 Author  : Brandon Riches
 Date     :	June 2013
 
-my_updated for compatability with main polling loop and GPS interrupts
 
 
 ******************************************************/
@@ -20,6 +19,7 @@ my_updated for compatability with main polling loop and GPS interrupts
 #endif
 
 #include <QuadGlobalDefined.h>
+#include <Kinematics.h>
 #include <SENSORLIB.h>
 #include <OseppGyro.h>
 #include <I2C.h>
@@ -62,6 +62,13 @@ class Quadcopter
 		double elev;
 		double vbatt;
 
+		double zero_vec[3];
+		int 	Pitch_err_count;
+		int 	Roll_err_count;
+		double err_num;
+		double Pitch_err_time;
+		double Roll_err_time;
+
 		double alpha_gyro;
 		double beta_gyro;
 		double heading_gyro;
@@ -76,24 +83,6 @@ class Quadcopter
 		int freq;				    		// Frequency of calls to my_update();
 
 
-		/*===============================================
-		Sensor initial offset data
-		-----------------------------------------------------------------------*/
-		double io_ax;                 // Offsets from initial position sensor data
-		double io_ay;
-		double io_az;
-		double io_wx;
-		double io_wy;
-		double io_wz;
-
-		/*=========================================================================
-		State variables
-		- The program didnt like having these in the class.
-		-----------------------------------------------------------------------*/
-		double alpha;
-		double beta;
-		double heading;
-
 		/***************************************************************************
 		 *! @FUNCTIONS
 		 ***************************************************************************/
@@ -104,25 +93,7 @@ class Quadcopter
 
 		void ERROR_LED(int LED_SEL);
 
-
-		/*===============================================
-			Class initializations
-			-----------------------------------------------------------------------*/
-		SENSORLIB_accel    accel;       		// Accel class
-		SENSORLIB_mag		 mag;				// Mag class
-		OseppGyro       	gyro;				// Gyro class
-		Servo             motor1;				// Motor 1
-		Servo             motor2;				// Motor 2
-		Servo             motor3;				// Motor 3
-		Servo             motor4;				// Motor 4
-
-		fourthOrderData   	fourthOrderXAXIS,
-							fourthOrderYAXIS,
-							fourthOrderZAXIS;
-
 		private:
-		float computeFourthOrder(float currentInput, struct fourthOrderData *filterParameters);
-		void setupFourthOrder(void);
 		void SI_convert();                 							// Convert to SI
 		void get_Initial_Offsets();                           	// Gets the initial Offsets
 };

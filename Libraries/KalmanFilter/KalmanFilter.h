@@ -9,47 +9,32 @@
 #ifndef KALMANFILTER_H_INCLUDED
 #define KALMANFILTER_H_INCLUDED
 
-
-typedef struct
+class Kalman2D
 {
-	int xdim[2] = {2, 1};
-	double x[2*1] = {0,
-					  0};				// State matrix
+	public:
 
-	int Fdim[2] = {2, 2};
-	double F[2*2] = {1, 1,
-					  0, 1};			// State transition matrix
-
-	int Hdim[2] = {1, 2};
-	double H[1*2] = {1, 0};			// Measurement function
-
-	double Z;							// Measurement
-
-	double y;							// Error
-
-	int Pdim[2] = {2, 2};				// Covariance matrix
-	double P[2*2] = {50, 0,
-					  0, 50};
-
-	double S;
-
-	int Kdim[2] = {1, 2};
-	double K[1*2] = {0,				// Kalman gain
-					  0};
-
-	double I[2*2] = {1, 0,
-					  0, 1};			// Identity
-
-	double Udim[2] = {2, 1};			// External motion
-	double U[2*1] = {0,
-					  0};
-
-	double R;
+		double x[2];			// State matrix
+		double F[4];			// State transition matrix
+		double H[1*2];			// Measurement function
+		double Z;				// Measurement
+		double Y;				// Error
+		double P[4];			// Covariance matrix
+		double S;
+		double K[2*1];			// Kalman gain
+		double I[2*2];			// Identity
+		double U[2*1];			// External motion
+		double R;				// Measurement noise
 
 
-} Kalman2D_struct;
+		void Kalman2DPredict(void);
+
+		void Kalman2DMeasure(double x_meas);
+
+		bool KalmanInit_2D(double x_covar, double xdot_covar, double sensor_noise, double dt);
 
 
+
+};
 
 double matrixDeterminant4x4(double m[]);
 

@@ -7,69 +7,102 @@
 	Kalman filters
 	-----------------------------------------------------------------------*/
 
-void Kalman2DPredict(Kalman2D_struct Kalman)
+#include <KalmanFilter.h>
+
+void Kalman2D::Kalman2DPredict()
 {
-	matrixMultiply(1, 2, 1, Kalman.x, Kalman.F, Kalman.x);
-	Kalman.x[0] += Kalman.U[0];
-	Kalman.x[1] += Kalman.U[1];
+	// Store the updated x matrix
+	x[0] = 1 * x[0] + 	1 * x[1] +	 U[0];
+	x[1] = 1 * x[1]	+ 	U[1];
 
-	double myVar = Kalman.F[2];
-	Kalman.F[2] = Kalman.F[1];
-	Kalman.F[1] = myVar;
+	P[0] = P[0]  + P[1];
+	P[1] = P[1];
+	P[2] = P[2]  + P[3];
+	P[3] = P[3];
 
-	matrixMultply(2, 2, 2, Kalman.P, Kalman.P, Kalman.F)
-
-	double myVar = Kalman.F[2];
-	Kalman.F[2] = Kalman.F[1];
-	Kalman.F[1] = myVar;
-
-	matrixMultply(2, 2, 2, Kalman.P, Kalman.F, Kalman.P)
-
-}
+	P[0] = P[0];
+	P[1] = P[0]  + P[1];
+	P[2] = P[2];
+	P[3] = P[2]  + P[3];
+};
 
 
-void Kalman2DMeasure(Kalman2D_struct Kalman, double x_meas)
+void Kalman2D::Kalman2DMeasure(double x_meas)
 {
-	Kalman.Z = x_meas;
+	Z = x_meas;
 
-	Kalman.Y = Kalman.Z - Kalman.H[0] * Kalman.x[0] + Kalman.H[1] * Kalman.x[1];
+	Y = Z - x[0];
 
-	Kalman.S = Kalman.R + 	(Kalman.H[0]^2)*(Kalman.P[0]) +
-							(Kalman.H[1]^2)*(Kalman.P[3]) +
-							Kalman.P[1] * Kalman.H[0] * Kalman.H[1] +
-							Kalman.P[2] * Kalman.H[0] * Kalman.H[1];
+	S = R + P[0];
 
-	Kalman.H[0] *= Kalman.S;
-	Kalman.H[1] *= Kalman.S;
+	K[0] = P[0] * 1 * 1/S + P[1] * 0 * 1/S;
+	K[1] = P[2] * 1 * 1/S + P[3] * 0 * 1/S;
 
-	// K m = 2, n = 1; P n =
-	matrixMultiply(1, 2, 2, Kalman.K, Kalman.P, Kalman.H);
+	K[0] = K[0] * Y;
+	K[1] = K[1] * Y;
 
-	double xadd[2 * 1];
 
-	matrixMultiply(1, 1, 1, xadd, Kalman.K, Kalman.y);
-
-	Kalman.x[0] += xadd[0];
-	Kalman.x[1] += xadd[1];
+	// Store the updated x matrix
+	x[0] += K[0];
+	x[1] += K[1];
 
 	double intermediate[2 * 2];
 
-	matrixMultiply(1, 2, 2, intermediate, Kalman.K, Kalman.H);
+	intermediate[0] = K[0] * 1;
+	intermediate[1] = K[0] * 0;
+	intermediate[2] = K[1] * 1;
+	intermediate[3] = K[1] * 0;
 
-	matrixSubtract(2, 2, intermediate, intermediate, Kalman.I);
+	intermediate[0] = I[0] - intermediate[0];
+	intermediate[1] = I[1] - intermediate[1];
+	intermediate[2] = I[2] - intermediate[2];
+	intermediate[3] = I[3] - intermediate[3];
 
-	matrixMultiply(2, 2, 2, Kalman.P, intermediate, Kalman.P);
+	P[0] = intermediate[0] * P[0] + intermediate[1] * P[2];
+	P[1] = intermediate[0] * P[1] + intermediate[1] * P[3];
+	P[2] = intermediate[2] * P[0] + intermediate[3] * P[2];
+	P[3] = intermediate[2] * P[1] + intermediate[3] * P[3];
 
 };
 
 
-void KalmanInit2D(Kalman2D_struct 	Kalman, double x_covar, double xdot_covar, double sensor_noise)
+bool Kalman2D::KalmanInit_2D(double x_covar, double xdot_covar, double sensor_noise, double dt)
 {
-	Kalman->P[0] = x_covar;
-	Kalman->P[3] = xdot_covar;
-	Kalman->R = sensor_noise;
-	Kalman->Z = 0;
-	Kalman->y = 0;
+	x[0] = 0;
+	x[1] = 0;
+
+	//F = {1, 1, 0, 1};
+	F[0] = 1;
+	F[1] = dt;
+	F[2] = 0;
+	F[3] = 1;
+
+	H[0] = 1;
+	H[1] = 0;
+
+	Z = 0;
+	Y = 0;
+
+	P[0] = x_covar;
+	P[1] = 0;
+	P[2] = 0;
+	P[3] = xdot_covar;		// Initial uncertainty of velocity
+
+	S = 0;
+	K[0] = 0;
+	K[1] = 0;
+
+	I[0] = 1;
+	I[1] = 0;
+	I[2] = 0;
+	I[3] = 1;
+
+	U[0] = 0;
+	U[1] = 0;
+
+	R = sensor_noise;		// Covariance of the measurement
+
+	return true;
 };
 
 void matrixInverse4x4(double final_mat[], double adj_mat[], double old_mat[])
@@ -101,7 +134,6 @@ void matrixInverse4x4(double final_mat[], double adj_mat[], double old_mat[])
 
 	matrixScale(4,4,final_mat,determinant,adj_mat);
 };
-
 
 
 double matrixDeterminant4x4(double m[])
