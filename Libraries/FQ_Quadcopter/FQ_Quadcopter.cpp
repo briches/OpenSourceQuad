@@ -1,7 +1,7 @@
 //*****************************************************/
-/*//*//*   FreeQuad   *//*//*
+/*//*//*   OpenSourceQuad   *//*//*
 
-Library designed to manage, my_update, and Control the
+Library designed to manage, update, and Control the
 state of quadcopter
 
 Author  : Brandon Riches
@@ -17,7 +17,7 @@ Date     :	June 2013
 #endif
 
 
-#include "FQ_Quadcopter.h"
+#include "OSQ_Quadcopter.h"
 
 
 
@@ -120,7 +120,7 @@ void mainProcess(	double pitchPID_out,
 					struct fourthOrderData *fourthOrderXAXIS,
 					struct fourthOrderData *fourthOrderYAXIS,
 					struct fourthOrderData *fourthOrderZAXIS,
-					struct FQ_MotorControl *MotorControl)
+					struct OSQ_MotorControl *MotorControl)
 {
 	/**************************************************************************/
 		//! @brief Checks elapsed time and executes various tasks such as running PID controllers
