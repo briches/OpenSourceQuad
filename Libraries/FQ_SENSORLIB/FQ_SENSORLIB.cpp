@@ -33,11 +33,186 @@
 #include <limits.h>
 
 #include <FQ_SENSORLIB.h>
+#include <FQ_QuadGlobalDefined.h>
 
 static float _lsm303Accel_MG_LSB     = 0.001F;   // 1, 2, 4 or 12 mg per lsb
+static float _GYRO_CONVERT_			 = SI_CONVERT_250;
 static float _lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
 static float _lsm303Mag_Gauss_LSB_Z  = 980.0F;   // Varies with gain
 
+/***************************************************************************
+ GYRO
+ ***************************************************************************/
+/***************************************************************************
+ PRIVATE FUNCTIONS
+ ***************************************************************************/
+
+/***************************************************************************
+ CONSTRUCTOR
+ ***************************************************************************/
+
+/**************************************************************************/
+/*!
+    @brief  Instantiates a new  class
+*/
+/**************************************************************************/
+SENSORLIB_gyro::SENSORLIB_gyro(int32_t sensorID) {
+  _sensorID = sensorID;
+}
+
+
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+void SENSORLIB_gyro::write8(byte address, byte reg, byte value)
+{
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)value);
+  #else
+    Wire.send(reg);
+    Wire.send(value);
+  #endif
+  Wire.endTransmission();
+};
+
+/**************************************************************************/
+/*!
+    @brief  Abstract away platform differences in Arduino wire library
+*/
+/**************************************************************************/
+byte SENSORLIB_gyro::read8(byte address, byte reg)
+{
+  byte value;
+
+  Wire.beginTransmission(address);
+  #if ARDUINO >= 100
+    Wire.write((uint8_t)reg);
+  #else
+    Wire.send(reg);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom(address, (byte)1);
+  #if ARDUINO >= 100
+    value = Wire.read();
+  #else
+    value = Wire.receive();
+  #endif
+  Wire.endTransmission();
+
+  return value;
+};
+
+/**************************************************************************/
+/*!
+    @brief  Reads the raw data from the gyro sensor
+*/
+/**************************************************************************/
+void SENSORLIB_gyro::read()
+{
+  // Read the accelerometer
+  Wire.beginTransmission((byte)GYRO_ADDR);
+  #if ARDUINO >= 100
+    Wire.write(GYRO_XOUT_H | 0x80);
+  #else
+    Wire.send(GYRO_XOUT_H | 0x80);
+  #endif
+  Wire.endTransmission();
+  Wire.requestFrom((byte)GYRO_ADDR, (byte)6);
+
+  // Wait around until enough data is available
+  while (Wire.available() < 6);
+
+  #if ARDUINO >= 100
+    uint8_t xhi = Wire.read();
+    uint8_t xlo = Wire.read();
+    uint8_t yhi = Wire.read();
+    uint8_t ylo = Wire.read();
+    uint8_t zhi = Wire.read();
+    uint8_t zlo = Wire.read();
+  #else
+    uint8_t xhi = Wire.receive();
+    uint8_t xlo = Wire.receive();
+    uint8_t yhi = Wire.receive();
+    uint8_t ylo = Wire.receive();
+    uint8_t zhi = Wire.receive();
+    uint8_t zlo = Wire.receive();
+  #endif
+
+  // Shift values to create properly formed integer (low byte first)
+  _gyroData.x = ~( (xlo | (xhi << 8)) - 1);
+  _gyroData.y = ~( (ylo | (yhi << 8)) - 1);
+  _gyroData.z = ~( (zlo | (zhi << 8)) - 1);
+
+};
+
+/***************************************************************************
+ PUBLIC FUNCTIONS
+ ***************************************************************************/
+
+/**************************************************************************/
+/*!
+    @brief  Setups the HW
+*/
+/**************************************************************************/
+bool SENSORLIB_gyro::begin()
+{
+	// Enable I2C
+	Wire.begin();
+
+	byte dDLPF_;
+	byte statusCheck = 0x01;
+
+	if(DLPF <= 6)
+	{
+		dDLPF_ = DLPF;
+	}  // 0 to 6 (sets bandwidth of DLPF and sample rate)
+	else if (DLPF >6)
+	{
+		dDLPF_ = 6;
+	}    // 0 to 6 (sets bandwidth of DLPF and sample rate)
+
+
+	byte FS_DLPF = byte(d_ScaleRange);
+	FS_DLPF = (FS_DLPF << 3) | byte(dDLPF_);
+	Serial.println(FS_DLPF, BIN);
+
+	// Enable the gyro for aux use
+	Serial.println("debug 1");
+	write8(GYRO_ADDR, DLPF_FS_SYNC, FS_DLPF);
+
+	Serial.println("debug 2");
+	write8(GYRO_ADDR, PWR_MGM, statusCheck);
+
+	Serial.println("debug 3");
+	write8(GYRO_ADDR, USER_CTRL, B00100000);
+
+	return true;
+};
+
+/**************************************************************************/
+/*!
+    @brief  Gets the most recent sensor event
+*/
+/**************************************************************************/
+void SENSORLIB_gyro::getEvent(sensors_event_t *event) {
+  /* Clear the event */
+  memset(event, 0, sizeof(sensors_event_t));
+
+  /* Read new data */
+  read();
+
+  event->version   = sizeof(sensors_event_t);
+  event->sensor_id = 3;
+  event->type      = 1;
+  event->timestamp = 0;
+  event->gyro.x = _gyroData.x * _GYRO_CONVERT_;
+  event->gyro.y = _gyroData.y * _GYRO_CONVERT_;
+  event->gyro.z = _gyroData.z * _GYRO_CONVERT_;
+};
 
 /***************************************************************************
  ACCELEROMETER

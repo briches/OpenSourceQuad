@@ -14,8 +14,28 @@
 
 #include <QuadGlobalDefined.h>
 #include <Servo.h>
-
-struct motorControl_t
+//***********************************************/
+/* Plus config
+**************************************************
+					  1
+					  ||
+				 	  ||
+				 	  ||
+				 	  ||
+				  /  front  \
+				  |  usb ^  |
+		  2 ======|         |====== 3
+				  |         |
+				  \_________/
+					  ||
+					  ||
+					  ||
+					  ||
+					  4
+**************************************************
+*/
+//***********************************************/
+struct motorSpeeds_t
 {
 	double m1_DC;
 	double m2_DC;
@@ -33,12 +53,12 @@ class FQ_MotorControl
 		Servo            	motor3;		// Motor 3
 		Servo             	motor4;		// Motor 4
 
-		motorControl_t		motorControl;
+		motorSpeeds_t		motorSpeeds;
 
 		// Function ideas //
 		void calibrateESC(int numESC = 4);
 		void motorDISARM();
-		void startMotors(int startPercentDC);
+		void startMotors();
 		void updateMotors(double pitchPID,
 						  double rollPID,
 						  double yawPID = 0.F,

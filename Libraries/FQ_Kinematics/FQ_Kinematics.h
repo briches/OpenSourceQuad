@@ -22,47 +22,23 @@ Date    :	August 2013
 #include <FQ_Quadcopter.h>
 #include <FQ_QuadGlobalDefined.h>
 #include <FQ_SENSORLIB.h>
-#include <FQ_OseppGyro.h>
-
-
-/*
-typedef struct kinematicData_s
-{
-	double pitch,
-			roll,
-			yaw,
-
-			io_ax,
-			io_ay,
-			io_az,
-			io_wx,
-			io_wy,
-			io_wz,
-
-			pitch_gyro,
-			roll_gyro,
-			yaw_gyro,
-
-			yaw_mag;
-
-	unsigned long timestamp;
-
-} kinematicData;*/
+#include <Wire.h>
+#include <I2C.h>
 
 void kinematicEvent(int eventType,
-					struct kinematicData data,
-					SENSORLIB_accel accel,
-					SENSORLIB_mag mag,
-					OseppGyro gyro,
-					fourthOrderData fourthOrderXAXIS,
-					fourthOrderData fourthOrderYAXIS,
-					fourthOrderData fourthOrderZAXIS);
+					struct kinematicData *data,
+					class SENSORLIB_accel *accel,
+					class SENSORLIB_mag *mag,
+					class SENSORLIB_gyro *gyro,
+					struct fourthOrderData *fourthOrderXAXIS,
+					struct fourthOrderData *fourthOrderYAXIS,
+					struct fourthOrderData *fourthOrderZAXIS);
 
-float computeFourthOrder(float currentInput, struct fourthOrderData *filterParameters);
+double computeFourthOrder(double currentInput, struct fourthOrderData *filterParameters);
 
-void setupFourthOrder(	fourthOrderData fourthOrderXAXIS,
-						fourthOrderData fourthOrderYAXIS,
-						fourthOrderData fourthOrderZAXIS);
+void setupFourthOrder(	struct fourthOrderData *fourthOrderXAXIS,
+						struct fourthOrderData *fourthOrderYAXIS,
+						struct fourthOrderData *fourthOrderZAXIS);
 
 
 

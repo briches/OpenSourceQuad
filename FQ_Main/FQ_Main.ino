@@ -1,7 +1,7 @@
  /*=========================================================================
  
 *//*//*   FreeQuad   *//*//*
-Name: QCopterMain.ino
+Name: FQ_Main.ino
 Authors: Brandon Riches
          With some help from: Branden Yue, Andrew Coulthard
 Date: 2013
@@ -10,8 +10,7 @@ Date: 2013
 TODO:
 1) Chebyshev filter. 
 2) Fix gyro DC drift. (Measure over time, possibly)
-3) Tune PID using Zieglerâ€“Nichols method
-  - http://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method .
+3) Tune PID using ZieglerÃ¢â‚¬â€œNichols method
         
 Copyright stuff from all included libraries that I didn't write
 
@@ -33,7 +32,6 @@ Copyright stuff from all included libraries that I didn't write
     -----------------------------------------------------------------------*/
 #include <FQ_QuadGlobalDefined.h>
 #include <FQ_Kinematics.h>
-#include <FQ_OseppGyro.h>
 #include <FQ_SENSORLIB.h>
 #include <FQ_Quadcopter.h>
 #include <FQ_Motors.h>
@@ -49,6 +47,18 @@ Copyright stuff from all included libraries that I didn't write
 File logfile;
 
 /*=========================================================================
+    Classes and important structures
+    -----------------------------------------------------------------------*/
+SENSORLIB_accel   	accel;
+SENSORLIB_mag	  	mag;
+SENSORLIB_gyro         	gyro;
+fourthOrderData   	fourthOrderXAXIS,
+			fourthOrderYAXIS,
+			fourthOrderZAXIS;
+kinematicData	  	kinematics;
+FQ_MotorControl   	motorControl;
+
+/*=========================================================================
     PID output variables and desired setpoints, and settings
     -----------------------------------------------------------------------*/
 /*=========================================================================
@@ -62,34 +72,14 @@ double set_b, rollPID_out;
 // Sample time for PID controllers in ms	      	
 int PID_SampleTime = 10;
 
-// Output limits on the PID controllers.
-// Both the alpha and the beta controller use these limits.
-// They represent the maximum absolute value that the PID equation could reach,
-// regardless of what the gain coefficients are. 
-int PID_OutLims[] = {-1000,1000};
-
-
-/*=========================================================================
-    Classes and important structures
-    -----------------------------------------------------------------------*/
-SENSORLIB_accel   accel;       		// Accel class
-SENSORLIB_mag	  mag;			// Mag class
-OseppGyro         gyro;			// Gyro class
-fourthOrderData   fourthOrderXAXIS,
-		  fourthOrderYAXIS,
-		  fourthOrderZAXIS;
-kinematicData	  kinematics;
-FQ_MotorControl   MotorControl;
-    
-
 // Constructors for the PID controllers
 // The 4th, 5th, and 6th args in the constructors are, respectively:
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-#define Kp 24    // Was 24, 48, 0.75
-#define Ki 48    // 5, 1, 1
-#define Kd 0.75  // Classic PID Z-N method
+#define Kp 1.500    
+#define Ki 2.0    
+#define Kd -0.0070
 PID aPID(&kinematics.pitch,  &pitchPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
 PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
@@ -142,7 +132,7 @@ void setup()
   while(!initSensor(accel, 
                     mag, 
                     gyro,
-                    kinematics));
+                    &kinematics));
   
   // Initialize the PID controllers. This is a sub-function, below loop.
   PID_init();   
@@ -151,8 +141,8 @@ void setup()
   // just below take-off speed.
   // Enter a %, from 0 - 100
   ERROR_LED(2);
-  MotorControl.calibrateESC();
-  MotorControl.startMotors(20);
+  motorControl.calibrateESC();
+  motorControl.startMotors();
   delay(50);
   
   // Set both the alpha and beta setpoints to 0. 
@@ -160,9 +150,9 @@ void setup()
   set_b = 0;  
   
   // Initialize the fourth order struct
-  setupFourthOrder(fourthOrderXAXIS,
-                  fourthOrderYAXIS,
-                  fourthOrderZAXIS);
+  setupFourthOrder(&fourthOrderXAXIS,
+                   &fourthOrderYAXIS,
+                   &fourthOrderZAXIS);
   ERROR_LED(1);    
 }
 
@@ -183,19 +173,18 @@ void loop()
   // more accurate readings of angle
   mainProcess(pitchPID_out, 
               rollPID_out, 
-              accel, 
-              mag, 
-              gyro,
-              kinematics,
-              fourthOrderXAXIS,
-              fourthOrderYAXIS,
-              fourthOrderZAXIS,
-              MotorControl);  
-
+              &accel, 
+              &mag, 
+              &gyro,
+              &kinematics,
+              &fourthOrderXAXIS,
+              &fourthOrderYAXIS,
+              &fourthOrderZAXIS,
+              &motorControl);  
+        
   // Updates the PID controllers. They return new outputs based on current
   // and past data. These outputs are used to decide what the motor speeds should be set to.
-  
-  if (millis() > 10000)
+  if (millis() > 4000)
   {
     aPID.Compute();
     bPID.Compute();
@@ -229,14 +218,11 @@ void loop()
   // Close the file after sometime  of logging.
   if (millis() >= 60000)
   {
-    MotorControl.motorDISARM();
-    while(1);
+    motorControl.motorDISARM();
+    ERROR_LED(3);
   }
 
-  Serial.print(kinematics.pitch);
-  Serial.print(" ");
-  Serial.print(kinematics.roll);
-  Serial.println(" ");
+ // Serial.println(motorControl.motorSpeeds.m1_DC);
 
   
 }
@@ -291,10 +277,11 @@ void logfileStart()
 // been explained already, essentially.
 void PID_init()                                          
 {
-  unsigned long t1, t2;
-  double elaps;
-  t1 = micros();
-  
+  // Output limits on the PID controllers.
+  // Both the alpha and the beta controller use these limits.
+  // They represent the maximum absolute value that the PID equation could reach,
+  // regardless of what the gain coefficients are. 
+  int PID_OutLims[] = {-100,100};
   Serial.print("Initializing PID controllers...    ");
   aPID.SetMode(AUTOMATIC);
   aPID.SetSampleTime(PID_SampleTime);	                 
@@ -303,11 +290,10 @@ void PID_init()
   bPID.SetSampleTime(PID_SampleTime);	               
   bPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);
   
-  t2 = micros();
-  elaps = (t2-t1);
-  Serial.print("Done! Elapsed time (us): ");
-  Serial.println(elaps,6);
+  Serial.println("Done! ");
+  Serial.println();
 }
+
 
 
 

@@ -16,24 +16,23 @@ Date     :	June 2013
  #include "WProgram.h"
 #endif
 
-#include <FQ_Kinematics.h>
-#include <FQ_Quadcopter.h>
-#include <Wire.h>
-#include <I2c.h>
+
+#include "FQ_Quadcopter.h"
 
 
 
 
-void getInitialOffsets(struct kinematicData kinematics,
+
+void getInitialOffsets(struct kinematicData *kinematics,
 						SENSORLIB_accel accel,
 						SENSORLIB_mag mag,
-						OseppGyro gyro)
+						SENSORLIB_gyro gyro)
 {
 	/**************************************************************************/
 		//! @brief Gets the initial offsets in both sensors to accomodate board mount
     /**************************************************************************/
 	ERROR_LED(2);										// Warning LED
-    int offset_counter = 10;                       // # of data sets to consider when finding offsets
+    int offset_counter = 100;                       // # of data sets to consider when finding offsets
     int counter = 1;
     double acceldata[3];
     double gyrodata[3];
@@ -46,19 +45,20 @@ void getInitialOffsets(struct kinematicData kinematics,
         acceldata[1] = accel_event.acceleration.y;
         acceldata[2] = accel_event.acceleration.z;
 
-        gyro.update();                             // my_updates the gyro output registers
-        gyrodata[0] = gyro.x();
-        gyrodata[1] = gyro.y();
-        gyrodata[2] = gyro.z();
+        sensors_event_t gyro_event;
+        gyro.getEvent(&gyro_event);
+        gyrodata[0] = gyro_event.gyro.x;
+        gyrodata[1] = gyro_event.gyro.y;
+        gyrodata[2] = gyro_event.gyro.z;
 
-        kinematics.io_ax = (kinematics.io_ax + acceldata[0] ); // Sum
-        kinematics.io_ay = (kinematics.io_ay + acceldata[1] );
-        kinematics.io_az = (kinematics.io_az + acceldata[2] );
-        kinematics.io_wx = (kinematics.io_wx + gyrodata[0] );
-        kinematics.io_wy = (kinematics.io_wy + gyrodata[1] );
-        kinematics.io_wz = (kinematics.io_wz + gyrodata[2] );
+        kinematics->io_ax = (kinematics->io_ax + acceldata[0] ); // Sum
+        kinematics->io_ay = (kinematics->io_ay + acceldata[1] );
+        kinematics->io_az = (kinematics->io_az + acceldata[2] );
+        kinematics->io_wx = (kinematics->io_wx + gyrodata[0] );
+        kinematics->io_wy = (kinematics->io_wy + gyrodata[1] );
+        kinematics->io_wz = (kinematics->io_wz + gyrodata[2] );
 
-		if ((kinematics.io_ax==0)&&(kinematics.io_ay == 0)&&(kinematics.io_az == 0))
+		if ((kinematics->io_ax==0)&&(kinematics->io_ay == 0)&&(kinematics->io_az == 0))
 		{
 			ERROR_LED(3);						// Critical error, accelerometer is NOT working
 		}
@@ -67,56 +67,36 @@ void getInitialOffsets(struct kinematicData kinematics,
         delay(1);
     }
 
-    kinematics.io_ax /= offset_counter;
-	kinematics.io_ay /= offset_counter;
-	kinematics.io_az /= offset_counter;
-	kinematics.io_wx /= offset_counter;
-	kinematics.io_wy /= offset_counter;
-	kinematics.io_wz /= offset_counter;
+    kinematics->io_ax /= offset_counter;
+	kinematics->io_ay /= offset_counter;
+	kinematics->io_az /= offset_counter;
+	kinematics->io_wx /= offset_counter;
+	kinematics->io_wy /= offset_counter;
+	kinematics->io_wz /= offset_counter;
 
 	Serial.println(" ");
-    Serial.println(kinematics.io_ax);
-    Serial.println(kinematics.io_ay);
-    Serial.println(kinematics.io_az);
-    Serial.println(kinematics.io_wx);
-    Serial.println(kinematics.io_wy);
-    Serial.println(kinematics.io_wz);
+    Serial.println(kinematics->io_ax);
+    Serial.println(kinematics->io_ay);
+    Serial.println(kinematics->io_az);
+    Serial.println(kinematics->io_wx);
+    Serial.println(kinematics->io_wy);
+    Serial.println(kinematics->io_wz);
 
     ERROR_LED(1); 					// Success LED
 };
 
 bool initSensor(SENSORLIB_accel accel,
 				SENSORLIB_mag mag,
-				OseppGyro gyro,
-				struct kinematicData kinematics)
+				SENSORLIB_gyro gyro,
+				struct kinematicData *kinematics)
 {
 	/**************************************************************************/
 		//! @brief Initializes the various sensors and instruments
 	/**************************************************************************/
 	ERROR_LED(2);												// Warning LED
 
-	byte x=0x0;
-	Serial.println("Intializing gyro...    ");                      		// See OseppGyro.h
-
-	Serial.println("Set I2c address.");
-    gyro.setI2CAddr(Gyro_Address);                // Set the I2C address in OseppGyro class
-
-	Serial.println("Set ScaleRange and DLPF settings");
-    gyro.dataMode(d_ScaleRange, DLPF);       // Set the dataMode in the OseppGyro Class
-
-	Serial.println("Set USER_CTRL register");
-    while(x != B100000)
-    {
-        gyro.regRead(USER_CTRL, &x, 1);                            // See the data sheet for the MPU3050 gyro
-        gyro.regWrite(USER_CTRL, B00100000);             // http://invensense.com/mems/gyro/documents/RM-MPU-3000A.pdf
-        if(millis() >= 3000)
-        {
-        	Serial.println("Err: Unable to write to USER_CTRL. ");
-        	break;
-        }
-    }
-
 	// Same as the gyro initialization, but the accel isnt an ass
+	gyro.begin();
 	accel.begin();
 	mag.begin();
 
@@ -133,14 +113,14 @@ bool initSensor(SENSORLIB_accel accel,
 
 void mainProcess(	double pitchPID_out,
 					double rollPID_out,
-					SENSORLIB_accel accel,
-					SENSORLIB_mag	mag,
-					OseppGyro	gyro,
-					kinematicData kinematics,
-					fourthOrderData fourthOrderXAXIS,
-					fourthOrderData fourthOrderYAXIS,
-					fourthOrderData fourthOrderZAXIS,
-					FQ_MotorControl MotorControl)
+					class SENSORLIB_accel *accel,
+					class SENSORLIB_mag	*mag,
+					class SENSORLIB_gyro *gyro,
+					struct kinematicData *kinematics,
+					struct fourthOrderData *fourthOrderXAXIS,
+					struct fourthOrderData *fourthOrderYAXIS,
+					struct fourthOrderData *fourthOrderZAXIS,
+					struct FQ_MotorControl *MotorControl)
 {
 	/**************************************************************************/
 		//! @brief Checks elapsed time and executes various tasks such as running PID controllers
@@ -183,9 +163,10 @@ void mainProcess(	double pitchPID_out,
 
 	}
 
+
 	/**!					@Poll type one 				*/
 	// Code in this block executes if any of the poll conditions are satisfied
-	if (priority == 1)
+	if ((priority == 1) || (priority == 2) || (priority == 3) || (priority == 4) )
 	{
 
 		kinematicEvent(	0,
@@ -204,7 +185,7 @@ void mainProcess(	double pitchPID_out,
 
 /**! 				@Poll type two - 75 Hz			*/
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
-	if (priority == 2)
+	if ((priority == 1) || (priority == 2))
 	{
 		// Update kinematics including magnetometer
 		kinematicEvent(	1,
@@ -223,11 +204,11 @@ void mainProcess(	double pitchPID_out,
 
 	/**! 				@Poll type three - 20 Hz			*/
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
-	if (priority == 3)
+	if ((priority == 4) || (priority == 3))
 	{
 		double x = 0;
 		// Motor Logic
-		MotorControl.updateMotors(pitchPID_out,  rollPID_out, x, x);
+		MotorControl->updateMotors(pitchPID_out,  rollPID_out, x, x);
 
 		// Read the time that poll3 was last executed
 		tpoll3 = micros();
@@ -245,7 +226,7 @@ void mainProcess(	double pitchPID_out,
 //		vbatt = (double)analogRead(15);
 //		vbatt *= 11.1;
 //		// Read the time that poll3 was last executed
-		tpoll3 = micros();
+		tpoll4 = micros();
 	}
 
 

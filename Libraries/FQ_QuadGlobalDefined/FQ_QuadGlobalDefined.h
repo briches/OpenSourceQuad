@@ -28,6 +28,7 @@
 #endif
 
 
+
 /***************************************************************************
 /////////////////////////////////////////////////////////////////////////////
 // General Definitions
@@ -89,8 +90,8 @@
 
 struct fourthOrderData
 {
-  float  inputTm1,  inputTm2,  inputTm3,  inputTm4;
-  float outputTm1, outputTm2, outputTm3, outputTm4;
+  double  inputTm1,  inputTm2,  inputTm3,  inputTm4;
+  double outputTm1, outputTm2, outputTm3, outputTm4;
 };
 
 /*=========================================================================
@@ -378,6 +379,16 @@ typedef struct lsm303AccelData_s
 } lsm303AccelData;
 
 /*=========================================================================
+    INTERNAL ACCELERATION DATA TYPE
+    -----------------------------------------------------------------------*/
+typedef struct OseppGyroData_s
+{
+  float x;
+  float y;
+  float z;
+} OseppGyroData;
+
+/*=========================================================================
     Kinematics Data Type
     -----------------------------------------------------------------------*/
 struct kinematicData
@@ -435,7 +446,7 @@ struct kinematicData
     I2C or TWI addresses
     -----------------------------------------------------------------------*/
 
-#define Gyro_Address    (0x69)				// I2C Address of the gyro
+#define GYRO_ADDR	   	(0x69)
 #define ACCEL_ADDR  	(0x32 >> 1)
 #define MAG_ADDR  		(0x3C >> 1)
 
@@ -445,6 +456,7 @@ struct kinematicData
 const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
 const int DLPF = 6;                 // 0,1,2,3,4,5,6,7 // See data sheet
 const bool HighDef = true;          // Is accel output 2byte or 1byte
+
 
 
 #endif // QUADGLOBALDEFINED_H_INCLUDED

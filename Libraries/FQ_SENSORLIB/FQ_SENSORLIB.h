@@ -80,4 +80,23 @@ class SENSORLIB_mag
 		byte read8(byte address, byte reg);
 		void read(void);
 };
+
+class SENSORLIB_gyro
+{
+	public:
+
+		SENSORLIB_gyro(int32_t sensorID = -1);
+		bool begin(void);
+		void getEvent(sensors_event_t*);
+
+	private:
+
+		int32_t _sensorID;
+
+		OseppGyroData	_gyroData;	// Last read gyro data will be available here
+
+		void write8(byte address, byte reg, byte value);
+		byte read8(byte address, byte reg);
+		void read(void);
+};
 #endif

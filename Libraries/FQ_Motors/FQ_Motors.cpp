@@ -38,27 +38,27 @@ void FQ_MotorControl :: calibrateESC(int numESC)
 	this->ESC_READY = true;
 };
 
-void FQ_MotorControl :: startMotors(int startPercentDC)
+void FQ_MotorControl :: startMotors()
 {
 	if(this->ESC_READY)
 	{
-		int dutyCycleTarget = map(startPercentDC, 0, 100, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+		int dutyCycleTarget = (passiveMAX + passiveMIN) / 2;
 
 		int DC;
 		for (DC = MIN_PULSE_WIDTH; DC <= dutyCycleTarget; DC++)
 		{
 			motor1.writeMicroseconds(DC);
 			motor2.writeMicroseconds(DC);
-			motor2.writeMicroseconds(DC);
-			motor2.writeMicroseconds(DC);
-
+			motor3.writeMicroseconds(DC);
+			motor4.writeMicroseconds(DC);
+			Serial.println(DC);
 			delayMicroseconds(DC*3);
 		}
 
-		motorControl.m1_DC = DC;
-		motorControl.m2_DC = DC;
-		motorControl.m3_DC = DC;
-		motorControl.m4_DC = DC;
+		motorSpeeds.m1_DC = DC;
+		motorSpeeds.m2_DC = DC;
+		motorSpeeds.m3_DC = DC;
+		motorSpeeds.m4_DC = DC;
 	}
 };
 
@@ -72,28 +72,32 @@ void FQ_MotorControl :: updateMotors(	double pitchPID,
 		#ifdef _PLUSconfig
 
 			// Control angle
-			motorControl.m1_DC 	+= pitchPID;
-			motorControl.m4_DC 	-= pitchPID;
-			motorControl.m2_DC	+= rollPID;
-			motorControl.m3_DC 	-= rollPID;
+			motorSpeeds.m1_DC 	+= rollPID;
+			motorSpeeds.m4_DC 	-= rollPID;
+			motorSpeeds.m2_DC	+= pitchPID;
+			motorSpeeds.m3_DC 	-= pitchPID;
 
 			// TODO: Yaw, elev PID.
 
 			// Restrict duty cycle to max/min
-			motorControl.m1_DC = constrain(	motorControl.m1_DC,
+			motorSpeeds.m1_DC = constrain(	motorSpeeds.m1_DC,
 											passiveMIN - agroBOOL * agroSTEP,
 											passiveMAX + agroBOOL * agroSTEP);
-			motorControl.m2_DC = constrain(	motorControl.m2_DC,
+			motorSpeeds.m2_DC = constrain(	motorSpeeds.m2_DC,
 											passiveMIN - agroBOOL * agroSTEP,
 											passiveMAX + agroBOOL * agroSTEP);
-			motorControl.m3_DC = constrain(	motorControl.m3_DC,
+			motorSpeeds.m3_DC = constrain(	motorSpeeds.m3_DC,
 											passiveMIN - agroBOOL * agroSTEP,
 											passiveMAX + agroBOOL * agroSTEP);
-			motorControl.m4_DC = constrain(	motorControl.m4_DC,
+			motorSpeeds.m4_DC = constrain(	motorSpeeds.m4_DC,
 											passiveMIN - agroBOOL * agroSTEP,
 											passiveMAX + agroBOOL * agroSTEP);
 
 
+			motor1.writeMicroseconds(motorSpeeds.m1_DC);
+			motor2.writeMicroseconds(motorSpeeds.m2_DC);
+			motor3.writeMicroseconds(motorSpeeds.m3_DC);
+			motor4.writeMicroseconds(motorSpeeds.m4_DC);
 		#endif
 
 		#ifdef _Xconfig
