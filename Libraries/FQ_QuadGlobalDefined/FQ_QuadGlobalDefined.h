@@ -1,6 +1,6 @@
 ////========================================================================
-	/*//*//*   FreeQuad   *//*//*
-	QuadGlobalDefined.h
+	/*//*//*   OpenSourceQuad   *//*//*
+	OSQ_QuadGlobalDefined.h
 	August 2013
 
 	A comprehensive functional list of all (most) variables used in any of
@@ -12,8 +12,8 @@
     -----------------------------------------------------------------------*/
 
 
-#ifndef QUADGLOBALDEFINED_H_INCLUDED
-#define QUADGLOBALDEFINED_H_INCLUDED
+#ifndef OSQ_QUADGLOBALDEFINED_H_INCLUDED
+#define OSQ_QUADGLOBALDEFINED_H_INCLUDED
 
 #if (ARDUINO >= 100)
  #include "Arduino.h"
@@ -51,10 +51,10 @@
 // "BrandonCoeffs" uses n = 4, r = 10, Wc = 0.1
 // AeroQuad filter uses n = 4, r = 60, Wc = 12.5/50
 
-#define AeroQuad
+#define AeroQuadCoeff
 // #define BrandonCoeffs
 
-#ifdef AeroQuad
+#ifdef AeroQuadCoeff
 	#define ORDER 4
 	#define _b0  0.001893594048567
 	#define _b1 -0.002220262954039
@@ -459,4 +459,4 @@ const bool HighDef = true;          // Is accel output 2byte or 1byte
 
 
 
-#endif // QUADGLOBALDEFINED_H_INCLUDED
+#endif // OSQ_QUADGLOBALDEFINED_H_INCLUDED
