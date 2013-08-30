@@ -1,13 +1,13 @@
 /**=========================================================================
 
-	KalmanFilter.h
+	OSQ_KalmanFilter.h
 	August 2013
 
 	A library designed to easily implement 2D or 4D state Kalman filters
     -----------------------------------------------------------------------*/
 
-#ifndef KALMANFILTER_H_INCLUDED
-#define KALMANFILTER_H_INCLUDED
+#ifndef OSQ_KALMANFILTER_H_INCLUDED
+#define OSQ_KALMANFILTER_H_INCLUDED
 
 class Kalman2D
 {
@@ -65,4 +65,4 @@ void matrixInverse3x3(double matrixC[9], double matrixA[9]);
 
 
 
-#endif // KALMANFILTER_H_INCLUDED
+#endif // OSQ_KALMANFILTER_H_INCLUDED
