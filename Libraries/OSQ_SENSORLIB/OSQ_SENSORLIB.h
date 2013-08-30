@@ -1,14 +1,24 @@
-//******************************************************************************
-    /*//*//*   OpenSourceQuad   *//*//*
-    Sensor Library
-    Author: Brandon Yue and Brandon Riches
+/*=====================================================================
+	OSQ_QuadGlobalDefined
+	OpenSourceQuad
+	-------------------------------------------------------------------*/
+/*================================================================================
 
-    Replacement for the Adafruit LSM303 library. Uses Wire.
-    Uses the same format as the Adafruit_LSM303 library. I assume the
-    code is used under the license provided by Adafruit Industries.
+	Author		: Brandon Riches
+	Date		: August 2013
+	License		: GNU Public License
 
-    /***************************************************************************
-	  This is a library for the LSM303 Accelerometer and magnentometer/compass
+	This library manages the I2C interface with certain sensors, allowing them to
+	easily communicate with the microcontroller.
+
+	Copyright (C) 2013  Brandon Riches
+
+	NOTE: Most of the methods and code in this library was originally designed by
+	Kevin Townsend for Adafruit Industries. The code was released under the BSD license
+
+	The following is the original license information:
+
+	 This is a library for the LSM303 Accelerometer and magnentometer/compass
 
 	  Designed specifically to work with the Adafruit LSM303DLHC Breakout
 
@@ -20,8 +30,8 @@
 
 	  Written by Kevin Townsend for Adafruit Industries.
 	  BSD license, all text above must be included in any redistribution
-	 *************************************************************************//*
-/******************************************************************************/
+
+	-----------------------------------------------------------------------------*/
 
 
 #ifndef OSQ_SENSORLIB_H_INCLUDED
