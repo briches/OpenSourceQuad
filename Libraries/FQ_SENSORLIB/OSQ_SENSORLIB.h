@@ -1,5 +1,5 @@
 //******************************************************************************
-    /*//*//*   FreeQuad   *//*//*
+    /*//*//*   OpenSourceQuad   *//*//*
     Sensor Library
     Author: Brandon Yue and Brandon Riches
 
@@ -24,8 +24,8 @@
 /******************************************************************************/
 
 
-#ifndef SENSORLIB_H_INCLUDED
-#define SENSORLIB_H_INCLUDED
+#ifndef OSQ_SENSORLIB_H_INCLUDED
+#define OSQ_SENSORLIB_H_INCLUDED
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -34,7 +34,7 @@
 #include "WProgram.h"
 #endif
 
-#include <FQ_QuadGlobalDefined.h>
+#include <OSQ_QuadGlobalDefined.h>
 #include <Wire.h>
 
 
