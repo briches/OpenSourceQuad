@@ -1,5 +1,5 @@
 //****************************************************/
-/*//*//*   FreeQuad   *//*//*
+/*//*//*   OpenSourceQuad   *//*//*
 
 Library designed to manage, my_update, and Control the
 state of quadcopter
@@ -15,10 +15,10 @@ Date     :	June 2013
  #include "WProgram.h"
 #endif
 
-#include <FQ_Kinematics.h>
-#include <FQ_Quadcopter.h>
-#include <FQ_QuadGlobalDefined.h>
-#include <FQ_SENSORLIB.h>
+#include <OSQ_Kinematics.h>
+#include <OSQ_Quadcopter.h>
+#include <OSQ_QuadGlobalDefined.h>
+#include <OSQ_SENSORLIB.h>
 
 
 double normalize(double x, double y, double z);
