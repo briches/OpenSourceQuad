@@ -1,7 +1,7 @@
  /*=========================================================================
  
-*//*//*   FreeQuad   *//*//*
-Name: FQ_Main.ino
+*//*//*   OpenSourceQuad   *//*//*
+Name: OSQ_Main.ino
 Authors: Brandon Riches
          With some help from: Branden Yue, Andrew Coulthard
 Date: 2013
@@ -30,11 +30,11 @@ Copyright stuff from all included libraries that I didn't write
   
   SD
     -----------------------------------------------------------------------*/
-#include <FQ_QuadGlobalDefined.h>
-#include <FQ_Kinematics.h>
-#include <FQ_SENSORLIB.h>
-#include <FQ_Quadcopter.h>
-#include <FQ_Motors.h>
+#include <OSQ_QuadGlobalDefined.h>
+#include <OSQ_Kinematics.h>
+#include <OSQ_SENSORLIB.h>
+#include <OSQ_Quadcopter.h>
+#include <OSQ_Motors.h>
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
@@ -56,7 +56,7 @@ fourthOrderData   	fourthOrderXAXIS,
 			fourthOrderYAXIS,
 			fourthOrderZAXIS;
 kinematicData	  	kinematics;
-FQ_MotorControl   	motorControl;
+OSQ_MotorControl   	motorControl;
 
 /*=========================================================================
     PID output variables and desired setpoints, and settings
