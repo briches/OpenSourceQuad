@@ -1,5 +1,5 @@
 //***************************************************/
-/*//*//*   FreeQuad   *//*//*
+/*//*//*   OpenSourceQuad   *//*//*
 
 Abstracts out the kinematic calculations from the other
 libraries and main files.
@@ -19,9 +19,9 @@ Date    :	August 2013
  #include "WProgram.h"
 #endif
 
-#include <FQ_Quadcopter.h>
-#include <FQ_QuadGlobalDefined.h>
-#include <FQ_SENSORLIB.h>
+#include <OSQ_Quadcopter.h>
+#include <OSQ_QuadGlobalDefined.h>
+#include <OSQ_SENSORLIB.h>
 #include <Wire.h>
 #include <I2C.h>
 
