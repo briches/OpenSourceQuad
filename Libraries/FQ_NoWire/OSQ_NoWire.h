@@ -1,5 +1,6 @@
 /**=====================================================================
 	NoWire library
+	OpenSourceQuad
 	-------------------------------------------------------------------*/
 /*================================================================================
 
@@ -29,8 +30,8 @@
 
 	-----------------------------------------------------------------------------*/
 
-#ifndef NOWIRE_H_INCLUDED
-#define NOWIRE_H_INCLUDED
+#ifndef OSQ_NOWIRE_H_INCLUDED
+#define OSQ_NOWIRE_H_INCLUDED
 
 #if (ARDUINO >= 100)
  #include "Arduino.h"
@@ -105,4 +106,4 @@ class NoWire
 
 }
 
-#endif // NOWIRE_H_INCLUDED
+#endif // OSQ_NOWIRE_H_INCLUDED
