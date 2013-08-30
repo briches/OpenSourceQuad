@@ -1,5 +1,5 @@
 //*****************************************************/
-/*//*//*   FreeQuad   *//*//*
+/*//*//*   OpenSourceQuad   *//*//*
 
 Library designed to manage, update, and control the
 state of quadcopter
@@ -10,8 +10,8 @@ Date     :	June 2013
 
 
 ******************************************************/
-#ifndef CONTROL_H_INCLUDED
-#define CONTROL_H_INCLUDED
+#ifndef OSQ_QUADCOPTER_H_INCLUDED
+#define OSQ_QUADCOPTER_H_INCLUDED
 
 
 #if (ARDUINO >= 100)
@@ -20,10 +20,10 @@ Date     :	June 2013
  #include "WProgram.h"
 #endif
 
-#include <FQ_QuadGlobalDefined.h>
-#include <FQ_Kinematics.h>
-#include <FQ_SENSORLIB.h>
-#include <FQ_Motors.h>
+#include <OSQ_QuadGlobalDefined.h>
+#include <OSQ_Kinematics.h>
+#include <OSQ_SENSORLIB.h>
+#include <OSQ_Motors.h>
 
 #include <I2C.h>
 #include <Wire.h>
@@ -59,7 +59,7 @@ void mainProcess(	double pitchPID_out,
 					struct fourthOrderData *fourthOrderXAXIS,
 					struct fourthOrderData *fourthOrderYAXIS,
 					struct fourthOrderData *fourthOrderZAXIS,
-					struct FQ_MotorControl *MotorControl);
+					struct OSQ_MotorControl *MotorControl);
 
 
 void ERROR_LED(		int LED_SEL);
@@ -73,4 +73,4 @@ void getInitialOffsets(struct kinematicData *kinematics,
 
 
 
-#endif // CONTROL_H_INCLUDED
+#endif // OSQ_QUADCOPTER_H_INCLUDED
