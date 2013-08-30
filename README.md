@@ -1,4 +1,4 @@
-FreeQuad
+OpenSourceQuad
 ==========
 
 Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
