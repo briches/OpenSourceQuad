@@ -1,5 +1,5 @@
 ////========================================================================
-	/*//*//*   FreeQuad   *//*//*
+	/*//*//*   OpenSourceQuad   *//*//*
 	FQ_Motors.cpp
 
 	Author		: Brandon Riches
@@ -7,12 +7,12 @@
 
 	Library designed to interface with and control brushless motor escs
     -----------------------------------------------------------------------*/
-#include "FQ_Motors.h"
-#include <FQ_QuadGlobalDefined.h>
+#include "OSQ_Motors.h"
+#include <OSQ_QuadGlobalDefined.h>
 
 
 
-FQ_MotorControl :: FQ_MotorControl(int num)
+OSQ_MotorControl :: OSQ_MotorControl(int num)
 {
 	this->NUM_MOTORS 	= num;
 	this->MOTORS_ARMED 	= false;
@@ -23,7 +23,7 @@ FQ_MotorControl :: FQ_MotorControl(int num)
 	this->agroBOOL		= false;
 };
 
-void FQ_MotorControl :: calibrateESC(int numESC)
+void OSQ_MotorControl :: calibrateESC(int numESC)
 {
 	motor1.attach(MOTOR1PIN);
 	motor2.attach(MOTOR2PIN);
@@ -38,7 +38,7 @@ void FQ_MotorControl :: calibrateESC(int numESC)
 	this->ESC_READY = true;
 };
 
-void FQ_MotorControl :: startMotors()
+void OSQ_MotorControl :: startMotors()
 {
 	if(this->ESC_READY)
 	{
@@ -62,7 +62,7 @@ void FQ_MotorControl :: startMotors()
 	}
 };
 
-void FQ_MotorControl :: updateMotors(	double pitchPID,
+void OSQ_MotorControl :: updateMotors(	double pitchPID,
 										double rollPID,
 										double yawPID,
 										double elevPID)
@@ -110,9 +110,9 @@ void FQ_MotorControl :: updateMotors(	double pitchPID,
 	}
 
 
-}
+};
 
-void FQ_MotorControl :: motorDISARM()
+void OSQ_MotorControl :: motorDISARM()
 {
 	motor1.writeMicroseconds(MIN_PULSE_WIDTH);
 	motor2.writeMicroseconds(MIN_PULSE_WIDTH);
@@ -125,4 +125,4 @@ void FQ_MotorControl :: motorDISARM()
 	motor4.detach();
 
 	MOTORS_ARMED = false;
-}
+};
