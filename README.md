@@ -1,4 +1,4 @@
-Quadcopter
+FreeQuad
 ==========
 
 Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
@@ -8,12 +8,14 @@ Version: 0.7 <br />
 Description
 -----------
 
-Its quadcopter flight software!  
+Its quadcopter flight software! 
+
+Our end goal is to create future proof, easy-to-use 
+and customizable firmware for any flight configuration ( which is quite the lofty goal, but we're working on it).
 <br /><br />
 
 MCU: Osepp Mega 2560 R3   
-(A port the chipKIT uC32 with the PIC32 is underway)
-
+(A port to the chipKIT uC32 with the PIC32 is underway)
 
 <br />
 Current sensors lineup:
@@ -29,10 +31,11 @@ Under development currently:
 ----------------------------
 
  <br />
-  - Digital filtering of accel and gyro data <br />
+  - Hardware PWM implementation
+
+  - Formatting changes to allow greater abstraction
 
   - GPS integration and datalogging <br />
-      - See [QCopterMain.ino](https://github.com/briches/Quadcopter/blob/master/QCopterMain/QCopterMain.ino) for info. <br />
 
 
 Features and long term goals:
