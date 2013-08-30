@@ -1,50 +1,51 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Quadcopter : Driver for controlled quadcopter flight" />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>OpenSourceQuad by briches</title>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Quadcopter</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
-
   <body>
+    <div class="wrapper">
+      <header>
+        <h1>OpenSourceQuad</h1>
+        <p>Driver for controlled quadcopter flight</p>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/QCopter/Quadcopter">View on GitHub</a>
+        <p class="view"><a href="https://github.com/briches/OpenSourceQuad">View the Project on GitHub <small>briches/OpenSourceQuad</small></a></p>
 
-          <h1 id="project_title">Quadcopter</h1>
-          <h2 id="project_tagline">Driver for controlled quadcopter flight</h2>
 
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/QCopter/Quadcopter/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/QCopter/Quadcopter/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
+        <ul>
+          <li><a href="https://github.com/briches/OpenSourceQuad/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/briches/OpenSourceQuad/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/briches/OpenSourceQuad">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
         <h1>
-<a name="quadcopter" class="anchor" href="#quadcopter"><span class="octicon octicon-link"></span></a>Quadcopter</h1>
+<a name="opensourcequad" class="anchor" href="#opensourcequad"><span class="octicon octicon-link"></span></a>OpenSourceQuad</h1>
 
 <p>Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br>
-Date   : May 2013 <br>
+Date   : 2013 <br>
 Version: 0.7 <br></p>
 
 <h2>
 <a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h2>
 
-<p>Its quadcopter flight software!<br><br><br></p>
+<p>Its quadcopter flight software! </p>
+
+<p>Our end goal is to create future proof, easy-to-use 
+and customizable firmware for any flight configuration ( which is quite the lofty goal, but we're working on it).
+<br><br></p>
 
 <p>MCU: Osepp Mega 2560 R3<br>
-(Soon switching to the chipKIT uC32 with the PIC32)  </p>
+(A port to the chipKIT uC32 with the PIC32 is underway)</p>
 
 <p><br>
 Current sensors lineup:</p>
@@ -62,15 +63,9 @@ Current sensors lineup:</p>
 <p><br></p>
 
 <ul>
-<li><p>Digital filtering of accel and gyro data <br></p></li>
-<li>
-<p>GPS integration and datalogging <br></p>
-
-<ul>
-<li>See <a href="https://github.com/briches/Quadcopter/blob/master/QCopterMain/QCopterMain.ino">QCopterMain.ino</a> for info. <br>
-</li>
-</ul>
-</li>
+<li><p>Hardware PWM implementation</p></li>
+<li><p>Formatting changes to allow greater abstraction</p></li>
+<li><p>GPS integration and datalogging <br></p></li>
 </ul><h2>
 <a name="features-and-long-term-goals" class="anchor" href="#features-and-long-term-goals"><span class="octicon octicon-link"></span></a>Features and long term goals:</h2>
 
@@ -83,17 +78,12 @@ Current sensors lineup:</p>
 <br><br></p></li>
 </ul>
       </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Quadcopter maintained by <a href="https://github.com/QCopter">QCopter</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/briches">briches</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
-
+    <script src="javascripts/scale.fix.js"></script>
     
-
   </body>
 </html>
