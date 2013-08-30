@@ -1,13 +1,13 @@
 /**=========================================================================
 
-	KalmanFilter.cpp
+	OSQ_KalmanFilter.cpp
 	August 2013
 
 	A library designed to easily implement 2D or 4D state vector
 	Kalman filters
 	-----------------------------------------------------------------------*/
 
-#include <KalmanFilter.h>
+#include <OSQ_KalmanFilter.h>
 
 void Kalman2D::Kalman2DPredict()
 {
