@@ -60,7 +60,9 @@ void kinematicEvent(int eventType,
 
 float computeFourthOrder(float currentInput, struct fourthOrderData *filterParameters);
 
-void setupFourthOrder(void);
+void setupFourthOrder(	fourthOrderData fourthOrderXAXIS,
+						fourthOrderData fourthOrderYAXIS,
+						fourthOrderData fourthOrderZAXIS);
 
 
 

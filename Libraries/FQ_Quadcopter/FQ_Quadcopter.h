@@ -24,17 +24,15 @@ Date     :	June 2013
 #include <FQ_Kinematics.h>
 #include <FQ_SENSORLIB.h>
 #include <FQ_OseppGyro.h>
+#include <FQ_Motors.h>
+
 #include <I2C.h>
 #include <Wire.h>
 #include <math.h>
 #include <Servo.h>
 
 
-/*===============================================
-Sensor data, current and buffer.
------------------------------------------------------------------------*/
-double elev;
-double vbatt;
+
 
 /*===============================================
 Time keeping for polling and interrupts
@@ -53,17 +51,17 @@ bool initSensor(	SENSORLIB_accel accel,
 					OseppGyro gyro,
 					struct kinematicData kinematics);
 
-bool initMotors(	int speed);
-
-void mainProcess(	double aPID_out,
-					double bPID_out,
+void mainProcess(	double pitchPID_out,
+					double rollPID_out,
 					SENSORLIB_accel accel,
 					SENSORLIB_mag	mag,
 					OseppGyro	gyro,
-					struct kinematicData kinematics);
+					kinematicData kinematics,
+					fourthOrderData fourthOrderXAXIS,
+					fourthOrderData fourthOrderYAXIS,
+					fourthOrderData fourthOrderZAXIS,
+					FQ_MotorControl MotorControl);
 
-bool updateMotors(	double aPID_out,
-					double bPID_out);
 
 void ERROR_LED(		int LED_SEL);
 

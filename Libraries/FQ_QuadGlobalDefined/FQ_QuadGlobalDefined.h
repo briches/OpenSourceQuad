@@ -116,13 +116,10 @@ struct fourthOrderData
 #define MOTOR3PIN			4
 #define MOTOR4PIN			5
 
-struct motorControl
-{
-	double motor1s;
-	double motor2s;
-	double motor3s;
-	double motor4s;
-};
+#define _PLUSconfig			1
+
+//#define _Xconfig			1
+
 
 /*=========================================================================
     SD logging definitions

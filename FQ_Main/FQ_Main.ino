@@ -2,7 +2,8 @@
  
 *//*//*   FreeQuad   *//*//*
 Name: QCopterMain.ino
-Authors: Brandon Riches, Branden Yue, Andrew Coulthard
+Authors: Brandon Riches
+         With some help from: Branden Yue, Andrew Coulthard
 Date: 2013
 
 
@@ -35,6 +36,7 @@ Copyright stuff from all included libraries that I didn't write
 #include <FQ_OseppGyro.h>
 #include <FQ_SENSORLIB.h>
 #include <FQ_Quadcopter.h>
+#include <FQ_Motors.h>
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
@@ -73,18 +75,11 @@ int PID_OutLims[] = {-1000,1000};
 SENSORLIB_accel   accel;       		// Accel class
 SENSORLIB_mag	  mag;			// Mag class
 OseppGyro         gyro;			// Gyro class
-Servo             motor1;		// Motor 1
-Servo             motor2;		// Motor 2
-Servo             motor3;		// Motor 3
-Servo             motor4;		// Motor 4
-
-// Holds previous accel data for filtering
 fourthOrderData   fourthOrderXAXIS,
 		  fourthOrderYAXIS,
 		  fourthOrderZAXIS;
-
-// Stores kinematic data
 kinematicData	  kinematics;
+FQ_MotorControl   MotorControl;
     
 
 // Constructors for the PID controllers
@@ -156,7 +151,8 @@ void setup()
   // just below take-off speed.
   // Enter a %, from 0 - 100
   ERROR_LED(2);
-  initMotors(20);
+  MotorControl.calibrateESC();
+  MotorControl.startMotors(20);
   delay(50);
   
   // Set both the alpha and beta setpoints to 0. 
@@ -164,7 +160,9 @@ void setup()
   set_b = 0;  
   
   // Initialize the fourth order struct
-  setupFourthOrder();
+  setupFourthOrder(fourthOrderXAXIS,
+                  fourthOrderYAXIS,
+                  fourthOrderZAXIS);
   ERROR_LED(1);    
 }
 
@@ -188,7 +186,11 @@ void loop()
               accel, 
               mag, 
               gyro,
-              kinematics);  
+              kinematics,
+              fourthOrderXAXIS,
+              fourthOrderYAXIS,
+              fourthOrderZAXIS,
+              MotorControl);  
 
   // Updates the PID controllers. They return new outputs based on current
   // and past data. These outputs are used to decide what the motor speeds should be set to.
@@ -227,6 +229,7 @@ void loop()
   // Close the file after sometime  of logging.
   if (millis() >= 60000)
   {
+    MotorControl.motorDISARM();
     while(1);
   }
 
