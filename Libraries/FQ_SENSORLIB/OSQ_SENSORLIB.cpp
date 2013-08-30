@@ -1,7 +1,7 @@
 //******************************************************************************
-    /*//*//*   FreeQuad   *//*//*
+    /*//*//*   OpenSourceQuad   *//*//*
     Sensor Library
-    Author: Brandon Yue and Brandon Riches
+    Author: Brandon Riches
 
     Replacement for the Adafruit LSM303 library. Uses Wire.
     Uses the same format as the Adafruit_LSM303 library. I assume the
@@ -32,8 +32,8 @@
 #include <Wire.h>
 #include <limits.h>
 
-#include <FQ_SENSORLIB.h>
-#include <FQ_QuadGlobalDefined.h>
+#include <OSQ_SENSORLIB.h>
+#include <OSQ_QuadGlobalDefined.h>
 
 static float _lsm303Accel_MG_LSB     = 0.001F;   // 1, 2, 4 or 12 mg per lsb
 static float _GYRO_CONVERT_			 = SI_CONVERT_250;
