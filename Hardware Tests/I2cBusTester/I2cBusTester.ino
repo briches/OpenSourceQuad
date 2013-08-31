@@ -1,7 +1,7 @@
 #include <I2C.h>
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(19200);
   I2c.begin();
   I2c.timeOut(1000);
   I2c.setSpeed(0);
