@@ -36,9 +36,9 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
 	this->NUM_MOTORS 	= num;
 	this->MOTORS_ARMED 	= false;
 	this->ESC_READY		= false;
-	this->passiveMIN	= 1200;
-	this->passiveMAX	= 1500;
-	this->agroSTEP		= 200;
+	this->passiveMIN	= 1300;
+	this->passiveMAX	= 1700;
+	this->agroSTEP		= 100;
 	this->agroBOOL		= false;
 };
 

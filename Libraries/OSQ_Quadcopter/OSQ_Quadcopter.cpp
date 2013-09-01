@@ -196,6 +196,10 @@ void mainProcess(	double pitchPID_out,
 						fourthOrderYAXIS,
 						fourthOrderZAXIS);
 
+		double x = 0;
+		// Motor Logic
+		MotorControl->updateMotors(pitchPID_out,  rollPID_out, x, x);
+
 		// Read the time that poll1 was last executed.
 		tpoll1 = micros();
 	}
@@ -224,9 +228,7 @@ void mainProcess(	double pitchPID_out,
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
 	if ((priority == 4) || (priority == 3))
 	{
-		double x = 0;
-		// Motor Logic
-		MotorControl->updateMotors(pitchPID_out,  rollPID_out, x, x);
+
 
 		// Read the time that poll3 was last executed
 		tpoll3 = micros();

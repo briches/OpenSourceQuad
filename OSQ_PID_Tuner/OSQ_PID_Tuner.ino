@@ -1,16 +1,12 @@
  /*=========================================================================
  
 *//*//*   OpenSourceQuad   *//*//*
-Name: OSQ_Main.ino
+Name: OSQ_PID_Tuner.ino
 Authors: Brandon Riches
          With some help from: Branden Yue, Andrew Coulthard
 Date: 2013
 
-
-TODO:
-1) Chebyshev filter. 
-2) Fix gyro DC drift. (Measure over time, possibly)
-3) Tune PID using ZieglerÃ¢â‚¬â€œNichols method
+  Using the PID autotune library from Brett Beauregard to find reasonable coefficients
         
 Copyright stuff from all included libraries that I didn't write
 
@@ -35,6 +31,8 @@ Copyright stuff from all included libraries that I didn't write
 #include <OSQ_SENSORLIB.h>
 #include <OSQ_Quadcopter.h>
 #include <OSQ_Motors.h>
+
+#include <PID_AutoTune_v0.h>
 
 #include <RTClib.h>
 #include <Adafruit_GPS.h>
@@ -83,19 +81,21 @@ int PID_SampleTime = 10;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-#define Kp 1.500    
-#define Ki 2.0    
-#define Kd -0.0070
+double Kp = 85;
+double Ki = 0;
+double Kd = 0;
 PID aPID(&kinematics.pitch,  &pitchPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
 PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
+PID_ATune aTune(&kinematics.roll, &rollPID_out);
+SoftwareSerial mySerial(37, 39);
+
+boolean tuning = true;
 
 /*=========================================================================
     Function declarations
     -----------------------------------------------------------------------*/
 void PID_init();           
-void logFileStart();
-void logData();
 
 char logFilename[] = "OSQ_Log.txt";
 
@@ -125,7 +125,7 @@ void setup()
   pinMode(RED_LED,     OUTPUT);
   digitalWrite(GREEN_LED, LOW);
   digitalWrite(YELLOW_LED, LOW);
-  digitalWrite(RED_LED, LOW);
+  digitalWrite(RED_LED,   LOW);
   
   // Turn on the yellow LED to signify start of setup
   ERROR_LED(2);
@@ -137,9 +137,6 @@ void setup()
     rtc.adjust(DateTime(__DATE__, __TIME__));
   }
   DateTime now = rtc.now();
-  
-  // Open a .txt file for data logging and debugging
-  logFileStart();
     
   // Initialize the sensors.
   // Sensors include: 
@@ -156,6 +153,23 @@ void setup()
   // Initialize the PID controllers. This is a sub-function, below loop.
   PID_init();   
   
+  // Initialize the AutoTuner.
+  aTune.SetNoiseBand(3);
+  aTune.SetOutputStep(30);
+  aTune.SetLookbackSec(1);
+  aTune.SetControlType(1);
+  
+  mySerial.begin(115200);
+  boolean receivedValue = false;
+  while (!receivedValue)
+  {
+    if (mySerial.available() == 1)
+    {
+      Kp = mySerial.read();
+      receivedValue = true;
+    }
+  }
+
   // Initialize motors. This turns the motors on, and sets them all to a speed
   // just below take-off speed.
   motorControl.calibrateESC();
@@ -171,7 +185,6 @@ void setup()
                    &fourthOrderYAXIS,
                    &fourthOrderZAXIS);
                    
-  logFile = SD.open(logFilename, FILE_WRITE);
   ERROR_LED(1);    
 }
 
@@ -204,23 +217,38 @@ void loop()
         
   // Updates the PID controllers. They return new outputs based on current
   // and past data. These outputs are used to decide what the motor speeds should be set to.
-  if (millis() > 4000)
+  if (millis() > 1000)
   {
     aPID.Compute();
     bPID.Compute();
+    mySerial.print(rollPID_out);
+    mySerial.print("   ");
+    mySerial.println(motorControl.motorSpeeds.m1_DC);
+    if(tuning)
+      {
+        byte val = (aTune.Runtime());
+        if (val!=0)
+        {
+          tuning = false;
+        }
+        if(!tuning)
+        { //we're done, set the tuning parameters
+          double kp = aTune.GetKp();
+          double ki = aTune.GetKi();
+          double kd = aTune.GetKd();
+          mySerial.print("kP: ");
+          mySerial.print(kp);
+          mySerial.print("kI: ");
+          mySerial.print(ki);
+          mySerial.print("lD: ");
+          mySerial.println(kd);
+          motorControl.motorDISARM();
+          while(1);
+        }
+      }
   }  
-  // Print data to the SD logFile, using some RTC data
-  logData();
   
-  // Stop after some logging is done for debugging
-  if (millis() >= 25000)
-  {
-    logFile.close();
-    motorControl.motorDISARM();
-    ERROR_LED(3);
-  }
   
-  Serial.println(kinematics.roll);
   // Track the number of elapsed cycles
   cycleCount++;
 }
@@ -236,7 +264,7 @@ void PID_init()
   // Both the alpha and the beta controller use these limits.
   // They represent the maximum absolute value that the PID equation could reach,
   // regardless of what the gain coefficients are. 
-  int pitch_roll_PID_OutLims[] = {-100,100};
+  int pitch_roll_PID_OutLims[] = {-10000,10000};
   Serial.print("Initializing PID controllers...    ");
   aPID.SetMode(AUTOMATIC);
   aPID.SetSampleTime(PID_SampleTime);	                 
@@ -248,93 +276,8 @@ void PID_init()
   Serial.println("Done! ");
   Serial.println();
 }
-/*=========================================================================
-    logData
-    - Writes various data to the flight txt
-    -----------------------------------------------------------------------*/
-void logData()
-{
- 
-  if (logFile)
-  {
-    logFile.print(micros());
-    logFile.print(",");
-    logFile.print(kinematics.pitch);
-    logFile.print(",");
-    logFile.print(kinematics.roll);
-    logFile.print(",");
-    logFile.print(pitchPID_out);
-    logFile.print(",");
-    logFile.println(rollPID_out);
-  }
-  else
-  {
-    Serial.println("Error opening file!");
-  }
-  
-}
 
-/*=========================================================================
-    logFileStart
-    - Initializes a .txt on the uSD
-    -----------------------------------------------------------------------*/
-void logFileStart()
-{
-  Serial.println(logFilename);
-  DateTime now = rtc.now();
-  
-  rtc.now(); // Update the current date and time
-  
-  // Initialize SD card
-  Serial.print("Initializing SD card...");
-  
-  // Hardware SS pin must be output. 
-  pinMode(SS, OUTPUT);
-  
-  if (!SD.begin(chipSelect)) {
-    Serial.println("initialization failed!");
-    ERROR_LED(3);
-    return;
-  }
-  Serial.println("initialization done.");
-  
-  // If the file exists, we want to delete it. 
-  if (SD.exists(logFilename))
-  {
-    SD.remove(logFilename);
-  }
-  
-  // Open the file for writing, here just for a title.
-  logFile = SD.open(logFilename, FILE_WRITE);
-  
-  // if the file opened okay, write to it:
-  if (logFile) {
-    Serial.print("Writing to file");
-    logFile.println("-----OpenSourceQuad-----");
-    logFile.println();
-    logFile.print("Software version: ");
-    logFile.println(SOFTWARE_VERSION);
-    logFile.print(now.year());
-    logFile.print("/");
-    logFile.print(now.month());
-    logFile.print("/");
-    logFile.print(now.day());
-    logFile.print("  ");
-    logFile.print(now.hour());
-    logFile.print(":");
-    logFile.print(now.minute());
-    logFile.print(":");
-    logFile.println(now.second());
-    logFile.println("Runtime data: ");
-    Serial.println("done.");
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening file");
-  }
-  
-  logFile.close();
 
-}
 
 
 
