@@ -95,7 +95,7 @@ PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
     -----------------------------------------------------------------------*/
 void PID_init();           
 void logFileStart();
-void getFilename(DateTime now);
+void logData();
 
 char logFilename[] = "OSQ_Log.txt";
 
@@ -263,14 +263,6 @@ void logData()
     logFile.print(",");
     logFile.print(kinematics.roll);
     logFile.print(",");
-//    logFile.print(motor1s);
-//    logFile.print(",");
-//    logFile.print(motor2s);
-//    logFile.print(",");
-//    logFile.print(motor3s);
-//    logFile.print(",");
-//    logFile.print(motor4s);
-//    logFile.print(",");
     logFile.print(pitchPID_out);
     logFile.print(",");
     logFile.println(rollPID_out);
