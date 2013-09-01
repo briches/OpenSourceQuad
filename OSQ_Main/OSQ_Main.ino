@@ -36,6 +36,7 @@ Copyright stuff from all included libraries that I didn't write
 #include <OSQ_Quadcopter.h>
 #include <OSQ_Motors.h>
 
+#include <RTClib.h>
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
 #include <PID_v1.h>
@@ -44,7 +45,8 @@ Copyright stuff from all included libraries that I didn't write
 #include <Servo.h>
 #include <SD.h>
 
-File logfile;
+#define SOFTWARE_VERSION   "V0.9.1"
+uint32_t cycleCount;
 
 /*=========================================================================
     Classes and important structures
@@ -57,6 +59,10 @@ fourthOrderData   	fourthOrderXAXIS,
 			fourthOrderZAXIS;
 kinematicData	  	kinematics;
 OSQ_MotorControl   	motorControl;
+
+File                    logFile;
+RTC_DS1307              rtc;
+
 
 /*=========================================================================
     PID output variables and desired setpoints, and settings
@@ -88,11 +94,10 @@ PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
     Function declarations
     -----------------------------------------------------------------------*/
 void PID_init();           
-boolean XBee_read();
-int XBee_send(String data);
-void get_telemetry(double* set_a, double* set_b);
-void logfileStart();
+void logFileStart();
+void getFilename(DateTime now);
 
+char logFilename[] = "OSQ_Log.txt";
 
 /*=========================================================================
     Main Setup
@@ -100,7 +105,13 @@ void logfileStart();
 void setup()
 { 
   // Initialize the main serial UART for output. 
-  Serial.begin(19200); 
+  Serial.begin(115200); 
+  
+  // Join the I2C bus
+  Wire.begin();
+  
+  // Start the rtc
+  rtc.begin();
   
   Serial.println(" ");
   
@@ -119,8 +130,16 @@ void setup()
   // Turn on the yellow LED to signify start of setup
   ERROR_LED(2);
   
+  // Check that the RTC is running properly
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(__DATE__, __TIME__));
+  }
+  DateTime now = rtc.now();
+  
   // Open a .txt file for data logging and debugging
-  logfileStart();
+  logFileStart();
     
   // Initialize the sensors.
   // Sensors include: 
@@ -133,14 +152,12 @@ void setup()
                     mag, 
                     gyro,
                     &kinematics));
-  
+  ERROR_LED(2);
   // Initialize the PID controllers. This is a sub-function, below loop.
   PID_init();   
   
   // Initialize motors. This turns the motors on, and sets them all to a speed
   // just below take-off speed.
-  // Enter a %, from 0 - 100
-  ERROR_LED(2);
   motorControl.calibrateESC();
   motorControl.startMotors();
   delay(50);
@@ -153,6 +170,8 @@ void setup()
   setupFourthOrder(&fourthOrderXAXIS,
                    &fourthOrderYAXIS,
                    &fourthOrderZAXIS);
+                   
+  logFile = SD.open(logFilename, FILE_WRITE);
   ERROR_LED(1);    
 }
 
@@ -171,6 +190,7 @@ void loop()
   // accelerometer, and gryo data. It then runs a basic moving average on these
   // data to smooth them. Then, it uses a complementary filter to help obtain 
   // more accurate readings of angle
+  // Everything's in here because I don't dev in Arduino IDE
   mainProcess(pitchPID_out, 
               rollPID_out, 
               &accel, 
@@ -189,52 +209,90 @@ void loop()
     aPID.Compute();
     bPID.Compute();
   }  
-  // We print all the data to the SD logfile, for debugging purposes. 
-  // Once a completely working build is finished, this may or may not be removed for
-  // the sake of speed.
-  logfile = SD.open("run_log.txt", FILE_WRITE);
-  if (logfile)
-  {
-    logfile.print(micros());
-    logfile.print(",");
-    logfile.print(kinematics.pitch);
-    logfile.print(",");
-    logfile.print(kinematics.roll);
-    logfile.print(",");
-//    logfile.print(motor1s);
-//    logfile.print(",");
-//    logfile.print(motor2s);
-//    logfile.print(",");
-//    logfile.print(motor3s);
-//    logfile.print(",");
-//    logfile.print(motor4s);
-//    logfile.print(",");
-    logfile.print(pitchPID_out);
-    logfile.print(",");
-    logfile.println(rollPID_out);
-  }
-  logfile.close();
+  // Print data to the SD logFile, using some RTC data
+  logData();
   
-  // Close the file after sometime  of logging.
-  if (millis() >= 60000)
+  // Stop after some logging is done for debugging
+  if (millis() >= 25000)
   {
+    logFile.close();
     motorControl.motorDISARM();
     ERROR_LED(3);
   }
-
- // Serial.println(motorControl.motorSpeeds.m1_DC);
-
   
+  Serial.println(cycleCount);
+  // Track the number of elapsed cycles
+  cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
 
+/*=========================================================================
+    PID_init()
+    - Initializes the PID controllers
+    -----------------------------------------------------------------------*/
+void PID_init()                                          
+{
+  // Output limits on the PID controllers.
+  // Both the alpha and the beta controller use these limits.
+  // They represent the maximum absolute value that the PID equation could reach,
+  // regardless of what the gain coefficients are. 
+  int pitch_roll_PID_OutLims[] = {-100,100};
+  Serial.print("Initializing PID controllers...    ");
+  aPID.SetMode(AUTOMATIC);
+  aPID.SetSampleTime(PID_SampleTime);	                 
+  aPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
+  bPID.SetMode(AUTOMATIC);
+  bPID.SetSampleTime(PID_SampleTime);	               
+  bPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
+  
+  Serial.println("Done! ");
+  Serial.println();
+}
+/*=========================================================================
+    logData
+    - Writes various data to the flight txt
+    -----------------------------------------------------------------------*/
+void logData()
+{
+ 
+  if (logFile)
+  {
+    logFile.print(micros());
+    logFile.print(",");
+    logFile.print(kinematics.pitch);
+    logFile.print(",");
+    logFile.print(kinematics.roll);
+    logFile.print(",");
+//    logFile.print(motor1s);
+//    logFile.print(",");
+//    logFile.print(motor2s);
+//    logFile.print(",");
+//    logFile.print(motor3s);
+//    logFile.print(",");
+//    logFile.print(motor4s);
+//    logFile.print(",");
+    logFile.print(pitchPID_out);
+    logFile.print(",");
+    logFile.println(rollPID_out);
+  }
+  else
+  {
+    Serial.println("Error opening file!");
+  }
+  
+}
 
 /*=========================================================================
-    logfileStart
+    logFileStart
     - Initializes a .txt on the uSD
     -----------------------------------------------------------------------*/
-void logfileStart()
+void logFileStart()
 {
+  Serial.println(logFilename);
+  DateTime now = rtc.now();
+  
+  rtc.now(); // Update the current date and time
+  
   // Initialize SD card
   Serial.print("Initializing SD card...");
   
@@ -249,50 +307,44 @@ void logfileStart()
   Serial.println("initialization done.");
   
   // If the file exists, we want to delete it. 
-  if (SD.exists("run_log.txt"))
+  if (SD.exists(logFilename))
   {
-    SD.remove("run_log.txt");
+    SD.remove(logFilename);
   }
   
   // Open the file for writing, here just for a title.
-  logfile = SD.open("run_log.txt", FILE_WRITE);
+  logFile = SD.open(logFilename, FILE_WRITE);
   
   // if the file opened okay, write to it:
-  if (logfile) {
-    Serial.print("Writing to run_log.txt...");
-    logfile.println("Time,Ax,Ay,Az,Wx,Wy,Wz,Alpha,Beta,Motor 1,Motor 2,Motor 3,Motor 4,APID,BPID");
+  if (logFile) {
+    Serial.print("Writing to file");
+    logFile.println("-----OpenSourceQuad-----");
+    logFile.println();
+    logFile.print("Software version: ");
+    logFile.println(SOFTWARE_VERSION);
+    logFile.print(now.year());
+    logFile.print("/");
+    logFile.print(now.month());
+    logFile.print("/");
+    logFile.print(now.day());
+    logFile.print("  ");
+    logFile.print(now.hour());
+    logFile.print(":");
+    logFile.print(now.minute());
+    logFile.print(":");
+    logFile.println(now.second());
+    logFile.println("Runtime data: ");
     Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening run_log.txt");
+    Serial.println("error opening file");
   }
   
-  logfile.close();
+  logFile.close();
 
 }
 
 
-// Initializes the PID controllers.
-// The function calls in here are pretty straightforwared, and have
-// been explained already, essentially.
-void PID_init()                                          
-{
-  // Output limits on the PID controllers.
-  // Both the alpha and the beta controller use these limits.
-  // They represent the maximum absolute value that the PID equation could reach,
-  // regardless of what the gain coefficients are. 
-  int PID_OutLims[] = {-100,100};
-  Serial.print("Initializing PID controllers...    ");
-  aPID.SetMode(AUTOMATIC);
-  aPID.SetSampleTime(PID_SampleTime);	                 
-  aPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);	
-  bPID.SetMode(AUTOMATIC);
-  bPID.SetSampleTime(PID_SampleTime);	               
-  bPID.SetOutputLimits(PID_OutLims[0],PID_OutLims[1]);
-  
-  Serial.println("Done! ");
-  Serial.println();
-}
 
 
 
