@@ -64,46 +64,18 @@
 // Define your possible messages here to have priorities automatically assigned
 typedef struct {
 
-	noWire_Message STOP;
-	noWire_Message BEGIN;
-
-
 } noWire_Codes;
 
 
 /*================================================================================
 	Internal Message Data Type
 	-----------------------------------------------------------------------------*/
-typedef struct {
 
-	char 		content[MSG_SIZE+2];			// Contents of the message
-	int32_t	priority;						// Priority code of the message
-
-} noWire_Message;
-
-
-noWire_Message	noWireHistory[32];				// Stores the past 32 messages
 
 class NoWire
 {
-	public:
-
-		NoWire();								// Constructor
-
-		void readMsg(char content[]);			// Check for a message and read it
-
-		void sendMsg(noWire_Message Message);	// Send a message
-
-		void createMsg(char content[]);		// Create a message
-
-	private:
 
 
-
-
-
-
-
-}
+};
 
 #endif // OSQ_NOWIRE_H_INCLUDED

@@ -1,39 +1,39 @@
  /*=========================================================================
- 
 *//*//*   OpenSourceQuad   *//*//*
-Name: OSQ_Main.ino
-Authors: Brandon Riches
-         With some help from: Branden Yue, Andrew Coulthard
-Date: 2013
+  OSQ_Main.ino
+  Brandon Riches
+With some help from: Branden Yue, Andrew Coulthard
+/*================================================================================
 
+	Author		: Brandon Riches
+	Date		: August 2013
+	License		: GNU Public License
 
-TODO:
-1) Chebyshev filter. 
-2) Fix gyro DC drift. (Measure over time, possibly)
-3) Tune PID using ZieglerÃ¢â‚¬â€œNichols method
+	This library interfaces with the BMP085 pressure sensor to return temperature
+	calibrated altitude measurements.
+
+	Copyright (C) 2013  Brandon Riches
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU General Public License as published by
+        the Free Software Foundation, either version 3 of the License, or
+        (at your option) any later version.
         
-Copyright stuff from all included libraries that I didn't write
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+        
+        You should have received a copy of the GNU General Public License
+        along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-  I2C.h   - I2C library
-  Copyright (c) 2011-2012 Wayne Truchsess.  All right reserved.
-  
-  PID Library
-  Brett Beauregard, br3ttb@gmail.com
-  
-  Adafruit_GPS
-  
-  Servo
-  
-  SoftwareSerial
-  
-  Wire
-  
-  SD
-    -----------------------------------------------------------------------*/
-#include <OSQ_Kinematics.h>
-#include <OSQ_SENSORLIB.h>
-#include <OSQ_Quadcopter.h>
-#include <OSQ_Motors.h>
+	-----------------------------------------------------------------------------*/
+#include "OSQ_Kinematics.h"
+#include "OSQ_SENSORLIB.h"
+#include "OSQ_Quadcopter.h"
+#include "OSQ_Motors.h"
+#include "OSQ_BMP085.h"
+#include "OSQ_NoWire.h"
 
 #include <RTClib.h>
 #include <Adafruit_GPS.h>
@@ -68,35 +68,30 @@ uint32_t cycleCount;
     Classes and important structures
     -----------------------------------------------------------------------*/
 SENSORLIB_accel   	accel;
-SENSORLIB_mag	  	mag;
-SENSORLIB_gyro         	gyro;
+SENSORLIB_mag	mag;
+SENSORLIB_gyro       gyro;
 fourthOrderData   	fourthOrderXAXIS,
-			fourthOrderYAXIS,
-			fourthOrderZAXIS;
+			                fourthOrderYAXIS,
+			                fourthOrderZAXIS;
 kinematicData	  	kinematics;
 OSQ_MotorControl   	motorControl;
-File                    logFile;
+File                                 logFile;
 RTC_DS1307              rtc;
 
 
 /*=========================================================================
     PID output variables and desired setpoints, and settings
     -----------------------------------------------------------------------*/
-/*=========================================================================
-    State variables
-    - The program didnt like having these in the class.
-    -----------------------------------------------------------------------*/
-// PID output for alpha and beta, PID setpoint vars for alpha and beta
 double setPitch = 0, pitchPID_out; 		  
 double setRoll = 0, rollPID_out;	
 	      	
 int PID_SampleTime = 10; // Sample time for PID controllers in ms
 
-#define Kp 35    
-#define Ki 85   
-#define Kd 30
-PID aPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   Kp,  Ki,  Kd,  DIRECT);
-PID bPID(&kinematics.roll,   &rollPID_out,  &setRoll,   Kp,  Ki,  Kd,  DIRECT);
+#define angleKp 35                        // TODO: 
+#define angleKi 85   
+#define angleKd 30
+PID aPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   angleKp,  angleKi,  angleKd,  DIRECT);
+PID bPID(&kinematics.roll,   &rollPID_out,  &setRoll,   angleKp,  angleKi,  angleKd,  DIRECT);
 
 
 /*=========================================================================
@@ -179,10 +174,12 @@ void setup()
   //   - GPS module (Adafruit Ultimate)
   //   - RTC Module
   Serial.println("Initializing Sensors");
+  
   while(!initSensor(accel, 
                     mag, 
                     gyro,
                     &kinematics));
+                    
   ERROR_LED(2);
   // Initialize the PID controllers. This is a sub-function, below loop.
   Serial.println("Initializing PID");

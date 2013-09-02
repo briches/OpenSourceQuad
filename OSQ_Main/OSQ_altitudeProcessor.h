@@ -27,3 +27,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	-----------------------------------------------------------------------------*/
+
+	// Waiting on the Kalman for this one.
+#ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+#define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+
+
+
+#endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED

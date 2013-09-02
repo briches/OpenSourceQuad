@@ -27,24 +27,80 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	-----------------------------------------------------------------------------*/
+#ifndef OSQ_QUADCOPTER_H_INCLUDED
+#define OSQ_QUADCOPTER_H_INCLUDED
 
-#if ARDUINO >= 100
+
+#if (ARDUINO >= 100)
  #include "Arduino.h"
 #else
  #include "WProgram.h"
 #endif
 
 
-#include "OSQ_Quadcopter.h"
+#include <I2C.h>
+#include <Wire.h>
+#include <math.h>
+#include <Servo.h>
+
+/*=========================================================================
+    General IO pins
+    -----------------------------------------------------------------------*/
+#define GREEN_LED 	27
+#define RED_LED 	25
+#define YELLOW_LED 	23
 
 
+/*=========================================================================
+    Polling Rates.
+    -----------------------------------------------------------------------*/
+
+#define _100HzPoll 		(10000)				// us Period of 100 Hz poll
+#define	_50HzPoll		(20000)				// us Period of 75 Hz poll
+#define _20HzPoll 		(50000)				// us Period of 50 Hz poll
+#define _10HzPoll		(100000)			// us Period of 10 Hz poll
+
+/*===============================================
+Time keeping for polling and interrupts
+-----------------------------------------------------------------------*/
+static double tpoll1;
+static double tpoll2;
+static double tpoll3;
+static double tpoll4;
 
 
+/***************************************************************************
+ *! @FUNCTIONS
+ ***************************************************************************/
+bool initSensor(	        SENSORLIB_accel accel,
+					SENSORLIB_mag mag,
+					SENSORLIB_gyro gyro,
+					struct kinematicData *kinematics);
 
-void getInitialOffsets(struct kinematicData *kinematics,
-						SENSORLIB_accel accel,
-						SENSORLIB_mag mag,
-						SENSORLIB_gyro gyro)
+void mainProcess(	double pitchPID_out,
+					double rollPID_out,
+					class SENSORLIB_accel *accel,
+					class SENSORLIB_mag	*mag,
+					class SENSORLIB_gyro	*gyro,
+					struct kinematicData *kinematics,
+					struct fourthOrderData  *fourthOrderXAXIS,
+					struct fourthOrderData  *fourthOrderYAXIS,
+					struct fourthOrderData  *fourthOrderZAXIS,
+					class OSQ_MotorControl  *motorControl);
+
+
+void ERROR_LED(	int LED_SEL);
+
+void getInitialOffsets(  struct kinematicData *kinematics,
+					SENSORLIB_accel accel,
+					SENSORLIB_mag mag,
+					SENSORLIB_gyro gyro);
+
+
+void getInitialOffsets(  struct kinematicData *kinematics,
+					SENSORLIB_accel accel,
+					SENSORLIB_mag mag,
+					SENSORLIB_gyro gyro)
 {
 	/**************************************************************************/
 		//! @brief Gets the initial offsets in both sensors to accomodate board mount
@@ -136,7 +192,7 @@ void mainProcess(	double pitchPID_out,
 					struct fourthOrderData *fourthOrderXAXIS,
 					struct fourthOrderData *fourthOrderYAXIS,
 					struct fourthOrderData *fourthOrderZAXIS,
-					struct OSQ_MotorControl *MotorControl)
+					class OSQ_MotorControl *motorControl)
 {
 	/**************************************************************************/
 		//! @brief Checks elapsed time and executes various tasks such as running PID controllers
@@ -196,7 +252,7 @@ void mainProcess(	double pitchPID_out,
 
 		double x = 0;
 		// Motor Logic
-		MotorControl->updateMotors(pitchPID_out,  rollPID_out, x, x);
+		motorControl->updateMotors(pitchPID_out,  rollPID_out, x ,  x);
 
 		// Read the time that poll1 was last executed.
 		tpoll1 = micros();
@@ -237,13 +293,10 @@ void mainProcess(	double pitchPID_out,
 	if (priority == 4)
 	{
 		/// Update GPS data using RMC
-
+		// TODO:
 
 		/// Read battery voltage
 		// TODO:
-//		vbatt = (double)analogRead(15);
-//		vbatt *= 11.1;
-//		// Read the time that poll3 was last executed
 		tpoll4 = micros();
 	}
 
@@ -277,3 +330,6 @@ void ERROR_LED(int LED_SEL)
 			digitalWrite(YELLOW_LED, HIGH);
 	}
 };
+
+
+#endif // OSQ_QUADCOPTER_H_INCLUDED

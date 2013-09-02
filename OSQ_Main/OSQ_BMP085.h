@@ -27,9 +27,68 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	-----------------------------------------------------------------------------*/
+#ifndef OSQ_BMP085_H_INCLUDED
+#define OSQ_BMP085_H_INCLUDED
+
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+#include <math.h>
+#include <Wire.h>
+
+#define BMP085_ADDR	(0x77)
+
+class BMP085
+{
+	public:
+
+		BMP085();
+
+		void updatePTA(void); // Main function
+
+		void readEEPROM();
+		void setSLP(double inchesMercury);
+		void setOSS(uint8_t OSS);
+		void printEEPROM();
+
+		float temperature;
+		float altitude;
+		int conversionStep;
+
+		// EEPROM calibration values
+		int16_t 		AC1;
+		int16_t			AC2;
+		int16_t			AC3;
+		uint16_t 		AC4;
+		uint16_t 		AC5;
+		uint16_t		AC6;
+		int16_t			_B1;
+		int16_t			_B2;
+		int16_t			MB;
+		int16_t			MC;
+		int16_t			MD;
+
+		// Calculated calibration values
+		int32_t X1, X2, X3;
+		int32_t _B3, _B5, _B6;
+		uint32_t _B4, _B7;
+		int32_t p;
+
+		int32_t			UT;
+		int32_t			UP;
 
 
-#include "OSQ_BMP085.h"
+	private:
+
+
+		void write8(byte reg, byte value);
+		uint8_t read8(byte reg);
+
+		uint16_t read16(byte addr);
+};
 
 static uint8_t _oversample_setting_  	= 0x00;
 static double  SEA_LEVEL_PRESSURE		= 101325.0;
@@ -266,3 +325,5 @@ uint8_t BMP085 :: read8(byte reg)
 
 	return value;
 };
+
+#endif // OSQ_BMP085_H_INCLUDED
