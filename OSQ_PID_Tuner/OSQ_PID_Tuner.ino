@@ -81,14 +81,14 @@ int PID_SampleTime = 10;
 // - Proportional gain
 // - Integral gain
 // - Derivative gain
-double Kp = 85;
+double Kp = 0;
 double Ki = 0;
 double Kd = 0;
 PID aPID(&kinematics.pitch,  &pitchPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
 PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
 
 PID_ATune aTune(&kinematics.roll, &rollPID_out);
-SoftwareSerial mySerial(37, 39);
+SoftwareSerial mySerial(10, 11);
 
 boolean tuning = true;
 
@@ -160,13 +160,18 @@ void setup()
   aTune.SetControlType(1);
   
   mySerial.begin(115200);
+  delay(10000);
   boolean receivedValue = false;
-  while (!receivedValue)
+  delay(2000); // Wait for XBee to start up
+  while (receivedValue == false)
   {
-    if (mySerial.available() == 1)
+    if(mySerial.available())
     {
       Kp = mySerial.read();
-      receivedValue = true;
+      mySerial.write(Kp);
+      delay(2000);
+      break;
+      
     }
   }
 

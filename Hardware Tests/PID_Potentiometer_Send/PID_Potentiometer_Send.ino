@@ -31,9 +31,18 @@ void loop()
   SEND = sum/10;
   
   // Send the data to the respective serial ports.
+  Serial.print("Sending: ");
   Serial.print((uint8_t)SEND); 
-  Serial.print(" ");
+  Serial.print(" ");  
   Serial.println(XBee.write((uint8_t)SEND));
   
-  delay(100);
+  if (XBee.available())
+  {
+    Serial.println();
+    Serial.println("Recieved: ");
+    Serial.print(XBee.read());
+    Serial.println("End recieved.");
+    while(1);
+  }
+  
 }

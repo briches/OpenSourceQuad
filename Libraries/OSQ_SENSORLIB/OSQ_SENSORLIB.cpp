@@ -190,16 +190,12 @@ bool SENSORLIB_gyro::begin()
 
 	byte FS_DLPF = byte(d_ScaleRange);
 	FS_DLPF = (FS_DLPF << 3) | byte(dDLPF_);
-	Serial.println(FS_DLPF, BIN);
 
 	// Enable the gyro for aux use
-	Serial.println("debug 1");
 	write8(GYRO_ADDR, DLPF_FS_SYNC, FS_DLPF);
 
-	Serial.println("debug 2");
 	write8(GYRO_ADDR, PWR_MGM, statusCheck);
 
-	Serial.println("debug 3");
 	write8(GYRO_ADDR, USER_CTRL, B00100000);
 
 	return true;

@@ -27,7 +27,6 @@
 
 	-----------------------------------------------------------------------------*/
 #include "OSQ_Motors.h"
-#include <OSQ_QuadGlobalDefined.h>
 
 
 
@@ -70,7 +69,6 @@ void OSQ_MotorControl :: startMotors()
 			motor2.writeMicroseconds(DC);
 			motor3.writeMicroseconds(DC);
 			motor4.writeMicroseconds(DC);
-			Serial.println(DC);
 			delayMicroseconds(DC*3);
 		}
 

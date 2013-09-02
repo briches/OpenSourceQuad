@@ -92,7 +92,6 @@ void getInitialOffsets(struct kinematicData *kinematics,
 	kinematics->io_wy /= offset_counter;
 	kinematics->io_wz /= offset_counter;
 
-	Serial.println(" ");
     Serial.println(kinematics->io_ax);
     Serial.println(kinematics->io_ay);
     Serial.println(kinematics->io_az);
@@ -119,7 +118,6 @@ bool initSensor(SENSORLIB_accel accel,
 	mag.begin();
 
 
-	Serial.print("Getting initial offset values...    ");
     getInitialOffsets(kinematics,
 						accel,
 						mag,
@@ -161,7 +159,7 @@ void mainProcess(	double pitchPID_out,
 		priority = 1;
 
 	}
-	if (time2 >=  _75HzPoll)
+	if (time2 >=  _50HzPoll)
 	{
 		// Mag, USRF.
 		priority = 2;

@@ -30,8 +30,30 @@
 #ifndef OSQ_MOTORS_H_INCLUDED
 #define OSQ_MOTORS_H_INCLUDED
 
-#include <OSQ_QuadGlobalDefined.h>
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
 #include <Servo.h>
+
+/*=========================================================================
+    Motors definitions
+    -----------------------------------------------------------------------*/
+#define MIN_PULSE_WIDTH       544     		// the shortest pulse sent to a servo
+#define MAX_PULSE_WIDTH      2400     		// the longest pulse sent to a servo
+
+#define MOTOR1PIN			2
+#define MOTOR2PIN			3
+#define MOTOR3PIN			4
+#define MOTOR4PIN			5
+
+#define _PLUSconfig			1
+
+//#define _Xconfig			1
+
+
 //***********************************************/
 /* Plus config
 **************************************************

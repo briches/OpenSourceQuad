@@ -47,8 +47,22 @@
 #include <math.h>
 #include <Servo.h>
 
+/*=========================================================================
+    General IO pins
+    -----------------------------------------------------------------------*/
+#define GREEN_LED 	27
+#define RED_LED 	25
+#define YELLOW_LED 	23
 
 
+/*=========================================================================
+    Polling Rates.
+    -----------------------------------------------------------------------*/
+
+#define _100HzPoll 		(10000)				// us Period of 100 Hz poll
+#define	_50HzPoll		(20000)				// us Period of 75 Hz poll
+#define _20HzPoll 		(50000)				// us Period of 50 Hz poll
+#define _10HzPoll		(100000)			// us Period of 10 Hz poll
 
 /*===============================================
 Time keeping for polling and interrupts

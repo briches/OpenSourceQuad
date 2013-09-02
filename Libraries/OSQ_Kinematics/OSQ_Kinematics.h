@@ -37,11 +37,88 @@
  #include "WProgram.h"
 #endif
 
-#include <OSQ_Quadcopter.h>
-#include <OSQ_QuadGlobalDefined.h>
 #include <OSQ_SENSORLIB.h>
 #include <Wire.h>
 #include <I2C.h>
+
+#define Pi  			(3.14159265359F)			// Its pi.
+
+#define ORDER 4
+
+// Comment out one of these defines to select the coefficent set to use.
+// Remember that Wst is a fraction of the Nyquist frequency, Nq = Ws/2
+// "BrandonCoeffs" uses n = 4, r = 10, Wc = 0.1
+// AeroQuad filter uses n = 4, r = 60, Wc = 12.5/50
+
+#define AeroQuadCoeff
+// #define BrandonCoeffs
+
+#ifdef AeroQuadCoeff
+	#define ORDER 4
+	#define _b0  0.001893594048567
+	#define _b1 -0.002220262954039
+	#define _b2  0.003389066536478
+	#define _b3 -0.002220262954039
+	#define _b4  0.001893594048567
+
+	#define _a0  1
+	#define _a1 -3.362256889209355
+	#define _a2  4.282608240117919
+	#define _a3 -2.444765517272841
+	#define _a4  0.527149895089809
+#endif
+
+#ifdef BrandonCoeffs
+	#define ORDER 4
+	#define _b0  0.267411759560506
+	#define _b1 -1.018535973364803
+	#define _b2  1.503499251793105
+	#define _b3 -1.018535973364804
+	#define _b4  0.267411759560506
+
+	#define _a0  1.000000000000000
+	#define _a1 -3.561271663800053
+	#define _a2  4.788976593687705
+	#define _a3 -2.881867760094174
+	#define _a4  0.655413654391032
+#endif
+
+struct fourthOrderData
+{
+  double  inputTm1,  inputTm2,  inputTm3,  inputTm4;
+  double outputTm1, outputTm2, outputTm3, outputTm4;
+};
+
+/*=========================================================================
+    Kinematics Data Type
+    -----------------------------------------------------------------------*/
+struct kinematicData
+{
+	double pitch,
+			roll,
+			yaw,
+
+			io_ax,
+			io_ay,
+			io_az,
+			io_wx,
+			io_wy,
+			io_wz,
+
+			pitch_gyro,
+			roll_gyro,
+			yaw_gyro,
+
+			yaw_mag;
+
+	unsigned long timestamp;
+
+};
+
+
+#define XAXIS   (0)
+#define YAXIS	(1)
+#define ZAXIS	(2)
 
 void kinematicEvent(int eventType,
 					struct kinematicData *data,

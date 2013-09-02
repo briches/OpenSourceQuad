@@ -30,7 +30,6 @@ Copyright stuff from all included libraries that I didn't write
   
   SD
     -----------------------------------------------------------------------*/
-#include <OSQ_QuadGlobalDefined.h>
 #include <OSQ_Kinematics.h>
 #include <OSQ_SENSORLIB.h>
 #include <OSQ_Quadcopter.h>
@@ -45,6 +44,23 @@ Copyright stuff from all included libraries that I didn't write
 #include <Servo.h>
 #include <SD.h>
 
+/*=========================================================================
+    Math related definitions
+    -----------------------------------------------------------------------*/
+#define Pi  			(3.14159265359F)			// Its pi.
+
+
+/*=========================================================================
+    Sensor analog pins
+    -----------------------------------------------------------------------*/
+
+#define VBATT_PIN 	(0x0)
+#define USRF_pin 	(0x0)	
+
+/*=========================================================================
+    Battery Monitor
+    -----------------------------------------------------------------------*/
+#define NOMINAL_V	11.1
 #define SOFTWARE_VERSION   "V0.9.1"
 uint32_t cycleCount;
 
@@ -59,7 +75,6 @@ fourthOrderData   	fourthOrderXAXIS,
 			fourthOrderZAXIS;
 kinematicData	  	kinematics;
 OSQ_MotorControl   	motorControl;
-
 File                    logFile;
 RTC_DS1307              rtc;
 
@@ -72,22 +87,16 @@ RTC_DS1307              rtc;
     - The program didnt like having these in the class.
     -----------------------------------------------------------------------*/
 // PID output for alpha and beta, PID setpoint vars for alpha and beta
-double set_a, pitchPID_out; 		  
-double set_b, rollPID_out;	
+double setPitch = 0, pitchPID_out; 		  
+double setRoll = 0, rollPID_out;	
+	      	
+int PID_SampleTime = 10; // Sample time for PID controllers in ms
 
-// Sample time for PID controllers in ms	      	
-int PID_SampleTime = 10;
-
-// Constructors for the PID controllers
-// The 4th, 5th, and 6th args in the constructors are, respectively:
-// - Proportional gain
-// - Integral gain
-// - Derivative gain
-#define Kp 1.500    
-#define Ki 2.0    
-#define Kd -0.0070
-PID aPID(&kinematics.pitch,  &pitchPID_out,  &set_a,   Kp,  Ki,  Kd,  DIRECT);
-PID bPID(&kinematics.roll,   &rollPID_out,  &set_b,   Kp,  Ki,  Kd,  DIRECT);
+#define Kp 35    
+#define Ki 85   
+#define Kd 30
+PID aPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   Kp,  Ki,  Kd,  DIRECT);
+PID bPID(&kinematics.roll,   &rollPID_out,  &setRoll,   Kp,  Ki,  Kd,  DIRECT);
 
 
 /*=========================================================================
@@ -97,6 +106,11 @@ void PID_init();
 void logFileStart();
 void logData();
 
+/*=========================================================================
+    SD logging definitions
+    -----------------------------------------------------------------------*/
+// Hardware SS pin on the ATmega2560
+#define chipSelect  (53)
 char logFilename[] = "OSQ_Log.txt";
 
 /*=========================================================================
@@ -138,6 +152,22 @@ void setup()
   }
   DateTime now = rtc.now();
   
+  Serial.println("-----OpenSourceQuad-----");
+  Serial.println();
+  Serial.print("Software version: ");
+  Serial.println(SOFTWARE_VERSION);
+  Serial.print(now.year());
+  Serial.print("/");
+  Serial.print(now.month());
+  Serial.print("/");
+  Serial.print(now.day());
+  Serial.print("  ");
+  Serial.print(now.hour());
+  Serial.print(":");
+  Serial.print(now.minute());
+  Serial.print(":");
+  Serial.println(now.second());
+  
   // Open a .txt file for data logging and debugging
   logFileStart();
     
@@ -148,30 +178,35 @@ void setup()
   //   - USRF
   //   - GPS module (Adafruit Ultimate)
   //   - RTC Module
+  Serial.println("Initializing Sensors");
   while(!initSensor(accel, 
                     mag, 
                     gyro,
                     &kinematics));
   ERROR_LED(2);
   // Initialize the PID controllers. This is a sub-function, below loop.
+  Serial.println("Initializing PID");
   PID_init();   
   
   // Initialize motors. This turns the motors on, and sets them all to a speed
   // just below take-off speed.
+  Serial.println("Initializing ESCs");
   motorControl.calibrateESC();
-  motorControl.startMotors();
-  delay(50);
   
-  // Set both the alpha and beta setpoints to 0. 
-  set_a = 0;		               
-  set_b = 0;  
+  Serial.println("Initializing Motors");
+  motorControl.startMotors();
+   
+  
   
   // Initialize the fourth order struct
   setupFourthOrder(&fourthOrderXAXIS,
                    &fourthOrderYAXIS,
                    &fourthOrderZAXIS);
-                   
+  
+  Serial.println("Initializing Data Logging");
   logFile = SD.open(logFilename, FILE_WRITE);
+  
+  Serial.println("Setup Complete");
   ERROR_LED(1);    
 }
 
@@ -237,7 +272,6 @@ void PID_init()
   // They represent the maximum absolute value that the PID equation could reach,
   // regardless of what the gain coefficients are. 
   int pitch_roll_PID_OutLims[] = {-100,100};
-  Serial.print("Initializing PID controllers...    ");
   aPID.SetMode(AUTOMATIC);
   aPID.SetSampleTime(PID_SampleTime);	                 
   aPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
@@ -245,8 +279,6 @@ void PID_init()
   bPID.SetSampleTime(PID_SampleTime);	               
   bPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
   
-  Serial.println("Done! ");
-  Serial.println();
 }
 /*=========================================================================
     logData
@@ -280,13 +312,12 @@ void logData()
     -----------------------------------------------------------------------*/
 void logFileStart()
 {
-  Serial.println(logFilename);
   DateTime now = rtc.now();
   
   rtc.now(); // Update the current date and time
   
   // Initialize SD card
-  Serial.print("Initializing SD card...");
+  Serial.print("Initializing SD card");
   
   // Hardware SS pin must be output. 
   pinMode(SS, OUTPUT);
@@ -296,7 +327,6 @@ void logFileStart()
     ERROR_LED(3);
     return;
   }
-  Serial.println("initialization done.");
   
   // If the file exists, we want to delete it. 
   if (SD.exists(logFilename))
@@ -309,7 +339,6 @@ void logFileStart()
   
   // if the file opened okay, write to it:
   if (logFile) {
-    Serial.print("Writing to file");
     logFile.println("-----OpenSourceQuad-----");
     logFile.println();
     logFile.print("Software version: ");
@@ -326,7 +355,6 @@ void logFileStart()
     logFile.print(":");
     logFile.println(now.second());
     logFile.println("Runtime data: ");
-    Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening file");
