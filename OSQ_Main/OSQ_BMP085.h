@@ -59,12 +59,12 @@ class BMP085
 		int conversionStep;
 
 		// EEPROM calibration values
-		int16_t 		AC1;
+		int16_t 		        AC1;
 		int16_t			AC2;
 		int16_t			AC3;
-		uint16_t 		AC4;
-		uint16_t 		AC5;
-		uint16_t		AC6;
+		uint16_t 		        AC4;
+		uint16_t 		        AC5;
+		uint16_t		        AC6;
 		int16_t			_B1;
 		int16_t			_B2;
 		int16_t			MB;

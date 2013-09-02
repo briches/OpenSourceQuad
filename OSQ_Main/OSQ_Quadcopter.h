@@ -38,10 +38,13 @@
 #endif
 
 
+
 #include <I2C.h>
 #include <Wire.h>
 #include <math.h>
 #include <Servo.h>
+
+#include "OSQ_GPS.h"
 
 /*=========================================================================
     General IO pins
@@ -58,7 +61,7 @@
 #define _100HzPoll 		(10000)				// us Period of 100 Hz poll
 #define	_50HzPoll		(20000)				// us Period of 75 Hz poll
 #define _20HzPoll 		(50000)				// us Period of 50 Hz poll
-#define _10HzPoll		(100000)			// us Period of 10 Hz poll
+#define _1HzPoll		(1000000)			// us Period of 10 Hz poll
 
 /*===============================================
 Time keeping for polling and interrupts
@@ -68,39 +71,16 @@ static double tpoll2;
 static double tpoll3;
 static double tpoll4;
 
-
 /***************************************************************************
  *! @FUNCTIONS
  ***************************************************************************/
-bool initSensor(	        SENSORLIB_accel accel,
-					SENSORLIB_mag mag,
-					SENSORLIB_gyro gyro,
-					struct kinematicData *kinematics);
 
-void mainProcess(	double pitchPID_out,
-					double rollPID_out,
-					class SENSORLIB_accel *accel,
-					class SENSORLIB_mag	*mag,
-					class SENSORLIB_gyro	*gyro,
-					struct kinematicData *kinematics,
-					struct fourthOrderData  *fourthOrderXAXIS,
-					struct fourthOrderData  *fourthOrderYAXIS,
-					struct fourthOrderData  *fourthOrderZAXIS,
-					class OSQ_MotorControl  *motorControl);
+void ERROR_LED(int LED_SEL);
 
-
-void ERROR_LED(	int LED_SEL);
-
-void getInitialOffsets(  struct kinematicData *kinematics,
-					SENSORLIB_accel accel,
-					SENSORLIB_mag mag,
-					SENSORLIB_gyro gyro);
-
-
-void getInitialOffsets(  struct kinematicData *kinematics,
-					SENSORLIB_accel accel,
-					SENSORLIB_mag mag,
-					SENSORLIB_gyro gyro)
+void getInitialOffsets( struct kinematicData *kinematics,
+						SENSORLIB_accel accel,
+						SENSORLIB_mag mag,
+						SENSORLIB_gyro gyro)
 {
 	/**************************************************************************/
 		//! @brief Gets the initial offsets in both sensors to accomodate board mount
@@ -228,7 +208,7 @@ void mainProcess(	double pitchPID_out,
 
 	}
 
-	if (time4 >= _10HzPoll)
+	if (time4 >= _1HzPoll)
 	{
 		priority = 4;								// GPS update
 
@@ -259,7 +239,7 @@ void mainProcess(	double pitchPID_out,
 	}
 
 
-/**! 				@Poll type two - 75 Hz			*/
+	/**! 				@Poll type two - 75 Hz			*/
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
 	if ((priority == 1) || (priority == 2))
 	{
@@ -294,7 +274,7 @@ void mainProcess(	double pitchPID_out,
 	{
 		/// Update GPS data using RMC
 		// TODO:
-
+		
 		/// Read battery voltage
 		// TODO:
 		tpoll4 = micros();

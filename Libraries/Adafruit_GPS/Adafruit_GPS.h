@@ -5,14 +5,14 @@ for the ultimate GPS module!
 Tested and works great with the Adafruit Ultimate GPS module
 using MTK33x9 chipset
     ------> http://www.adafruit.com/products/746
-Pick one up today at the Adafruit electronics shop 
+Pick one up today at the Adafruit electronics shop
 and help support open source hardware & software! -ada
 
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
+Adafruit invests time and resources providing this open source code,
+please support Adafruit and open-source hardware by purchasing
 products from Adafruit!
 
-Written by Limor Fried/Ladyada  for Adafruit Industries.  
+Written by Limor Fried/Ladyada  for Adafruit Industries.
 BSD license, check license.txt for more information
 All text above must be included in any redistribution
 ****************************************/
@@ -62,9 +62,9 @@ All text above must be included in any redistribution
 // ask for the release and version
 #define PMTK_Q_RELEASE "$PMTK605*31"
 
-// request for updates on antenna status 
-#define PGCMD_ANTENNA "$PGCMD,33,1*6C" 
-#define PGCMD_NOANTENNA "$PGCMD,33,0*6C" 
+// request for updates on antenna status
+#define PGCMD_ANTENNA "$PGCMD,33,1*6C"
+#define PGCMD_NOANTENNA "$PGCMD,33,0*6C"
 
 // how long to wait when we're looking for a response
 #define MAXWAITSENTENCE 5
@@ -82,9 +82,9 @@ All text above must be included in any redistribution
 
 class Adafruit_GPS {
  public:
-  void begin(uint16_t baud); 
+  void begin(uint16_t baud);
 
-#if ARDUINO >= 100 
+#if ARDUINO >= 100
   Adafruit_GPS(SoftwareSerial *ser); // Constructor when using SoftwareSerial
 #else
   Adafruit_GPS(NewSoftSerial  *ser); // Constructor when using NewSoftSerial
@@ -105,7 +105,7 @@ class Adafruit_GPS {
   void interruptReads(boolean r);
 
   boolean wakeup(void);
- boolean standby(void);
+  boolean standby(void);
 
   uint8_t hour, minute, seconds, year, month, day;
   uint16_t milliseconds;
@@ -123,7 +123,7 @@ class Adafruit_GPS {
   uint8_t LOCUS_type, LOCUS_mode, LOCUS_config, LOCUS_interval, LOCUS_distance, LOCUS_speed, LOCUS_status, LOCUS_percent;
  private:
   boolean paused;
-  
+
   uint8_t parseResponse(char *response);
 #if ARDUINO >= 100
   SoftwareSerial *gpsSwSerial;

@@ -71,9 +71,9 @@ void setup()
   
   // Set the update rate
   // 1 Hz update rate
-  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
   // 5 Hz update rate- for 9600 baud you'll have to set the output to RMC or RMCGGA only (see above)
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
   // 10 Hz update rate - for 9600 baud you'll have to set the output to RMC only (see above)
   //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
 
@@ -83,7 +83,7 @@ void setup()
   // the nice thing about this code is you can have a timer0 interrupt go off
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
-  useInterrupt(true);
+  useInterrupt(false);
   
   delay(1000);
 }
