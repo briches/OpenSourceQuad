@@ -32,13 +32,13 @@
 
 typedef struct gpsdata_t
 {
-	int		        fix, quality;	// Is fixed or no
+	int		fix, quality;	// Is fixed or no
 	int    		satellites;		// number of sats
 	double 		altitude,		// in m, apparently. this seems to be fucked
-				angle,			// in deg, based of movement
-				lat,			// in degrees, decimal minutes
-				lon,			// degrees, decimal minutes
-				speed;			// converted to m/s, direction of motion
+		        angle,			// in deg, based of movement
+			lat,			// in degrees, decimal minutes
+			lon,			// degrees, decimal minutes
+			spd;			// converted to m/s, direction of motion
 
 };
 

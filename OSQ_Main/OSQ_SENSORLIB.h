@@ -824,7 +824,7 @@ void SENSORLIB_mag::read()
   _magData.y = (ylo | (yhi << 8));
   _magData.z = (zlo | (zhi << 8));
 
-  // TODO: Calculate orientation
+  //Calculate orientation
   _magData.orientation = 0.0;
 };
 

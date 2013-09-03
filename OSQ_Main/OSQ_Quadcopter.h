@@ -44,7 +44,7 @@
 #include <math.h>
 #include <Servo.h>
 
-#include "OSQ_GPS.h"
+#include "OSQ_BMP085.h"
 
 /*=========================================================================
     General IO pins
@@ -168,6 +168,7 @@ void mainProcess(	double pitchPID_out,
 					class SENSORLIB_accel *accel,
 					class SENSORLIB_mag	*mag,
 					class SENSORLIB_gyro *gyro,
+                                        class BMP085    *barometer,
 					struct kinematicData *kinematics,
 					struct fourthOrderData *fourthOrderXAXIS,
 					struct fourthOrderData *fourthOrderYAXIS,
@@ -262,7 +263,7 @@ void mainProcess(	double pitchPID_out,
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
 	if ((priority == 4) || (priority == 3))
 	{
-
+                barometer->updatePTA();
 
 		// Read the time that poll3 was last executed
 		tpoll3 = micros();
@@ -271,10 +272,7 @@ void mainProcess(	double pitchPID_out,
 	/**! 				@Poll type four - 10 Hz				*/
 	// Code in this block executes if the conditions for priority == 2 are satisfied.
 	if (priority == 4)
-	{
-		/// Update GPS data using RMC
-		// TODO:
-		
+	{	
 		/// Read battery voltage
 		// TODO:
 		tpoll4 = micros();

@@ -96,21 +96,22 @@ struct fourthOrderData
 struct kinematicData
 {
 	double pitch,
-			roll,
-			yaw,
+		roll,
+		yaw,
+                phi,        // used for USRF altitude calcs
 
-			io_ax,
-			io_ay,
-			io_az,
-			io_wx,
-			io_wy,
-			io_wz,
+		io_ax,
+		io_ay,
+		io_az,
+		io_wx,
+		io_wy,
+		io_wz,
 
-			pitch_gyro,
-			roll_gyro,
-			yaw_gyro,
+		pitch_gyro,
+		roll_gyro,
+		yaw_gyro,
 
-			yaw_mag;
+		yaw_mag;
 
 	unsigned long timestamp;
 
@@ -198,12 +199,13 @@ void kinematicEvent(int eventType,
 		elapsed_time = (micros() - data->timestamp) / t_convert;
 		data->timestamp = micros();
 
-		data->pitch_gyro 	+= wy * elapsed_time;
-		data->roll_gyro 	+= wx * elapsed_time;
-		data->yaw_gyro		+= wz * elapsed_time;
+		data->pitch_gyro    += wy * elapsed_time;
+		data->roll_gyro     += wx * elapsed_time;
+		data->yaw_gyro	    += wz * elapsed_time;
 
+                data->phi   = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
 		pitch_accel = atan2( ax, sqrt(ay*ay + az*az)) * 180 / Pi;
-		roll_accel 	= atan2( ay, sqrt(az*az + az*az)) * 180 / Pi;
+		roll_accel  = atan2( ay, sqrt(az*az + az*az)) * 180 / Pi;
 
 		// Remove pesky NaNs that seem to occur around 0.
 		// Check the quadrant of vector
@@ -211,7 +213,7 @@ void kinematicEvent(int eventType,
 
 		data->pitch = complementary(pitch_accel, 0, pitchRollCoeff, data);
 		data->roll  = complementary(roll_accel, 1, pitchRollCoeff, data);
-		data->yaw	= complementary(data->yaw_gyro, 2, yawCoeff, data);
+		data->yaw   = complementary(data->yaw_gyro, 2, yawCoeff, data);
 
 
 

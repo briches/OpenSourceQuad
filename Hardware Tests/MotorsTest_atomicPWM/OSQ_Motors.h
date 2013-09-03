@@ -36,7 +36,7 @@
  #include "WProgram.h"
 #endif
 
-#define USE_300HZ_ESC
+#define USE_400HZ_ESC
 
 #ifdef USE_300HZ_ESC
 	#define PWM_FREQUENCY   300
@@ -50,8 +50,8 @@
 #define PWM_COUNTER_PERIOD	(F_CPU/PRESCALER/PWM_FREQUENCY)
 
 
-#define MIN_COMMAND      	1000     		// the shortest pulse
-#define MAX_COMMAND     	2000     		// the longest pulse
+#define MIN_COMMAND      	1100     		// the shortest pulse
+#define MAX_COMMAND     	2400     		// the longest pulse
 
 #define MOTOR1PIN			2				// Front Motor PORTE PE4
 #define MOTOR2PIN			3				// Left Motor  PORTE PE5
@@ -66,21 +66,22 @@
 //***********************************************/
 /* Plus config
 **************************************************
-					    1
-					    ||
-				 	    ||
-				 	    ||
-				 	    ||
-				  /      front        \
-                                  |      usb ^      |
-                2 ======|                      |====== 3
-				  |                     |
-				  \_________/
-					    ||
-					    ||
-					    ||
-					    ||
-					    4
+		  1
+		 ||
+		 ||
+                 ||
+	 	 ||
+        /      front        \
+        |      usb ^        |
+2 ======|                   |====== 3
+        |                   |
+        |                   |
+        \___________________/
+		 ||
+		 ||
+		 ||
+		 ||
+		  4
 **************************************************
 */
 //***********************************************/
@@ -177,26 +178,40 @@ void OSQ_MotorControl :: startMotors()
 {
 	if(this->ESC_READY)
 	{
-		int dutyCycleTarget = (MIN_COMMAND);
+	    int dutyCycleTarget = (MIN_COMMAND);
 
-		int DC;
-		for (DC = 0; DC <= dutyCycleTarget; DC++)
-		{
-			motorSpeeds[0] = DC;
-			motorSpeeds[1] = DC;
-			motorSpeeds[2] = DC;
-			motorSpeeds[3] = DC;
-			writeMotors();
-			delayMicroseconds(DC*3);
-		}
+	    int DC;
+
+            // Perform motor sweep
+            // Upwards sweep
+	    for (DC = MIN_COMMAND; DC <= MAX_COMMAND; DC+= 10)
+	    {
+		motorSpeeds[0] = DC;
+		motorSpeeds[1] = DC;
+		motorSpeeds[2] = DC;
+		motorSpeeds[3] = DC;
+		writeMotors();
+		delay(50);
+	    }
+            // Down sweep
+            for (DC = MAX_COMMAND; DC >= MIN_COMMAND; DC-= 10)
+	    {
+		motorSpeeds[0] = DC;
+		motorSpeeds[1] = DC;
+		motorSpeeds[2] = DC;
+		motorSpeeds[3] = DC;
+		writeMotors();
+		delay(50);
+	    }
+
 
 	}
 };
 
 void OSQ_MotorControl :: updateMotors(	double pitchPID,
-										double rollPID,
-										double yawPID,
-										double elevPID)
+					double rollPID,
+					double yawPID,
+					double elevPID)
 {
 	if (MOTORS_ARMED)
 	{
@@ -212,17 +227,17 @@ void OSQ_MotorControl :: updateMotors(	double pitchPID,
 
 			// Restrict duty cycle to max/min
 			motorSpeeds[0] = constrain(	motorSpeeds[0],
-											passiveMIN - agroBOOL * agroSTEP,
-											passiveMAX + agroBOOL * agroSTEP);
+							passiveMIN - agroBOOL * agroSTEP,
+							passiveMAX + agroBOOL * agroSTEP);
 			motorSpeeds[1] = constrain(	motorSpeeds[1],
-											passiveMIN - agroBOOL * agroSTEP,
-											passiveMAX + agroBOOL * agroSTEP);
+							passiveMIN - agroBOOL * agroSTEP,
+							passiveMAX + agroBOOL * agroSTEP);
 			motorSpeeds[2] = constrain(	motorSpeeds[2],
-											passiveMIN - agroBOOL * agroSTEP,
-											passiveMAX + agroBOOL * agroSTEP);
+							passiveMIN - agroBOOL * agroSTEP,
+							passiveMAX + agroBOOL * agroSTEP);
 			motorSpeeds[3] = constrain(	motorSpeeds[3],
-											passiveMIN - agroBOOL * agroSTEP,
-											passiveMAX + agroBOOL * agroSTEP);
+							passiveMIN - agroBOOL * agroSTEP,
+							passiveMAX + agroBOOL * agroSTEP);
 
 
 			writeMotors();	// In OSQ_atomicPWM

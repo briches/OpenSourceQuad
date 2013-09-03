@@ -17,8 +17,8 @@ void individualTest()
   for(int i = 0; i < 4; i++)
   {
     // Test each motor individually. 
-    // bring each motor up to 1200, then back to 1000
-    for (int thrust = 1000; thrust < 1200; thrust += 10)
+    // bring each motor up to 1200, then back to MIN_COMMAND
+    for (int thrust = MIN_COMMAND; thrust < MAX_COMMAND; thrust += 10)
     {
       motorSpeeds[i] = thrust;
       writeMotors();
@@ -26,40 +26,34 @@ void individualTest()
     }
     
     // Test each motor individually. 
-    for (int thrust = 1200; thrust > 1000; thrust -= 10)
+    for (int thrust = MAX_COMMAND; thrust > MIN_COMMAND; thrust -= 10)
     {
       motorSpeeds[i] = thrust;
       writeMotors();
       delay(200);
     }
-    delay(1000);
+    delay(100);
   }   
 }
 
 void pulseTest()
 {
   
-  for(int i =0; i<21;i++)
+  for(int i =0; i<16;i++)
   {
+    
     delay(200);
-    motorSpeeds[0] = 1100;
-    motorSpeeds[1] = 1100;
-    motorSpeeds[2] = 1100;
-    motorSpeeds[3] = 1100;
+    motorSpeeds[0] = (MAX_COMMAND+MIN_COMMAND)/2;
+    motorSpeeds[1] = (MAX_COMMAND+MIN_COMMAND)/2;
+    motorSpeeds[2] = (MAX_COMMAND+MIN_COMMAND)/2;
+    motorSpeeds[3] = (MAX_COMMAND+MIN_COMMAND)/2;
     writeMotors();
     
     delay(200);
-    motorSpeeds[0] = 1200;
-    motorSpeeds[1] = 1200;
-    motorSpeeds[2] = 1200;
-    motorSpeeds[3] = 1200;
-    writeMotors();
-    
-    delay(200);
-    motorSpeeds[0] = 1000;
-    motorSpeeds[1] = 1000;
-    motorSpeeds[2] = 1000;
-    motorSpeeds[3] = 1000;
+    motorSpeeds[0] = MIN_COMMAND;
+    motorSpeeds[1] = MIN_COMMAND;
+    motorSpeeds[2] = MIN_COMMAND;
+    motorSpeeds[3] = MIN_COMMAND;
     writeMotors();
     
     

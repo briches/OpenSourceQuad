@@ -35,6 +35,7 @@
 #include "OSQ_BMP085.h"
 #include "OSQ_NoWire.h"
 #include "OSQ_GPS.h"
+#include "OSQ_altitudeProcessor.h"
 
 #include <RTClib.h>
 #include <Adafruit_GPS.h>         
@@ -56,7 +57,7 @@
  -----------------------------------------------------------------------*/
 
 #define VBATT_PIN 	(0x0)
-#define USRF_pin 	(0x0)	
+#define USRF_PIN 	(0x0)	
 
 /*=========================================================================
  Battery Monitor
@@ -69,18 +70,19 @@ uint32_t cycleCount;
  Classes and important structures
  -----------------------------------------------------------------------*/
 SENSORLIB_accel   	accel;
-SENSORLIB_mag	mag;
-SENSORLIB_gyro       gyro;
+SENSORLIB_mag	        mag;
+SENSORLIB_gyro          gyro;
+BMP085                  barometer;
 fourthOrderData   	fourthOrderXAXIS,
-fourthOrderYAXIS,
-fourthOrderZAXIS;
+                        fourthOrderYAXIS,
+                        fourthOrderZAXIS;
 kinematicData	  	kinematics;
 OSQ_MotorControl   	motorControl;
-File                                 logFile;
+File                    logFile;
 RTC_DS1307              rtc;
-gpsdata_t                     GPSDATA;
-SoftwareSerial             GPSSerial(13, 12); // TX, RX GPS pins
-Adafruit_GPS               GPS(&GPSSerial);
+gpsdata_t               GPSDATA;
+SoftwareSerial          GPSSerial(13, 12); // TX, RX GPS pins
+Adafruit_GPS            GPS(&GPSSerial);
 
 
 /*=========================================================================
@@ -188,6 +190,10 @@ void setup()
     mag, 
     gyro,
     &kinematics));
+    
+    barometer.readEEPROM();
+    barometer.setSLP(29.908);
+    barometer.setOSS(3);
 
     ERROR_LED(2);
 
@@ -241,23 +247,37 @@ void loop()
     // more accurate readings of angle
     // Everything's in here because I don't dev in Arduino IDE
     mainProcess( pitchPID_out, 
-                               rollPID_out, 
-                               &accel, 
-                               &mag, 
-                               &gyro,
-                               &kinematics,
-                               &fourthOrderXAXIS,
-                               &fourthOrderYAXIS,
-                               &fourthOrderZAXIS,
-                               &motorControl );  
+                 rollPID_out, 
+                 &accel, 
+                 &mag, 
+                 &gyro,
+                 &barometer,
+                 &kinematics,
+                 &fourthOrderXAXIS,
+                 &fourthOrderYAXIS,
+                 &fourthOrderZAXIS,
+                 &motorControl );  
 
     // Check for GPS data, uses ISR
     checkGPS();
+    //(double GPS, double baro, double USRF, double phi, int GPS_FIX)
+    //Serial.println(GPSDATA.altitude);
+    double altitude = getAccurateAltitude(GPSDATA.altitude, 
+                                          barometer.altitude, 
+                                          analogRead(USRF_PIN)*0.01266762, 
+                                          kinematics.phi, 
+                                          GPSDATA.quality);
     
     if(millis() - GPS_Timer > 1000)
     {
         GPS_Timer = millis();
+        
         getGPS_Data();
+        //define barometer_Debug
+        #ifdef barometer_Debug
+            Serial.print("Altitude (Barometer): ");
+            Serial.println(barometer.altitude);
+        #endif
         
         //#define GPS_Debug
         #ifdef GPS_Debug
@@ -270,18 +290,18 @@ void loop()
             Serial.print(GPS.day, DEC); Serial.print('/');
             Serial.print(GPS.month, DEC); Serial.print("/20");
             Serial.println(GPS.year, DEC);
-            Serial.print("Fix: "); Serial.print((int)GPS.fix);
-            Serial.print(" quality: "); Serial.println((int)GPS.fixquality); 
+            Serial.print("Fix: "); Serial.print(GPSDATA.fix);
+            Serial.print(" quality: "); Serial.println((int)GPSDATA.quality); 
             if (GPS.fix) {
               Serial.print("Location: ");
-              Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+              Serial.print(GPS.latitude, 4); Serial.print(GPSDATA.lat);
               Serial.print(", "); 
-              Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+              Serial.print(GPS.longitude, 4); Serial.println(GPSDATA.lon);
               
-              Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-              Serial.print("Angle: "); Serial.println(GPS.angle);
-              Serial.print("Altitude: "); Serial.println(GPS.altitude);
-              Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+              Serial.print("Speed (m/s): "); Serial.println(GPSDATA.spd);
+              Serial.print("Angle: "); Serial.println(GPSDATA.angle);
+              Serial.print("Altitude: "); Serial.println(GPSDATA.altitude);
+              Serial.print("Satellites: "); Serial.println((int)GPSDATA.satellites);
             }
         #endif
     }
@@ -339,7 +359,7 @@ void getGPS_Data()
 	GPSDATA.angle = GPS.angle;
 	GPSDATA.lat = GPS.lat;
 	GPSDATA.lon = GPS.lon;
-	GPSDATA.speed = GPS.speed / 0.5144;		// Convert to m/s from knots
+	GPSDATA.spd = GPS.speed / 0.5144;		// Convert to m/s from knots
 }
 
 /*=========================================================================
