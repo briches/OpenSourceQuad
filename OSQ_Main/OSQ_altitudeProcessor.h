@@ -39,16 +39,17 @@
 #define altKd       (0.0)
 
 
-
-static boolean useUSRF = true;
-static boolean isSetInitialAltitude = false;
 static boolean altitudeHold  = false;
+
+static boolean isSetInitialAltitudeBarometer = false;
+static boolean isSetInitialAltitudeGPS = false;
 static boolean changedFromInitial = false;
 
 static double barometerOffset = 0;
 static double GPSOffset = 0;
 
-static double initialAltitude = 0;    // From sea level;
+static double initialAltitudeBarometer = 0;    // From sea level;
+static double initialAltitudeGPS = 0;    // From sea level;
 static double previousAltitude = 0;
 static double accurateAltitude = 0;
 static double altitudeCovariance = 1;
@@ -56,111 +57,106 @@ static double altitudeCovariance = 1;
 boolean altitudeDebug = true;
 
 void setInitialAltitude(double GPS, double baro);
+bool checkUSRF(double hieght);
 
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
-    static boolean haveUsedGPS = false;
-    double GPSCovar = 5;        // Assume covariance in GPS            // 1
-    double baroCovar = 1;     // Assume covariance in barometer      // 2
-    double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
-    
-    if(altitudeDebug)
-    {
-        Serial.print(" Raw GPS: ");
-        Serial.print(GPS);
-        Serial.print(" Raw baro: ");
-        Serial.print(baro);
-        Serial.print(" Raw USRF: ");
-        Serial.print(USRF);
-    }
-    
-    if(isSetInitialAltitude)
-    {
-        if(accurateAltitude < 10)    // If lower than 10 m, we can probably trust the USRF
-        {
-            useUSRF = true;
-        } 
-        else {
-            useUSRF = false;
-        }
-    
-        // This is a super basic kalman filter.
-        USRF *= cos(phi * Pi / 180);
-        GPS -= initialAltitude;
-        baro -= initialAltitude;
-        
-        if((accurateAltitude - previousAltitude) > altitudeCovariance) changedFromInitial = true;
-        
+        static int barometerSampleCount = 0;
+        double GPSCovar = 3;        // Assume covariance in GPS            // 1
+        double baroCovar = 1;       // Assume covariance in barometer      // 2
+        double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
+
+        double sensorAltitude;
+        double sensorCovariance;
+
         previousAltitude = accurateAltitude;
-       
-        if(GPS_quality == 1)
+        // This is a super basic kalman filter.
+        // We only use each sensor if certain conditions are met
+
+        // USRF
+        if(checkUSRF(10.0))	// If under 10 m, use the USRF.
         {
-            if(!changedFromInitial)
-            {
-                barometerOffset = initialAltitude - (initialAltitude + GPS) / 2;
-                GPSOffset = initialAltitude - (initialAltitude + GPS) / 2;
-                initialAltitude = (initialAltitude + GPS) / 2;
-            }
-            if(changedFromInitial && !haveUsedGPS)
-            {
-                GPSOffset = initialAltitude - GPS;
-            }
-           
-            haveUsedGPS = true;
-            
-            GPS -= GPSOffset;
-            baro -= barometerOffset;
-            
-            accurateAltitude = (accurateAltitude * GPSCovar + GPS * altitudeCovariance) / (altitudeCovariance + GPSCovar);
-            altitudeCovariance = (altitudeCovariance * GPSCovar)/(altitudeCovariance + GPSCovar);
+                USRF *= cos(phi * Pi / 180);
+                sensorAltitude = USRF;
+                sensorCovariance = USRFCovar;
         }
         
-        accurateAltitude = (accurateAltitude * baroCovar + baro * altitudeCovariance) / (altitudeCovariance + baroCovar);
-        altitudeCovariance = (altitudeCovariance * baroCovar)/(altitudeCovariance + baroCovar);
-        
-        if(useUSRF)
+        // Barometer
+        if(isSetInitialAltitudeBarometer)	// Wait at least 150 ms into the loop() to get barometer altitudes
         {
-            accurateAltitude = (accurateAltitude * USRFCovar + USRF * altitudeCovariance) / (altitudeCovariance + USRFCovar);
-            altitudeCovariance = (altitudeCovariance * USRFCovar)/(altitudeCovariance + USRFCovar);
+                baro -= initialAltitudeBarometer;
+                sensorAltitude = (sensorAltitude * baroCovar + baro * sensorCovariance) / (sensorCovariance + baroCovar);
+                sensorCovariance = (sensorCovariance * baroCovar)/(sensorCovariance + baroCovar);
         }
         
-        altitudeCovariance += abs(accurateAltitude - previousAltitude);
-        
-        
+        else if(baro != 0)
+        {
+                initialAltitudeBarometer += baro;
+                barometerSampleCount++;
+                if(barometerSampleCount == 10)
+                {
+                        isSetInitialAltitudeBarometer = true;
+                        initialAltitudeBarometer /= 10;                       
+                }
+        }
+
+        // GPS
+        if( (GPS_quality == 1) && (isSetInitialAltitudeGPS) )	// If the GPS is connected on 3axis
+        {
+                GPS -= initialAltitudeGPS;
+                sensorAltitude = (sensorAltitude * GPSCovar + GPS * sensorCovariance) / (sensorCovariance + GPSCovar);
+                sensorCovariance = (sensorCovariance * GPSCovar)/(sensorCovariance + GPSCovar);
+        }
+        else if(GPS_quality == 1)
+        {
+                initialAltitudeGPS = GPS;
+                isSetInitialAltitudeGPS = true;
+        }
+
+        accurateAltitude = (sensorAltitude * altitudeCovariance + accurateAltitude * sensorCovariance) / (sensorCovariance + altitudeCovariance);
+        altitudeCovariance = (sensorCovariance * altitudeCovariance)/(sensorCovariance + altitudeCovariance);
+
+        // Update covariance with "movement step"
+        altitudeCovariance += abs(previousAltitude - sensorAltitude);
+
         if(altitudeDebug)
         {
-            Serial.print(" GPS: "); Serial.print(GPS);
-            Serial.print(" Baro: "); Serial.print(baro);
-            Serial.print(" USRF: "); Serial.print(USRF);
-            Serial.print(" 'Accurate Altitude' : ");
-            Serial.print(accurateAltitude);
-            Serial.print(" Altitude covariance: ");
-            Serial.println(altitudeCovariance);
+                Serial.print(" GPS: "); 
+                Serial.print(GPS);
+                Serial.print(" Baro: "); 
+                Serial.print(baro);
+                Serial.print(" USRF: "); 
+                Serial.print(USRF);
+                Serial.print(" 'Accurate Altitude' : ");
+                Serial.print(accurateAltitude);
+                Serial.print(" Altitude covariance: ");
+                Serial.println(altitudeCovariance);
         }
-            
-    } 
-    else 
-    {
-        setInitialAltitude(GPS, baro);
-    }
-    
-    return accurateAltitude;
+
+        return accurateAltitude;
 
 };
 
-void setInitialAltitude(double GPS, double baro)
+bool movedFromInitial(boolean changed)
 {
-    if(altitudeDebug) Serial.println("Checking initial altitude");
-    if( baro != 0 )
-    {
-        initialAltitude = (baro);    // From sea level
-        accurateAltitude = 0;    // From ground
-        isSetInitialAltitude = true;
-    }
+        if(!changed)
+        {
+                if((accurateAltitude - previousAltitude) > altitudeCovariance)
+                        return true;
+        }
+        else return false;
 
+}
+
+
+bool checkUSRF(double hieght)
+{
+        return (accurateAltitude <= hieght);
 };
+
 
 
 
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+
 

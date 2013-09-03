@@ -124,109 +124,109 @@ char logFilename[] = "OSQ_Log.txt";
  -----------------------------------------------------------------------*/
 void setup()
 { 
-    // Initialize the main serial UART for output. 
-    Serial.begin(115200); 
+        // Initialize the main serial UART for output. 
+        Serial.begin(115200); 
 
-    // Join the I2C bus
-    Wire.begin();
+        // Join the I2C bus
+        Wire.begin();
 
-    // Start the rtc
-    rtc.begin();
+        // Start the rtc
+        rtc.begin();
 
-    Serial.println(" ");
+        Serial.println(" ");
 
-    // Initialize these pins for digital output.
-    // They are used in the ERROR_LED function
-    // Use ERROR_LED(1) for success,
-    //     ERROR_LED(2) for warnings,
-    //     ERROR_LED(3) for critical fail (has a while(1)).
-    pinMode(GREEN_LED,   OUTPUT);
-    pinMode(YELLOW_LED,  OUTPUT);
-    pinMode(RED_LED,     OUTPUT);
-    digitalWrite(GREEN_LED, LOW);
-    digitalWrite(YELLOW_LED, LOW);
-    digitalWrite(RED_LED, LOW);
+        // Initialize these pins for digital output.
+        // They are used in the ERROR_LED function
+        // Use ERROR_LED(1) for success,
+        //     ERROR_LED(2) for warnings,
+        //     ERROR_LED(3) for critical fail (has a while(1)).
+        pinMode(GREEN_LED,   OUTPUT);
+        pinMode(YELLOW_LED,  OUTPUT);
+        pinMode(RED_LED,     OUTPUT);
+        digitalWrite(GREEN_LED, LOW);
+        digitalWrite(YELLOW_LED, LOW);
+        digitalWrite(RED_LED, LOW);
 
-    // Turn on the yellow LED to signify start of setup
-    ERROR_LED(2);
+        // Turn on the yellow LED to signify start of setup
+        ERROR_LED(2);
 
-    // Check that the RTC is running properly
-    if (! rtc.isrunning()) {
-        Serial.println("RTC is NOT running!");
-        // following line sets the RTC to the date & time this sketch was compiled
-        rtc.adjust(DateTime(__DATE__, __TIME__));
-    }
-    DateTime now = rtc.now();
+        // Check that the RTC is running properly
+        if (! rtc.isrunning()) {
+                Serial.println("RTC is NOT running!");
+                // following line sets the RTC to the date & time this sketch was compiled
+                rtc.adjust(DateTime(__DATE__, __TIME__));
+        }
+        DateTime now = rtc.now();
 
-    Serial.println("-----OpenSourceQuad-----");
-    Serial.println();
-    Serial.print("Software version: ");
-    Serial.println(SOFTWARE_VERSION);
-    Serial.print(now.year());
-    Serial.print("/");
-    Serial.print(now.month());
-    Serial.print("/");
-    Serial.print(now.day());
-    Serial.print("  ");
-    Serial.print(now.hour());
-    Serial.print(":");
-    Serial.print(now.minute());
-    Serial.print(":");
-    Serial.println(now.second());
+        Serial.println("-----OpenSourceQuad-----");
+        Serial.println();
+        Serial.print("Software version: ");
+        Serial.println(SOFTWARE_VERSION);
+        Serial.print(now.year());
+        Serial.print("/");
+        Serial.print(now.month());
+        Serial.print("/");
+        Serial.print(now.day());
+        Serial.print("  ");
+        Serial.print(now.hour());
+        Serial.print(":");
+        Serial.print(now.minute());
+        Serial.print(":");
+        Serial.println(now.second());
 
-    // Open a .txt file for data logging and debugging
-    logFileStart();
+        // Open a .txt file for data logging and debugging
+        logFileStart();
 
-    // Initialize the sensors.
-    // Sensors include: 
-    //   - Gyro (InvenSense MPU3050)
-    //   - Accel/Magnetometer (LSM303)
-    //   - USRF
-    //   - GPS module (Adafruit Ultimate)
-    //   - RTC Module
-    Serial.println("Initializing Sensors");
+        // Initialize the sensors.
+        // Sensors include: 
+        //   - Gyro (InvenSense MPU3050)
+        //   - Accel/Magnetometer (LSM303)
+        //   - USRF
+        //   - GPS module (Adafruit Ultimate)
+        //   - RTC Module
+        Serial.println("Initializing Sensors");
 
-    while(!initSensor(accel, 
-    mag, 
-    gyro,
-    &kinematics));
-    
-    barometer.readEEPROM();
-    barometer.setSLP(29.908);
-    barometer.setOSS(3);
+        while(!initSensor(accel, 
+        mag, 
+        gyro,
+        &kinematics));
 
-    ERROR_LED(2);
+        barometer.readEEPROM();
+        barometer.setSLP(29.908);
+        barometer.setOSS(3);
 
-    // Initialize the PID controllers. This is a sub-function, below loop.
-    Serial.println("Initializing PID");
-    PID_init();   
+        ERROR_LED(2);
 
-    // Initialize motors. This turns the motors on, and sets them all to a speed
-    // just below take-off speed.
-    Serial.println("Initializing ESCs");
-    motorControl.calibrateESC();
+        // Initialize the PID controllers. This is a sub-function, below loop.
+        Serial.println("Initializing PID");
+        PID_init();   
 
-    Serial.println("Initializing Motors");
-    motorControl.startMotors();
+        // Initialize motors. This turns the motors on, and sets them all to a speed
+        // just below take-off speed.
+        Serial.println("Initializing ESCs");
+        motorControl.calibrateESC();
 
-
-
-    // Initialize the fourth order struct
-    setupFourthOrder(&fourthOrderXAXIS,
-    &fourthOrderYAXIS,
-    &fourthOrderZAXIS);
-
-    Serial.println("Initializing Data Logging");
-    logFile = SD.open(logFilename, FILE_WRITE);
+        Serial.println("Initializing Motors");
+        motorControl.startMotors();
 
 
-    Serial.println("Initializing GPS");
-    GPS.begin(9600);
-    initGPS();
 
-    Serial.println("Setup Complete");
+        // Initialize the fourth order struct
+        setupFourthOrder(&fourthOrderXAXIS,
+        &fourthOrderYAXIS,
+        &fourthOrderZAXIS);
 
-    ERROR_LED(1);    
+        Serial.println("Initializing Data Logging");
+        logFile = SD.open(logFilename, FILE_WRITE);
+
+
+        Serial.println("Initializing GPS");
+        GPS.begin(9600);
+        initGPS();
+
+        Serial.println("Setup Complete");
+
+        ERROR_LED(1);    
 }
 
 uint32_t GPS_Timer = millis();
@@ -235,97 +235,110 @@ uint32_t GPS_Timer = millis();
  -----------------------------------------------------------------------*/
 void loop()                          
 {
-    // This is the main runtime function included in the Quadcopter class.
-    //
-    // It includes a number of different priorities, based on the time elapsed
-    // since it was last called (This is because various sensors or events may
-    // have different time intervals between them). 
-    // 
-    // In the most basic priority, the function gathers new magnetometer, 
-    // accelerometer, and gryo data. It then runs a basic moving average on these
-    // data to smooth them. Then, it uses a complementary filter to help obtain 
-    // more accurate readings of angle
-    // Everything's in here because I don't dev in Arduino IDE
-    mainProcess( pitchPID_out, 
-                 rollPID_out, 
-                 &accel, 
-                 &mag, 
-                 &gyro,
-                 &barometer,
-                 &kinematics,
-                 &fourthOrderXAXIS,
-                 &fourthOrderYAXIS,
-                 &fourthOrderZAXIS,
-                 &motorControl );  
+        // This is the main runtime function included in the Quadcopter class.
+        //
+        // It includes a number of different priorities, based on the time elapsed
+        // since it was last called (This is because various sensors or events may
+        // have different time intervals between them). 
+        // 
+        // In the most basic priority, the function gathers new magnetometer, 
+        // accelerometer, and gryo data. It then runs a basic moving average on these
+        // data to smooth them. Then, it uses a complementary filter to help obtain 
+        // more accurate readings of angle
+        // Everything's in here because I don't dev in Arduino IDE
+        mainProcess(    pitchPID_out, 
+                        rollPID_out, 
+                        &accel, 
+                        &mag, 
+                        &gyro,
+                        &barometer,
+                        &kinematics,
+                        &fourthOrderXAXIS,
+                        &fourthOrderYAXIS,
+                        &fourthOrderZAXIS,
+                        &motorControl );  
 
-    // Check for GPS data, uses ISR
-    checkGPS();
-    //(double GPS, double baro, double USRF, double phi, int GPS_FIX)
-    //Serial.println(GPSDATA.altitude);
-    double altitude = getAccurateAltitude(GPSDATA.altitude, 
-                                          barometer.altitude, 
-                                          analogRead(USRF_PIN)*0.01266762, 
-                                          kinematics.phi, 
-                                          GPSDATA.quality);
-    
-    if(millis() - GPS_Timer > 1000)
-    {
-        GPS_Timer = millis();
+        // Check for GPS data, uses ISR
+        checkGPS();
+        //(double GPS, double baro, double USRF, double phi, int GPS_FIX)
+        //Serial.println(GPSDATA.altitude);
+        double altitude = getAccurateAltitude(  GPSDATA.altitude, 
+                                                barometer.altitude, 
+                                                analogRead(USRF_PIN)*0.01266762, 
+                                                kinematics.phi, 
+                                                GPSDATA.quality);
+
+        if(millis() - GPS_Timer > 1000)
+        {
+                GPS_Timer = millis();
+
+                getGPS_Data();
+                //define barometer_Debug
+                #ifdef barometer_Debug
+                        Serial.print("Altitude (Barometer): ");
+                        Serial.println(barometer.altitude);
+                #endif
+
+                //#define GPS_Debug
+                #ifdef GPS_Debug
+                        Serial.print("\nTime: ");
+                        Serial.print(GPS.hour, DEC); 
+                        Serial.print(':');
+                        Serial.print(GPS.minute, DEC); 
+                        Serial.print(':');
+                        Serial.print(GPS.seconds, DEC); 
+                        Serial.print('.');
+                        Serial.println(GPS.milliseconds);
+                        Serial.print("Date: ");
+                        Serial.print(GPS.day, DEC); 
+                        Serial.print('/');
+                        Serial.print(GPS.month, DEC); 
+                        Serial.print("/20");
+                        Serial.println(GPS.year, DEC);
+                        Serial.print("Fix: "); 
+                        Serial.print(GPSDATA.fix);
+                        Serial.print(" quality: "); 
+                        Serial.println((int)GPSDATA.quality); 
+                        if (GPS.fix) {
+                                Serial.print("Location: ");
+                                Serial.print(GPS.latitude, 4); 
+                                Serial.print(GPSDATA.lat);
+                                Serial.print(", "); 
+                                Serial.print(GPS.longitude, 4); 
+                                Serial.println(GPSDATA.lon);
         
-        getGPS_Data();
-        //define barometer_Debug
-        #ifdef barometer_Debug
-            Serial.print("Altitude (Barometer): ");
-            Serial.println(barometer.altitude);
-        #endif
-        
-        //#define GPS_Debug
-        #ifdef GPS_Debug
-            Serial.print("\nTime: ");
-            Serial.print(GPS.hour, DEC); Serial.print(':');
-            Serial.print(GPS.minute, DEC); Serial.print(':');
-            Serial.print(GPS.seconds, DEC); Serial.print('.');
-            Serial.println(GPS.milliseconds);
-            Serial.print("Date: ");
-            Serial.print(GPS.day, DEC); Serial.print('/');
-            Serial.print(GPS.month, DEC); Serial.print("/20");
-            Serial.println(GPS.year, DEC);
-            Serial.print("Fix: "); Serial.print(GPSDATA.fix);
-            Serial.print(" quality: "); Serial.println((int)GPSDATA.quality); 
-            if (GPS.fix) {
-              Serial.print("Location: ");
-              Serial.print(GPS.latitude, 4); Serial.print(GPSDATA.lat);
-              Serial.print(", "); 
-              Serial.print(GPS.longitude, 4); Serial.println(GPSDATA.lon);
-              
-              Serial.print("Speed (m/s): "); Serial.println(GPSDATA.spd);
-              Serial.print("Angle: "); Serial.println(GPSDATA.angle);
-              Serial.print("Altitude: "); Serial.println(GPSDATA.altitude);
-              Serial.print("Satellites: "); Serial.println((int)GPSDATA.satellites);
-            }
-        #endif
-    }
+                                Serial.print("Speed (m/s): "); 
+                                Serial.println(GPSDATA.spd);
+                                Serial.print("Angle: "); 
+                                Serial.println(GPSDATA.angle);
+                                Serial.print("Altitude: "); 
+                                Serial.println(GPSDATA.altitude);
+                                Serial.print("Satellites: "); 
+                                Serial.println((int)GPSDATA.satellites);
+                        }
+                #endif
+        }
 
-    // Updates the PID controllers. They return new outputs based on current
-    // and past data. These outputs are used to decide what the motor speeds should be set to.
-    if (millis() > 3000)
-    {
-        aPID.Compute();
-        bPID.Compute();
-    }  
-    // Print data to the SD logFile, using some RTC data
-    logData();
+        // Updates the PID controllers. They return new outputs based on current
+        // and past data. These outputs are used to decide what the motor speeds should be set to.
+        if (millis() > 3000)
+        {
+                aPID.Compute();
+                bPID.Compute();
+        }  
+        // Print data to the SD logFile, using some RTC data
+        logData();
 
-    // Stop after some logging is done for debugging
-    if (millis() >= 60000)
-    {
-        logFile.close();
-        motorControl.motorDISARM();
-        ERROR_LED(3);
-    }
+        // Stop after some logging is done for debugging
+        if (millis() >= 60000)
+        {
+                logFile.close();
+                motorControl.motorDISARM();
+                ERROR_LED(3);
+        }
 
-    // Track the number of elapsed cycles
-    cycleCount++;
+        // Track the number of elapsed cycles
+        cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
 
@@ -335,13 +348,13 @@ void loop()
  -----------------------------------------------------------------------*/
 void checkGPS()
 {
-	// Should be called like all the time, pretty much
-	// Call it in loop
-	if (GPS.newNMEAreceived())
-	{
-            if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-              return;  // we can fail to parse a sentence so we should just wait for another
-	}
+        // Should be called like all the time, pretty much
+        // Call it in loop
+        if (GPS.newNMEAreceived())
+        {
+                if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
+                        return;  // we can fail to parse a sentence so we should just wait for another
+        }
 
 }
 
@@ -351,15 +364,15 @@ void checkGPS()
  -----------------------------------------------------------------------*/
 void getGPS_Data()
 {
-	// Call in the 1Hz loop
-	GPSDATA.fix = GPS.fix;
-	GPSDATA.quality = (uint8_t)GPS.fixquality;
-	GPSDATA.altitude = GPS.altitude;		
-	GPSDATA.satellites = (int8_t)GPS.satellites;
-	GPSDATA.angle = GPS.angle;
-	GPSDATA.lat = GPS.lat;
-	GPSDATA.lon = GPS.lon;
-	GPSDATA.spd = GPS.speed / 0.5144;		// Convert to m/s from knots
+        // Call in the 1Hz loop
+        GPSDATA.fix = GPS.fix;
+        GPSDATA.quality = (uint8_t)GPS.fixquality;
+        GPSDATA.altitude = GPS.altitude;		
+        GPSDATA.satellites = (int8_t)GPS.satellites;
+        GPSDATA.angle = GPS.angle;
+        GPSDATA.lat = GPS.lat;
+        GPSDATA.lon = GPS.lon;
+        GPSDATA.spd = GPS.speed / 0.5144;		// Convert to m/s from knots
 }
 
 /*=========================================================================
@@ -368,10 +381,10 @@ void getGPS_Data()
  -----------------------------------------------------------------------*/
 void initGPS()
 {
-	GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-	OCR0A = 0xAF;
-	TIMSK0 |= _BV(OCIE0A); // Enable OCR0A interrupt
+        GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+        OCR0A = 0xAF;
+        TIMSK0 |= _BV(OCIE0A); // Enable OCR0A interrupt
 }
 
 
@@ -381,7 +394,7 @@ void initGPS()
  -----------------------------------------------------------------------*/
 SIGNAL(TIMER0_COMPA_vect)
 {
-	char c = GPS.read();
+        char c = GPS.read();
 }
 
 /*=========================================================================
@@ -390,18 +403,17 @@ SIGNAL(TIMER0_COMPA_vect)
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-    // Output limits on the PID controllers.
-    // Both the alpha and the beta controller use these limits.
-    // They represent the maximum absolute value that the PID equation could reach,
-    // regardless of what the gain coefficients are. 
-    int pitch_roll_PID_OutLims[] = {
-        -100,100    };
-    aPID.SetMode(AUTOMATIC);
-    aPID.SetSampleTime(PID_SampleTime);	                 
-    aPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
-    bPID.SetMode(AUTOMATIC);
-    bPID.SetSampleTime(PID_SampleTime);	               
-    bPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
+        // Output limits on the PID controllers.
+        // Both the alpha and the beta controller use these limits.
+        // They represent the maximum absolute value that the PID equation could reach,
+        // regardless of what the gain coefficients are. 
+        int pitch_roll_PID_OutLims[] = {-100,100};
+        aPID.SetMode(AUTOMATIC);
+        aPID.SetSampleTime(PID_SampleTime);	                 
+        aPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
+        bPID.SetMode(AUTOMATIC);
+        bPID.SetSampleTime(PID_SampleTime);	               
+        bPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
 
 }
 /*=========================================================================
@@ -411,22 +423,22 @@ void PID_init()
 void logData()
 {
 
-    if (logFile)
-    {
-        logFile.print(micros());
-        logFile.print(",");
-        logFile.print(kinematics.pitch);
-        logFile.print(",");
-        logFile.print(kinematics.roll);
-        logFile.print(",");
-        logFile.print(pitchPID_out);
-        logFile.print(",");
-        logFile.println(rollPID_out);
-    }
-    else
-    {
-        Serial.println("Error opening file!");
-    }
+        if (logFile)
+        {
+                logFile.print(micros());
+                logFile.print(",");
+                logFile.print(kinematics.pitch);
+                logFile.print(",");
+                logFile.print(kinematics.roll);
+                logFile.print(",");
+                logFile.print(pitchPID_out);
+                logFile.print(",");
+                logFile.println(rollPID_out);
+        }
+        else
+        {
+                Serial.println("Error opening file!");
+        }
 
 }
 
@@ -436,55 +448,56 @@ void logData()
  -----------------------------------------------------------------------*/
 void logFileStart()
 {
-    DateTime now = rtc.now();
+        DateTime now = rtc.now();
 
-    rtc.now(); // Update the current date and time
+        rtc.now(); // Update the current date and time
 
-    // Initialize SD card
-    Serial.println("Initializing SD card");
+        // Initialize SD card
+        Serial.println("Initializing SD card");
 
-    // Hardware SS pin must be output. 
-    pinMode(SS, OUTPUT);
+        // Hardware SS pin must be output. 
+        pinMode(SS, OUTPUT);
 
-    if (!SD.begin(chipSelect)) {
-        Serial.println("initialization failed!");
-        ERROR_LED(3);
-        return;
-    }
+        if (!SD.begin(chipSelect)) {
+                Serial.println("initialization failed!");
+                ERROR_LED(3);
+                return;
+        }
 
-    // If the file exists, we want to delete it. 
-    if (SD.exists(logFilename))
-    {
-        SD.remove(logFilename);
-    }
+        // If the file exists, we want to delete it. 
+        if (SD.exists(logFilename))
+        {
+                SD.remove(logFilename);
+        }
 
-    // Open the file for writing, here just for a title.
-    logFile = SD.open(logFilename, FILE_WRITE);
+        // Open the file for writing, here just for a title.
+        logFile = SD.open(logFilename, FILE_WRITE);
 
-    // if the file opened okay, write to it:
-    if (logFile) {
-        logFile.println("-----OpenSourceQuad-----");
-        logFile.println();
-        logFile.print("Software version: ");
-        logFile.println(SOFTWARE_VERSION);
-        logFile.print(now.year());
-        logFile.print("/");
-        logFile.print(now.month());
-        logFile.print("/");
-        logFile.print(now.day());
-        logFile.print("  ");
-        logFile.print(now.hour());
-        logFile.print(":");
-        logFile.print(now.minute());
-        logFile.print(":");
-        logFile.println(now.second());
-        logFile.println("Runtime data: ");
-    } 
-    else {
-        // if the file didn't open, print an error:
-        Serial.println("error opening file");
-    }
+        // if the file opened okay, write to it:
+        if (logFile) {
+                logFile.println("-----OpenSourceQuad-----");
+                logFile.println();
+                logFile.print("Software version: ");
+                logFile.println(SOFTWARE_VERSION);
+                logFile.print(now.year());
+                logFile.print("/");
+                logFile.print(now.month());
+                logFile.print("/");
+                logFile.print(now.day());
+                logFile.print("  ");
+                logFile.print(now.hour());
+                logFile.print(":");
+                logFile.print(now.minute());
+                logFile.print(":");
+                logFile.println(now.second());
+                logFile.println("Runtime data: ");
+        } 
+        else {
+                // if the file didn't open, print an error:
+                Serial.println("error opening file");
+        }
 
-    logFile.close();
+        logFile.close();
 
 }
+
