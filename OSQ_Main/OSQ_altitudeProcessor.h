@@ -38,6 +38,8 @@
 #define altKi       (0.0)
 #define altKd       (0.0)
 
+#define USRF_POWER      (40)	
+
 
 static boolean altitudeHold  = false;
 
@@ -51,8 +53,8 @@ static double GPSOffset = 0;
 static double initialAltitudeBarometer = 0;    // From sea level;
 static double initialAltitudeGPS = 0;    // From sea level;
 static double previousAltitude = 0;
-static double accurateAltitude = 0;
-static double altitudeCovariance = 1;
+static double sensorAltitude = 0;
+static double sensorCovariance = 1;
 
 boolean altitudeDebug = true;
 
@@ -62,31 +64,22 @@ bool checkUSRF(double hieght);
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
         static int barometerSampleCount = 0;
+        static boolean calibratedUSRF = false;
         double GPSCovar = 3;        // Assume covariance in GPS            // 1
         double baroCovar = 1;       // Assume covariance in barometer      // 2
         double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
 
-        double sensorAltitude;
-        double sensorCovariance;
-
-        previousAltitude = accurateAltitude;
+        previousAltitude = sensorAltitude;
         // This is a super basic kalman filter.
         // We only use each sensor if certain conditions are met
 
-        // USRF
-        if(checkUSRF(10.0))	// If under 10 m, use the USRF.
-        {
-                USRF *= cos(phi * Pi / 180);
-                sensorAltitude = USRF;
-                sensorCovariance = USRFCovar;
-        }
         
         // Barometer
         if(isSetInitialAltitudeBarometer)	// Wait at least 150 ms into the loop() to get barometer altitudes
         {
                 baro -= initialAltitudeBarometer;
-                sensorAltitude = (sensorAltitude * baroCovar + baro * sensorCovariance) / (sensorCovariance + baroCovar);
-                sensorCovariance = (sensorCovariance * baroCovar)/(sensorCovariance + baroCovar);
+                sensorAltitude = baro;
+                sensorCovariance = baroCovar;
         }
         
         else if(baro != 0)
@@ -112,12 +105,21 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
                 initialAltitudeGPS = GPS;
                 isSetInitialAltitudeGPS = true;
         }
-
-        accurateAltitude = (sensorAltitude * altitudeCovariance + accurateAltitude * sensorCovariance) / (sensorCovariance + altitudeCovariance);
-        altitudeCovariance = (sensorCovariance * altitudeCovariance)/(sensorCovariance + altitudeCovariance);
+        
+        // USRF
+        if(checkUSRF(10.0) && calibratedUSRF)	// If under 10 m, use the USRF.
+        {
+                USRF *= cos(phi * Pi / 180);
+                sensorAltitude = (sensorAltitude * USRFCovar + USRF * sensorCovariance) / (sensorCovariance + USRFCovar);
+                sensorCovariance = (sensorCovariance * USRFCovar)/(sensorCovariance + USRFCovar);
+        }
+        else if(!calibratedUSRF && (sensorAltitude >= 0.15))
+        {
+                digitalWrite(USRF_POWER, HIGH);
+        }
 
         // Update covariance with "movement step"
-        altitudeCovariance += abs(previousAltitude - sensorAltitude);
+        sensorCovariance += abs(previousAltitude - sensorAltitude);
 
         if(altitudeDebug)
         {
@@ -128,12 +130,12 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
                 Serial.print(" USRF: "); 
                 Serial.print(USRF);
                 Serial.print(" 'Accurate Altitude' : ");
-                Serial.print(accurateAltitude);
+                Serial.print(sensorAltitude);
                 Serial.print(" Altitude covariance: ");
-                Serial.println(altitudeCovariance);
+                Serial.println(sensorCovariance);
         }
 
-        return accurateAltitude;
+        return sensorAltitude;
 
 };
 
@@ -141,17 +143,17 @@ bool movedFromInitial(boolean changed)
 {
         if(!changed)
         {
-                if((accurateAltitude - previousAltitude) > altitudeCovariance)
+                if((sensorAltitude - previousAltitude) > sensorCovariance)
                         return true;
         }
         else return false;
 
-}
+};
 
 
 bool checkUSRF(double hieght)
 {
-        return (accurateAltitude <= hieght);
+        return (sensorAltitude <= hieght);
 };
 
 

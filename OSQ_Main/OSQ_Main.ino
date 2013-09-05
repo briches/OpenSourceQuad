@@ -1,8 +1,6 @@
 /*=========================================================================
  *//*//*   OpenSourceQuad   *//*//*
  OSQ_Main.ino
- Brandon Riches
- With some help from: Branden Yue, Andrew Coulthard
 /*================================================================================
  
  	Author	        : Brandon Riches
@@ -51,19 +49,18 @@
  -----------------------------------------------------------------------*/
 #define Pi  			(3.14159265359F)			// Its pi.
 
-
 /*=========================================================================
  Sensor analog pins
  -----------------------------------------------------------------------*/
 
 #define VBATT_PIN 	(0x0)
-#define USRF_PIN 	(0x0)	
+#define USRF_PIN 	(0x0)
 
 /*=========================================================================
  Battery Monitor
  -----------------------------------------------------------------------*/
-#define NOMINAL_V	11.1
-#define SOFTWARE_VERSION   "V0.9.1"
+#define NOMINAL_V	  11.1
+#define SOFTWARE_VERSION  "V0.9.1"
 uint32_t cycleCount;
 
 /*=========================================================================
@@ -143,9 +140,11 @@ void setup()
         pinMode(GREEN_LED,   OUTPUT);
         pinMode(YELLOW_LED,  OUTPUT);
         pinMode(RED_LED,     OUTPUT);
-        digitalWrite(GREEN_LED, LOW);
+        pinMode(USRF_POWER,  OUTPUT);
+        digitalWrite(GREEN_LED,  LOW);
         digitalWrite(YELLOW_LED, LOW);
-        digitalWrite(RED_LED, LOW);
+        digitalWrite(RED_LED,    LOW);
+        digitalWrite(USRF_POWER, LOW);
 
         // Turn on the yellow LED to signify start of setup
         ERROR_LED(2);
