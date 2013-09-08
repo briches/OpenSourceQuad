@@ -50,7 +50,6 @@
 // Remember that Wst is a fraction of the Nyquist frequency, Nq = Ws/2
 // "BrandonCoeffs" uses n = 4, r = 10, Wc = 0.1
 // AeroQuad filter uses n = 4, r = 60, Wc = 12.5/50
-
 #define AeroQuadCoeff
 // #define BrandonCoeffs
 
@@ -114,7 +113,6 @@ struct kinematicData
 		yaw_mag;
 
 	unsigned long timestamp;
-
 };
 
 

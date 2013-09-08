@@ -1,22 +1,24 @@
 // Voltage monitor test
-
-#define battPin  3
-#define conversion  0.2342F
-
-double Vmeasure;
+#include "OSQ_BatteryMonitor.h"
 
 
 void setup()
 {
-  Serial.begin(115200);
+        Serial.begin(115200);
+        Serial.println("-------------------------BatteryMonitorTest-------------------------");
 }
 
 void loop()
 {
-  Vmeasure = analogRead(battPin)* (5.0/1023.0) / conversion;
-  Serial.print("Measured battery voltage: ");
-  Serial.println(Vmeasure);
-  Serial.println("");
-  delay(1000);
+        monitorBatteryVoltage();
+        Serial.print("Voltage: ");
+        Serial.print(batteryStats.batteryVoltage);
+        Serial.print(" Soft alarm: ");
+        Serial.print(softAlarm);
+        Serial.print(" Critical alarm: ");
+        Serial.print(criticalAlarm);
+        Serial.print(" Alarm count: ");
+        Serial.println(batteryStats.alarmCount);
+        delay(1000);
 }
 

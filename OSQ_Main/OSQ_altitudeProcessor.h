@@ -3,29 +3,29 @@
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
- 
+
  	Author		: Brandon Riches
  	Date		: August 2013
  	License		: GNU Public License
- 
+
  	This library is designed to abstract away some of the craft management functions
  	from the main file (OSQ_Main.ino)
- 
+
  	Copyright (C) 2013  Brandon Riches
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
  	-----------------------------------------------------------------------------*/
 
 // Waiting on the Kalman for this one.
@@ -38,7 +38,7 @@
 #define altKi       (0.0)
 #define altKd       (0.0)
 
-#define USRF_POWER      (40)	
+#define USRF_POWER      (40)
 
 
 static boolean altitudeHold  = false;
@@ -70,10 +70,9 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
 
         previousAltitude = sensorAltitude;
+
         // This is a super basic kalman filter.
         // We only use each sensor if certain conditions are met
-
-        
         // Barometer
         if(isSetInitialAltitudeBarometer)	// Wait at least 150 ms into the loop() to get barometer altitudes
         {
@@ -81,7 +80,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
                 sensorAltitude = baro;
                 sensorCovariance = baroCovar;
         }
-        
+
         else if(baro != 0)
         {
                 initialAltitudeBarometer += baro;
@@ -89,7 +88,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
                 if(barometerSampleCount == 10)
                 {
                         isSetInitialAltitudeBarometer = true;
-                        initialAltitudeBarometer /= 10;                       
+                        initialAltitudeBarometer /= 10;
                 }
         }
 
@@ -105,7 +104,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
                 initialAltitudeGPS = GPS;
                 isSetInitialAltitudeGPS = true;
         }
-        
+
         // USRF
         if(checkUSRF(10.0) && calibratedUSRF)	// If under 10 m, use the USRF.
         {
@@ -123,11 +122,11 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
 
         if(altitudeDebug)
         {
-                Serial.print(" GPS: "); 
+                Serial.print(" GPS: ");
                 Serial.print(GPS);
-                Serial.print(" Baro: "); 
+                Serial.print(" Baro: ");
                 Serial.print(baro);
-                Serial.print(" USRF: "); 
+                Serial.print(" USRF: ");
                 Serial.print(USRF);
                 Serial.print(" 'Accurate Altitude' : ");
                 Serial.print(sensorAltitude);
