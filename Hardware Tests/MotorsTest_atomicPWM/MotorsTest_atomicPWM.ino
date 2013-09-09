@@ -12,30 +12,6 @@ void setup()
   
 }
 
-void individualTest()
-{
-  for(int i = 0; i < 4; i++)
-  {
-    // Test each motor individually. 
-    // bring each motor up to 1200, then back to MIN_COMMAND
-    for (int thrust = MIN_COMMAND; thrust < MAX_COMMAND; thrust += 10)
-    {
-      motorSpeeds[i] = thrust;
-      writeMotors();
-      delay(200);
-    }
-    
-    // Test each motor individually. 
-    for (int thrust = MAX_COMMAND; thrust > MIN_COMMAND; thrust -= 10)
-    {
-      motorSpeeds[i] = thrust;
-      writeMotors();
-      delay(200);
-    }
-    delay(100);
-  }   
-}
-
 void pulseTest()
 {
   
@@ -64,9 +40,9 @@ void loop()
 {
   Serial.println("********************Begin Motor test********************");
   Serial.println("Individual test:");
-  individualTest();
   
-  Serial.println("Pulse test:");
-  pulseTest();
+  motorSpeeds[0] = 1100;
+  writeMotors();
+  
   
 }

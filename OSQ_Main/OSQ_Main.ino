@@ -457,6 +457,7 @@ void loop()
                 processBatteryAlarms();
 
                 getGPS_Data();
+                
         }
 
         // Updates the PID controllers. They return new outputs based on current

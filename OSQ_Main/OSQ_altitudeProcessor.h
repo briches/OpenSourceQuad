@@ -106,15 +106,11 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         }
 
         // USRF
-        if(checkUSRF(10.0) && calibratedUSRF)	// If under 10 m, use the USRF.
+        if(checkUSRF(10.0))	// If under 10 m, use the USRF.
         {
                 USRF *= cos(phi * Pi / 180);
                 sensorAltitude = (sensorAltitude * USRFCovar + USRF * sensorCovariance) / (sensorCovariance + USRFCovar);
                 sensorCovariance = (sensorCovariance * USRFCovar)/(sensorCovariance + USRFCovar);
-        }
-        else if(!calibratedUSRF && (sensorAltitude >= 0.15))
-        {
-                digitalWrite(USRF_POWER, HIGH);
         }
 
         // Update covariance with "movement step"

@@ -183,8 +183,8 @@ void OSQ_MotorControl :: startMotors()
 	    int DC;
 
             // Perform motor sweep
-            // Upwards sweep
-	    for (DC = MIN_COMMAND; DC <= MAX_COMMAND; DC+= 10)
+//            // Upwards sweep
+	    for (DC = MIN_COMMAND; DC <= 1200; DC+= 10)
 	    {
 		motorSpeeds[0] = DC;
 		motorSpeeds[1] = DC;
@@ -193,18 +193,22 @@ void OSQ_MotorControl :: startMotors()
 		writeMotors();
 		delay(50);
 	    }
-            // Down sweep
-            for (DC = MAX_COMMAND; DC >= MIN_COMMAND; DC-= 10)
-	    {
-		motorSpeeds[0] = DC;
-		motorSpeeds[1] = DC;
-		motorSpeeds[2] = DC;
-		motorSpeeds[3] = DC;
-		writeMotors();
-		delay(50);
-	    }
+//            // Down sweep
+//            for (DC = MAX_COMMAND; DC >= MIN_COMMAND; DC-= 10)
+//	    {
+//		motorSpeeds[0] = DC;
+//		motorSpeeds[1] = DC;
+//		motorSpeeds[2] = DC;
+//		motorSpeeds[3] = DC;
+//		writeMotors();
+//		delay(50);
+//	    }
 
-
+        motorSpeeds[0] = DC;
+	motorSpeeds[1] = DC;
+	motorSpeeds[2] = DC;
+	motorSpeeds[3] = DC;
+        writeMotors();
 	}
 };
 
