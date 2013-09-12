@@ -45,8 +45,8 @@
  	modemXB settings
  	-----------------------------------------------------------------------------*/
 #define BAUD		(19200)			// Baud rate of modemXBs
-#define RX_PIN		7			// Change this to the pin RX is connected to
-#define TX_PIN		8			// Change this to the pin TX is connected to
+#define RX_PIN		12			// Change this to the pin RX is connected to
+#define TX_PIN		13			// Change this to the pin TX is connected to
 #define	PAN_ID		(1234)			// Network ID for communication
 
 /*================================================================================
@@ -80,17 +80,18 @@ enum {  FIRSTBYTE,
 /*================================================================================
  	Internal Message Data Type
  	-----------------------------------------------------------------------------*/
-static SoftwareSerial modemXB(7, 8);
+static SoftwareSerial modemXB(RX_PIN, TX_PIN);
+
 class NoWire
 {
         public:
                 NoWire();
                 int ScanForMessages();
                 bool	start();
-        
+
                 uint8_t newMessage[MSG_SIZE];
                 long timestamp;
-        
+
         private:
                 bool	msgCurrentLoc[MSG_SIZE];
                 bool 	startMessage(void);
@@ -208,5 +209,8 @@ bool NoWire :: start()
         return 1;
 };
 
+NoWire                  receiver;
+
 #endif // OSQ_NOWIRE_H_INCLUDED
+
 

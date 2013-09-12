@@ -38,8 +38,6 @@
 #define altKi       (0.0)
 #define altKd       (0.0)
 
-#define USRF_POWER      (40)
-
 
 static boolean altitudeHold  = false;
 
@@ -131,17 +129,6 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         }
 
         return sensorAltitude;
-
-};
-
-bool movedFromInitial(boolean changed)
-{
-        if(!changed)
-        {
-                if((sensorAltitude - previousAltitude) > sensorCovariance)
-                        return true;
-        }
-        else return false;
 
 };
 

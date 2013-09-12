@@ -50,8 +50,8 @@
 #define PWM_COUNTER_PERIOD	(F_CPU/PRESCALER/PWM_FREQUENCY)
 
 
-#define MIN_COMMAND      	1000     		// the shortest pulse
-#define MAX_COMMAND     	2000     		// the longest pulse
+#define MIN_COMMAND      	1075     		// the shortest pulse
+#define MAX_COMMAND     	1600     		// the longest pulse
 
 #define MOTOR1PIN			2				// Front Motor PORTE PE4
 #define MOTOR2PIN			3				// Left Motor  PORTE PE5
@@ -269,6 +269,9 @@ void OSQ_MotorControl :: motorDISARM()
 	MOTORS_ARMED = false;
 };
 
+OSQ_MotorControl   		motorControl;
+
 
 
 #endif // FQ_MOTORS_H_INCLUDED
+

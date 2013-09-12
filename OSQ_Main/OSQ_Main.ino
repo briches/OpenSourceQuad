@@ -2,29 +2,29 @@
  //*//**   OpenSourceQuad   *//**//**
  OSQ_Main.ino **/
 /** ===============================================================================
- 
- 	Author	        : Brandon Riches
- 	Date		: August 2013
- 	License		: GNU Public License
- 
- 	This library interfaces with the BMP085 pressure sensor to return temperature
- 	calibrated altitude measurements.
- 
- 	Copyright (C) 2013  Brandon Riches
- 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+ * 
+ * 	Author	        : Brandon Riches
+ * 	Date		: August 2013
+ * 	License		: GNU Public License
+ * 
+ * 	This library interfaces with the BMP085 pressure sensor to return temperature
+ * 	calibrated altitude measurements.
+ * 
+ * 	Copyright (C) 2013  Brandon Riches
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
  	----------------------------------------------------------------------------*/
 #include "OSQ_Kinematics.h"
 #include "OSQ_SENSORLIB.h"
@@ -62,23 +62,10 @@
 uint32_t cycleCount;
 
 /*=========================================================================
- Classes and important structures
+ Some classes. Most are at the bottom of their respective headers
  -----------------------------------------------------------------------*/
-SENSORLIB_accel   	accel;
-SENSORLIB_mag	        mag;
-SENSORLIB_gyro          gyro;
-BMP085                  barometer;
-fourthOrderData   	fourthOrderXAXIS,
-                        fourthOrderYAXIS,
-                        fourthOrderZAXIS;
-kinematicData	  	kinematics;
-OSQ_MotorControl   	motorControl;
 File                    logFile;
 RTC_DS1307              rtc;
-gpsdata_t               GPSDATA;
-SoftwareSerial          GPSSerial(13, 12); // TX, RX GPS pins
-Adafruit_GPS            GPS(&GPSSerial);
-NoWire                  receiver;
 
 
 /*=========================================================================
@@ -92,8 +79,8 @@ int PID_SampleTime = 10; // Sample time for PID controllers in ms
 #define angleKp 35                        // TODO:
 #define angleKi 85
 #define angleKd 30
-PID aPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   angleKp,  angleKi,  angleKd,  DIRECT);
-PID bPID(&kinematics.roll,   &rollPID_out,  &setRoll,   angleKp,  angleKi,  angleKd,  DIRECT);
+PID pitchPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   angleKp,  angleKi,  angleKd,  DIRECT);
+PID rollPID(&kinematics.roll,   &rollPID_out,  &setRoll,   angleKp,  angleKi,  angleKd,  DIRECT);
 
 
 /*=========================================================================
@@ -103,21 +90,22 @@ PID bPID(&kinematics.roll,   &rollPID_out,  &setRoll,   angleKp,  angleKi,  angl
 #define chipSelect  (53)
 char logFilename[] = "OSQ_Log.txt";
 
+
 /*=========================================================================
- getTelemetryCommands()
+ scanTelemetry()
  Watches for new commands sent via radio
  -----------------------------------------------------------------------*/
-void getTelemetryCommands()
+void scanTelemetry()
 {
         switch(receiver.ScanForMessages())
         {
-                case err:
-                        break;
-                        
-                case disarm:
-                        motorControl.motorDISARM();
-                        break;
-                        
+        case err:
+                break;
+
+        case disarm:
+                motorControl.motorDISARM();
+                break;
+
                 // Put messages here
         }
 }
@@ -136,62 +124,7 @@ void processBatteryAlarms()
                 motorControl.motorDISARM();
                 while(true);
         }
-        
-}
 
-/*=========================================================================
- checkGPS()
- Checks for a new NMEA sentence, and parses it
- -----------------------------------------------------------------------*/
-void checkGPS()
-{
-        // Should be called like all the time, pretty much
-        // Call it in loop
-        if (GPS.newNMEAreceived())
-        {
-                if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-                        return;  // we can fail to parse a sentence so we should just wait for another
-        }
-
-}
-
-/*=========================================================================
- getGPS_Data()
- Places parsed data into the GPS data type
- -----------------------------------------------------------------------*/
-void getGPS_Data()
-{
-        // Call in the 1Hz loop
-        GPSDATA.fix = GPS.fix;
-        GPSDATA.quality = (uint8_t)GPS.fixquality;
-        GPSDATA.altitude = GPS.altitude;		
-        GPSDATA.satellites = (int8_t)GPS.satellites;
-        GPSDATA.angle = GPS.angle;
-        GPSDATA.lat = GPS.lat;
-        GPSDATA.lon = GPS.lon;
-        GPSDATA.spd = GPS.speed / 0.5144;		// Convert to m/s from knots
-}
-
-/*=========================================================================
- initGPS
- Starts the GPS by sending commands, and sets up the ISR
- -----------------------------------------------------------------------*/
-void initGPS()
-{
-        GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-        OCR0A = 0xAF;
-        TIMSK0 |= _BV(OCIE0A); // Enable OCR0A interrupt
-}
-
-
-/*=========================================================================
- SIGNAL(TIMER0_COMPA_vect)
- ISR for GPS
- -----------------------------------------------------------------------*/
-SIGNAL(TIMER0_COMPA_vect)
-{
-        char c = GPS.read();
 }
 
 /*=========================================================================
@@ -204,13 +137,14 @@ void PID_init()
         // Both the alpha and the beta controller use these limits.
         // They represent the maximum absolute value that the PID equation could reach,
         // regardless of what the gain coefficients are. 
-        int pitch_roll_PID_OutLims[] = {-100,100};
-        aPID.SetMode(AUTOMATIC);
-        aPID.SetSampleTime(PID_SampleTime);	                 
-        aPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
-        bPID.SetMode(AUTOMATIC);
-        bPID.SetSampleTime(PID_SampleTime);	               
-        bPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
+        int pitch_roll_PID_OutLims[] = {
+                -100,100        };
+        pitchPID.SetMode(AUTOMATIC);
+        pitchPID.SetSampleTime(PID_SampleTime);	                 
+        pitchPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
+        rollPID.SetMode(AUTOMATIC);
+        rollPID.SetSampleTime(PID_SampleTime);	               
+        rollPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
 
 }
 /*=========================================================================
@@ -257,7 +191,7 @@ void logFileStart()
 
         if (!SD.begin(chipSelect)) {
                 Serial.println("initialization failed!");
-                ERROR_LED(3);
+                statusLED(-1);
                 return;
         }
 
@@ -297,11 +231,6 @@ void logFileStart()
         logFile.close();
 
 }
-/*=========================================================================
- _100HzTask
- Process on a 100Hz clock
- -----------------------------------------------------------------------*/
- 
 
 /*=========================================================================
  Main Setup
@@ -310,56 +239,29 @@ void setup()
 { 
         Serial.begin(115200); 
         Serial.println();
-
-        // Join the I2C bus
         Wire.begin();
 
-        // Start the rtc
-        rtc.begin();
-        
-        // Start the radio
-        receiver.start();
-
-        // Initialize these pins for digital output.
-        // They are used in the ERROR_LED function
-        // Use ERROR_LED(1) for success,
-        //     ERROR_LED(2) for warnings,
-        //     ERROR_LED(3) for critical fail (has a while(1)).
-        pinMode(GREEN_LED,   OUTPUT);
-        pinMode(YELLOW_LED,  OUTPUT);
-        pinMode(RED_LED,     OUTPUT);
-        pinMode(USRF_POWER,  OUTPUT);
-        digitalWrite(GREEN_LED,  LOW);
-        digitalWrite(YELLOW_LED, LOW);
-        digitalWrite(RED_LED,    LOW);
-        digitalWrite(USRF_POWER, LOW);
+        // Initialize various LED outputs
+        pinMode(GREEN_LED1, OUTPUT);
+        pinMode(GREEN_LED2, OUTPUT);
+        pinMode(GREEN_LED3, OUTPUT);
+        pinMode(YELLOW_LED1, OUTPUT);
+        pinMode(YELLOW_LED2, OUTPUT);
+        pinMode(YELLOW_LED3, OUTPUT);
+        digitalWrite(GREEN_LED1, LOW);
+        digitalWrite(GREEN_LED2, LOW);
+        digitalWrite(GREEN_LED3, LOW);
+        digitalWrite(YELLOW_LED1, LOW);
+        digitalWrite(YELLOW_LED2, LOW);
+        digitalWrite(YELLOW_LED3, LOW);
 
         // Turn on the yellow LED to signify start of setup
-        ERROR_LED(2);
-
-        // Check that the RTC is running properly
-        if (! rtc.isrunning()) {
-                Serial.println("RTC is NOT running!");
-                // following line sets the RTC to the date & time this sketch was compiled
-                rtc.adjust(DateTime(__DATE__, __TIME__));
-        }
-        DateTime now = rtc.now();
+        statusLED(4);
 
         Serial.println("-----OpenSourceQuad-----");
         Serial.println();
         Serial.print("Software version: ");
         Serial.println(SOFTWARE_VERSION);
-        Serial.print(now.year());
-        Serial.print("/");
-        Serial.print(now.month());
-        Serial.print("/");
-        Serial.print(now.day());
-        Serial.print("  ");
-        Serial.print(now.hour());
-        Serial.print(":");
-        Serial.print(now.minute());
-        Serial.print(":");
-        Serial.println(now.second());
 
         // Open a .txt file for data logging and debugging
         logFileStart();
@@ -373,23 +275,21 @@ void setup()
         //   - RTC Module
         Serial.println("Initializing Sensors");
 
-        while(!initSensor(accel, 
-        mag, 
-        gyro,
-        &kinematics));
+        while(!initSensor(accel, mag,  gyro, &kinematics));
 
         barometer.readEEPROM();
         barometer.setSLP(29.908);
         barometer.setOSS(3);
 
-        ERROR_LED(2);
+        statusLED(5);
+        
+        // Start the radio
+        receiver.start();
 
-        // Initialize the PID controllers. This is a sub-function, below loop.
-        Serial.println("Initializing PID");
+        Serial.println("Initializing PID"); // Initialize PID
         PID_init();   
 
-        // Initialize motors. This turns the motors on, and sets them all to a speed
-        // just below take-off speed.
+        // Arm and initialize motors
         Serial.println("Initializing ESCs");
         motorControl.calibrateESC();
 
@@ -399,9 +299,7 @@ void setup()
 
 
         // Initialize the fourth order struct
-        setupFourthOrder(&fourthOrderXAXIS,
-        &fourthOrderYAXIS,
-        &fourthOrderZAXIS);
+        setupFourthOrder();
 
         Serial.println("Initializing Data Logging");
         logFile = SD.open(logFilename, FILE_WRITE);
@@ -412,73 +310,147 @@ void setup()
         initGPS();
 
         Serial.println("Setup Complete");
-
-        ERROR_LED(1);    
+        statusLED(1);    
 }
 
-uint32_t GPS_Timer = millis();
+/*===============================================
+ Time keeping for polling
+ -----------------------------------------------------------------------*/
+double t_100Hz;
+double t_70Hz;
+double t_20Hz;
+double t_10Hz;
+double t_1Hz;
+
+/*=========================================================================
+ _100HzTask
+ Process on a 100Hz clock
+ -----------------------------------------------------------------------*/
+void _100HzTask()
+{
+        kinematicEvent(0,&accel,&mag,&gyro);
+
+        pitchPID.Compute();
+        rollPID.Compute();
+
+        motorControl.updateMotors(pitchPID_out, rollPID_out, 0.0, 0.0);
+
+        t_100Hz = micros();
+}
+
+/*=========================================================================
+ _70HzTask
+ Process on a 70Hz clock
+ -----------------------------------------------------------------------*/
+void _70HzTask()
+{
+        kinematicEvent(1, &accel, &mag, &gyro);
+
+        t_70Hz = micros();
+}
+
+/*=========================================================================
+ _20HzTask
+ Process on a 20Hz clock
+ -----------------------------------------------------------------------*/
+void _20HzTask()
+{
+        barometer.updatePTA();                    
+        scanTelemetry();
+
+        // Print data to the SD logFile, using some RTC data
+        logData();
+
+        t_20Hz = micros();
+}
+
+/*=========================================================================
+ _10HzTask
+ Process on a 10Hz clock
+ -----------------------------------------------------------------------*/
+void _10HzTask()
+{
+        // Integrate all 3 altitude sensor readings
+        kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
+        
+        checkGPS(); // Check for GPS data fully received, uses ISR
+
+        t_10Hz = micros();
+}
+
+/*=========================================================================
+ _1HzTask
+ Process on a 1Hz clock
+ -----------------------------------------------------------------------*/
+void _1HzTask()
+{
+        monitorBatteryVoltage();
+        processBatteryAlarms();
+
+        getGPS_Data();
+        
+        
+        
+
+        t_1Hz = micros();
+}
+
+uint32_t timer = micros();
 /*=========================================================================
  MAIN CONTROL LOOP
  -----------------------------------------------------------------------*/
 void loop()                          
-{
-        // This is the main runtime function
-        mainProcess(    pitchPID_out, 
-                        rollPID_out, 
-                        &accel, 
-                        &mag, 
-                        &gyro,
-                        &barometer,
-                        &kinematics,
-                        &fourthOrderXAXIS,
-                        &fourthOrderYAXIS,
-                        &fourthOrderZAXIS,
-                        &motorControl );  
-
-        // Check for GPS data, uses ISR
-        checkGPS();
-        
-        // Integrate all 3 altitude sensor readings
-        double altitude = getAccurateAltitude(  GPSDATA.altitude, 
-                                                barometer.altitude, 
-                                                analogRead(USRF_PIN)*0.01266762, 
-                                                kinematics.phi, 
-                                                GPSDATA.quality);
-        // Scan for instructions                         
-        getTelemetryCommands();
-
-        
-        if(millis() - GPS_Timer > 1000)
+{		
+        bool priorityFlag = false;
+        if(t_100Hz - micros() >= _100HzPeriod)
         {
-                GPS_Timer = millis();
-                
-                monitorBatteryVoltage();
-                
-                processBatteryAlarms();
-
-                getGPS_Data();
-                
+                statusLED(4);
+                _100HzTask();
+                priorityFlag = true;
+               statusLED(1);
         }
 
-        // Updates the PID controllers. They return new outputs based on current
-        // and past data. These outputs are used to decide what the motor speeds should be set to.
-        if (millis() > 3000)
+        if(t_70Hz - micros()  >= _70HzPeriod)
         {
-                aPID.Compute();
-                bPID.Compute();
-        }  
-        // Print data to the SD logFile, using some RTC data
-        logData();
+                statusLED(4);
+                _70HzTask();
+                statusLED(1);
+        }
+
+        if( (t_20Hz - micros()  >= _20HzPeriod) && !priorityFlag)
+        {
+                statusLED(4);
+                _20HzTask();
+                statusLED(1);
+        }
+
+        if((t_10Hz - micros()  >= _10HzPeriod) && !priorityFlag)
+        {
+                statusLED(4);
+                _10HzTask();
+                statusLED(1);
+        }
+
+
+        if((t_1Hz - micros()  >= _1HzPeriod) && !priorityFlag)
+        {
+                statusLED(4);
+                _1HzTask();
+                statusLED(1);
+        }
 
         // Stop after some logging is done for debugging
         if (millis() >= 60000)
         {
                 logFile.close();
                 motorControl.motorDISARM();
-                ERROR_LED(3);
+                statusLED(-1);
+                while(1);
         }
 
         // Track the number of elapsed cycles
         cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
+
+

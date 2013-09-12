@@ -326,4 +326,7 @@ uint8_t BMP085 :: read8(byte reg)
 	return value;
 };
 
+BMP085                  barometer;
+
 #endif // OSQ_BMP085_H_INCLUDED
+

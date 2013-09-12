@@ -916,4 +916,10 @@ void SENSORLIB_mag::getEvent(sensors_event_t *event) {
   event->magnetic.y = _magData.y / _lsm303Mag_Gauss_LSB_XY * SENSORS_GAUSS_TO_MICROTESLA;
   event->magnetic.z = _magData.z / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
 };
+
+SENSORLIB_accel   	accel;
+SENSORLIB_mag	        mag;
+SENSORLIB_gyro          gyro;
+
 #endif
+

@@ -46,48 +46,18 @@
 
 #define ORDER 4
 
-// Comment out one of these defines to select the coefficent set to use.
-// Remember that Wst is a fraction of the Nyquist frequency, Nq = Ws/2
-// "BrandonCoeffs" uses n = 4, r = 10, Wc = 0.1
-// AeroQuad filter uses n = 4, r = 60, Wc = 12.5/50
-#define AeroQuadCoeff
-// #define BrandonCoeffs
+// Filter uses n = 4, r = 60, Wc = 12.5/50
 
-#ifdef AeroQuadCoeff
-	#define ORDER 4
-	#define _b0  0.001893594048567
-	#define _b1 -0.002220262954039
-	#define _b2  0.003389066536478
-	#define _b3 -0.002220262954039
-	#define _b4  0.001893594048567
-
-	#define _a0  1
-	#define _a1 -3.362256889209355
-	#define _a2  4.282608240117919
-	#define _a3 -2.444765517272841
-	#define _a4  0.527149895089809
-#endif
-
-#ifdef BrandonCoeffs
-	#define ORDER 4
-	#define _b0  0.267411759560506
-	#define _b1 -1.018535973364803
-	#define _b2  1.503499251793105
-	#define _b3 -1.018535973364804
-	#define _b4  0.267411759560506
-
-	#define _a0  1.000000000000000
-	#define _a1 -3.561271663800053
-	#define _a2  4.788976593687705
-	#define _a3 -2.881867760094174
-	#define _a4  0.655413654391032
-#endif
 
 struct fourthOrderData
 {
   double  inputTm1,  inputTm2,  inputTm3,  inputTm4;
   double outputTm1, outputTm2, outputTm3, outputTm4;
 };
+
+fourthOrderData fourthOrderXAXIS,
+				fourthOrderYAXIS,
+				fourthOrderZAXIS;
 
 /*=========================================================================
     Kinematics Data Type
@@ -97,7 +67,9 @@ struct kinematicData
 	double pitch,
 		roll,
 		yaw,
-                phi,        // used for USRF altitude calcs
+		phi,        // used for USRF altitude calcs
+
+		altitude,
 
 		io_ax,
 		io_ay,
@@ -115,40 +87,20 @@ struct kinematicData
 	unsigned long timestamp;
 };
 
+kinematicData	  		kinematics;
 
 #define XAXIS   (0)
 #define YAXIS	(1)
 #define ZAXIS	(2)
 
-void kinematicEvent(int eventType,
-					struct kinematicData *data,
-					class SENSORLIB_accel *accel,
-					class SENSORLIB_mag *mag,
-					class SENSORLIB_gyro *gyro,
-					struct fourthOrderData *fourthOrderXAXIS,
-					struct fourthOrderData *fourthOrderYAXIS,
-					struct fourthOrderData *fourthOrderZAXIS);
-
 double computeFourthOrder(double currentInput, struct fourthOrderData *filterParameters);
-
-void setupFourthOrder(	struct fourthOrderData *fourthOrderXAXIS,
-						struct fourthOrderData *fourthOrderYAXIS,
-						struct fourthOrderData *fourthOrderZAXIS);
-
 double normalize(double x, double y, double z);
 void nan_quad_Check(double num1, double num2, double num3);
-double complementary(double mynum, int select, double coeff,  struct kinematicData *data);
+double complementary(double mynum, int select, double coeff);
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
-void kinematicEvent(int eventType,
-					struct kinematicData *data,
-					class SENSORLIB_accel *accel,
-					class SENSORLIB_mag *mag,
-					class SENSORLIB_gyro *gyro,
-					struct fourthOrderData *fourthOrderXAXIS,
-					struct fourthOrderData *fourthOrderYAXIS,
-					struct fourthOrderData *fourthOrderZAXIS)
+void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro)
 {
 
 	sensors_event_t	accel_event,
@@ -167,7 +119,7 @@ void kinematicEvent(int eventType,
 	if(eventType == 1)
 	{
 		mag->getEvent(&mag_event);
-		data->yaw_mag = atan2(mag_event.magnetic.y, mag_event.magnetic.x)* 180/Pi;
+		kinematics.yaw_mag = atan2(mag_event.magnetic.y, mag_event.magnetic.x)* 180/Pi;
 	}
 
 	if(eventType == 0)
@@ -176,42 +128,42 @@ void kinematicEvent(int eventType,
 		gyro->getEvent(&gyro_event);
 
 		/// Store Raw values from the sensor registers, and remove initial offsets
-		double ax = accel_event.acceleration.x - data->io_ax;
-		double ay = accel_event.acceleration.y - data->io_ay;
-		double az = accel_event.acceleration.z - data->io_az + SENSORS_GRAVITY_STANDARD;
+		double ax = accel_event.acceleration.x - kinematics.io_ax;
+		double ay = accel_event.acceleration.y - kinematics.io_ay;
+		double az = accel_event.acceleration.z - kinematics.io_az + SENSORS_GRAVITY_STANDARD;
 
-		double wx =  -(gyro_event.gyro.x - data->io_wx);
-		double wy =  -(gyro_event.gyro.y - data->io_wy);
-		double wz =    gyro_event.gyro.z - data->io_wz;
+		double wx =  -(gyro_event.gyro.x - kinematics.io_wx);
+		double wy =  -(gyro_event.gyro.y - kinematics.io_wy);
+		double wz =    gyro_event.gyro.z - kinematics.io_wz;
 
 		// Compute a Chebyshev 4th order filter
-		ax = computeFourthOrder(ax, fourthOrderXAXIS);
-		ay = computeFourthOrder(ay, fourthOrderYAXIS);
-		az = computeFourthOrder(az, fourthOrderZAXIS);
+		ax = computeFourthOrder(ax, &fourthOrderXAXIS);
+		ay = computeFourthOrder(ay, &fourthOrderYAXIS);
+		az = computeFourthOrder(az, &fourthOrderZAXIS);
 
 		double norm = normalize(ax, ay, az);
 		ax /= norm;
 		ay /= norm;
 		az /= norm;
 
-		elapsed_time = (micros() - data->timestamp) / t_convert;
-		data->timestamp = micros();
+		elapsed_time = (micros() - kinematics.timestamp) / t_convert;
+		kinematics.timestamp = micros();
 
-		data->pitch_gyro    += wy * elapsed_time;
-		data->roll_gyro     += wx * elapsed_time;
-		data->yaw_gyro	    += wz * elapsed_time;
+		kinematics.pitch_gyro    += wy * elapsed_time;
+		kinematics.roll_gyro     += wx * elapsed_time;
+		kinematics.yaw_gyro	    += wz * elapsed_time;
 
-                data->phi   = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
+		kinematics.phi   = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
 		pitch_accel = atan2( ax, sqrt(ay*ay + az*az)) * 180 / Pi;
 		roll_accel  = atan2( ay, sqrt(az*az + az*az)) * 180 / Pi;
 
 		// Remove pesky NaNs that seem to occur around 0.
 		// Check the quadrant of vector
-		nan_quad_Check(pitch_accel, roll_accel, data->yaw_mag);
+		nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
 
-		data->pitch = complementary(pitch_accel, 0, pitchRollCoeff, data);
-		data->roll  = complementary(roll_accel, 1, pitchRollCoeff, data);
-		data->yaw   = complementary(data->yaw_gyro, 2, yawCoeff, data);
+		kinematics.pitch = complementary(pitch_accel, 0, pitchRollCoeff);
+		kinematics.roll  = complementary(roll_accel, 1, pitchRollCoeff);
+		kinematics.yaw   = complementary(kinematics.yaw_gyro, 2, yawCoeff);
 
 
 
@@ -219,22 +171,19 @@ void kinematicEvent(int eventType,
 
 };
 
-double complementary(	double mynum,
-						int select,
-						double coeff,
-						struct kinematicData *data)
+double complementary(double mynum, int select, double coeff)
 {
 	if (select == 0)
 	{
-		return coeff * data->pitch_gyro 	+ (1 - coeff) * mynum;
+		return coeff * kinematics.pitch_gyro 	+ (1 - coeff) * mynum;
 	}
 	if (select == 1)
 	{
-		return coeff * data->roll_gyro 	+ (1 - coeff) * mynum;
+		return coeff * kinematics.roll_gyro 	+ (1 - coeff) * mynum;
 	}
 	if (select == 2)
 	{
-		return coeff * data->yaw_gyro		+ (1 - coeff) * mynum;
+		return coeff * kinematics.yaw_gyro		+ (1 - coeff) * mynum;
 	}
 };
 
@@ -278,41 +227,39 @@ double computeFourthOrder(	double currentInput,
   return output;
 };
 
-void setupFourthOrder(	struct fourthOrderData *fourthOrderXAXIS,
-						struct fourthOrderData *fourthOrderYAXIS,
-						struct fourthOrderData *fourthOrderZAXIS)
+void setupFourthOrder()
 {
-  fourthOrderXAXIS->inputTm1 = 0.0;
-  fourthOrderXAXIS->inputTm2 = 0.0;
-  fourthOrderXAXIS->inputTm3 = 0.0;
-  fourthOrderXAXIS->inputTm4 = 0.0;
+  fourthOrderXAXIS.inputTm1 = 0.0;
+  fourthOrderXAXIS.inputTm2 = 0.0;
+  fourthOrderXAXIS.inputTm3 = 0.0;
+  fourthOrderXAXIS.inputTm4 = 0.0;
 
-  fourthOrderXAXIS->outputTm1 = 0.0;
-  fourthOrderXAXIS->outputTm2 = 0.0;
-  fourthOrderXAXIS->outputTm3 = 0.0;
-  fourthOrderXAXIS->outputTm4 = 0.0;
-
-  //////////
-  fourthOrderYAXIS->inputTm1 = 0.0;
-  fourthOrderYAXIS->inputTm2 = 0.0;
-  fourthOrderYAXIS->inputTm3 = 0.0;
-  fourthOrderYAXIS->inputTm4 = 0.0;
-
-  fourthOrderYAXIS->outputTm1 = 0.0;
-  fourthOrderYAXIS->outputTm2 = 0.0;
-  fourthOrderYAXIS->outputTm3 = 0.0;
-  fourthOrderYAXIS->outputTm4 = 0.0;
+  fourthOrderXAXIS.outputTm1 = 0.0;
+  fourthOrderXAXIS.outputTm2 = 0.0;
+  fourthOrderXAXIS.outputTm3 = 0.0;
+  fourthOrderXAXIS.outputTm4 = 0.0;
 
   //////////
-  fourthOrderZAXIS->inputTm1 = -9.8065;
-  fourthOrderZAXIS->inputTm2 = -9.8065;
-  fourthOrderZAXIS->inputTm3 = -9.8065;
-  fourthOrderZAXIS->inputTm4 = -9.8065;
+  fourthOrderYAXIS.inputTm1 = 0.0;
+  fourthOrderYAXIS.inputTm2 = 0.0;
+  fourthOrderYAXIS.inputTm3 = 0.0;
+  fourthOrderYAXIS.inputTm4 = 0.0;
 
-  fourthOrderZAXIS->outputTm1 = -9.8065;
-  fourthOrderZAXIS->outputTm2 = -9.8065;
-  fourthOrderZAXIS->outputTm3 = -9.8065;
-  fourthOrderZAXIS->outputTm4 = -9.8065;
+  fourthOrderYAXIS.outputTm1 = 0.0;
+  fourthOrderYAXIS.outputTm2 = 0.0;
+  fourthOrderYAXIS.outputTm3 = 0.0;
+  fourthOrderYAXIS.outputTm4 = 0.0;
+
+  //////////
+  fourthOrderZAXIS.inputTm1 = -9.8065;
+  fourthOrderZAXIS.inputTm2 = -9.8065;
+  fourthOrderZAXIS.inputTm3 = -9.8065;
+  fourthOrderZAXIS.inputTm4 = -9.8065;
+
+  fourthOrderZAXIS.outputTm1 = -9.8065;
+  fourthOrderZAXIS.outputTm2 = -9.8065;
+  fourthOrderZAXIS.outputTm3 = -9.8065;
+  fourthOrderZAXIS.outputTm4 = -9.8065;
 };
 
 double normalize(double x, double y, double z)
