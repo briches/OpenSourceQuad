@@ -1,31 +1,32 @@
-/**========================================================================
- //*//**   OpenSourceQuad   *//**//**
- OSQ_Main.ino **/
-/** ===============================================================================
- * 
- * 	Author	        : Brandon Riches
- * 	Date		: August 2013
- * 	License		: GNU Public License
- * 
- * 	This library interfaces with the BMP085 pressure sensor to return temperature
- * 	calibrated altitude measurements.
- * 
- * 	Copyright (C) 2013  Brandon Riches
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- 	----------------------------------------------------------------------------*/
+/*=====================================================================
+	OSQ_Main
+	OpenSourceQuad
+	-------------------------------------------------------------------*/
+/*================================================================================
+
+	Author		: Brandon Riches
+	Date		: September 2013
+	License		: GNU Public License
+
+	This library interfaces with the BMP085 pressure sensor to return temperature
+	calibrated altitude measurements.
+
+	Copyright (C) 2013  Brandon Riches
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	-----------------------------------------------------------------------------*/
 #include "OSQ_Kinematics.h"
 #include "OSQ_SENSORLIB.h"
 #include "OSQ_Quadcopter.h"
@@ -35,12 +36,11 @@
 #include "OSQ_GPS.h"
 #include "OSQ_altitudeProcessor.h"
 #include "OSQ_BatteryMonitor.h"
+#include "OSQ_PID.h"
 
 #include <RTClib.h>
 #include <Adafruit_GPS.h>         
 #include <SoftwareSerial.h>
-#include <PID_v1.h>
-#include <I2C.h>
 #include <Wire.h>
 #include <SD.h>
 
@@ -71,17 +71,6 @@ RTC_DS1307              rtc;
 /*=========================================================================
  PID output variables and desired setpoints, and settings
  -----------------------------------------------------------------------*/
-double setPitch = 0, pitchPID_out;
-double setRoll = 0, rollPID_out;
-
-int PID_SampleTime = 10; // Sample time for PID controllers in ms
-
-#define angleKp 35                        // TODO:
-#define angleKi 85
-#define angleKd 30
-PID pitchPID(&kinematics.pitch,  &pitchPID_out,  &setPitch,   angleKp,  angleKi,  angleKd,  DIRECT);
-PID rollPID(&kinematics.roll,   &rollPID_out,  &setRoll,   angleKp,  angleKi,  angleKd,  DIRECT);
-
 
 /*=========================================================================
  SD logging definitions
@@ -133,19 +122,14 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        // Output limits on the PID controllers.
-        // Both the alpha and the beta controller use these limits.
-        // They represent the maximum absolute value that the PID equation could reach,
-        // regardless of what the gain coefficients are. 
-        int pitch_roll_PID_OutLims[] = {
-                -100,100        };
-        pitchPID.SetMode(AUTOMATIC);
-        pitchPID.SetSampleTime(PID_SampleTime);	                 
-        pitchPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);	
-        rollPID.SetMode(AUTOMATIC);
-        rollPID.SetSampleTime(PID_SampleTime);	               
-        rollPID.SetOutputLimits(pitch_roll_PID_OutLims[0],pitch_roll_PID_OutLims[1]);
-
+        initializePID(&pitchPID, anglekP, anglekI, anglekD);
+        initializePID(&rollPID, anglekP, anglekI, anglekD);
+        initializePID(&altitudePID, altitudekP, altitudekI, altitudekD);
+        
+        setPoint(&pitchPID, 0);
+        setPoint(&rollPID, 0);
+        setPoint(&altitudePID, 1.5);
+        
 }
 /*=========================================================================
  logData
@@ -162,13 +146,13 @@ void logData()
                 logFile.print(",");
                 logFile.print(kinematics.roll);
                 logFile.print(",");
-                logFile.print(pitchPID_out);
+                logFile.print(pitchPID.output);
                 logFile.print(",");
-                logFile.println(rollPID_out);
+                logFile.println(rollPID.output);
         }
         else
         {
-                Serial.println("Error opening file!");
+                //Serial.println("Error opening file!");
         }
 
 }
@@ -185,8 +169,7 @@ void logFileStart()
 
         // Initialize SD card
         Serial.println("Initializing SD card");
-
-        // Hardware SS pin must be output. 
+        // Hardware SS pin
         pinMode(SS, OUTPUT);
 
         if (!SD.begin(chipSelect)) {
@@ -330,10 +313,10 @@ void _100HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
 
-        pitchPID.Compute();
-        rollPID.Compute();
+        calculatePID(&pitchPID, kinematics.pitch);
+        calculatePID(&rollPID, kinematics.roll);
 
-        motorControl.updateMotors(pitchPID_out, rollPID_out, 0.0, 0.0);
+        motorControl.updateMotors(pitchPID.output, rollPID.output, 0.0, altitudePID.output);
 
         t_100Hz = micros();
 }
@@ -372,6 +355,7 @@ void _10HzTask()
 {
         // Integrate all 3 altitude sensor readings
         kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
+        calculatePID(&altitudePID, kinematics.altitude);
         
         checkGPS(); // Check for GPS data fully received, uses ISR
 
@@ -385,13 +369,8 @@ void _10HzTask()
 void _1HzTask()
 {
         monitorBatteryVoltage();
-        processBatteryAlarms();
-
+        //processBatteryAlarms();
         getGPS_Data();
-        
-        
-        
-
         t_1Hz = micros();
 }
 
@@ -400,43 +379,41 @@ uint32_t timer = micros();
  MAIN CONTROL LOOP
  -----------------------------------------------------------------------*/
 void loop()                          
-{		
-        bool priorityFlag = false;
-        if(t_100Hz - micros() >= _100HzPeriod)
+{	
+        if(micros() - t_100Hz >= _100HzPeriod)
         {
                 statusLED(4);
                 _100HzTask();
-                priorityFlag = true;
                statusLED(1);
         }
 
-        if(t_70Hz - micros()  >= _70HzPeriod)
+        if(micros() - t_70Hz >= _70HzPeriod)
         {
                 statusLED(4);
                 _70HzTask();
                 statusLED(1);
         }
 
-        if( (t_20Hz - micros()  >= _20HzPeriod) && !priorityFlag)
+        if( (micros() - t_20Hz >= _20HzPeriod))
         {
                 statusLED(4);
                 _20HzTask();
                 statusLED(1);
         }
 
-        if((t_10Hz - micros()  >= _10HzPeriod) && !priorityFlag)
+        if((micros() - t_10Hz  >= _10HzPeriod))
         {
-                statusLED(4);
+                statusLED(5);
                 _10HzTask();
-                statusLED(1);
+                statusLED(2);
         }
 
 
-        if((t_1Hz - micros()  >= _1HzPeriod) && !priorityFlag)
+        if((micros() - t_1Hz  >= _1HzPeriod))
         {
-                statusLED(4);
+                statusLED(6);
                 _1HzTask();
-                statusLED(1);
+                statusLED(3);
         }
 
         // Stop after some logging is done for debugging

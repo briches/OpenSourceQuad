@@ -132,9 +132,9 @@ class OSQ_MotorControl
 		void motorDISARM();
 		void startMotors();
 		void updateMotors(double pitchPID,
-						  double rollPID,
-						  double yawPID = 0.F,
-						  double elevPID = 0.F);
+				  double rollPID,
+				  double yawPID = 0.F,
+				  double elevPID = 0.F);
 
 
 

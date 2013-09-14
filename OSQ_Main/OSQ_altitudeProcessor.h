@@ -54,7 +54,7 @@ static double previousAltitude = 0;
 static double sensorAltitude = 0;
 static double sensorCovariance = 1;
 
-boolean altitudeDebug = true;
+boolean altitudeDebug = false;
 
 void setInitialAltitude(double GPS, double baro);
 bool checkUSRF(double hieght);
