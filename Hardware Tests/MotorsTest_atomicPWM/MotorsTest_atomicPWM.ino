@@ -41,7 +41,7 @@ void loop()
   Serial.println("********************Begin Motor test********************");
   Serial.println("Individual test:");
   
-  motorSpeeds[0] = 1100;
+  motorSpeeds[0] = 1500;
   writeMotors();
   
   

@@ -78,6 +78,7 @@ void printData(int P, int I, int D)
         static long int printTime = 0;
         if((millis() - printTime) > 1000)
         {
+                Serial.println("Coefficients: ");
                 Serial.print("P: ");
                 Serial.print(P);
                 Serial.print("  I: ");
@@ -113,12 +114,13 @@ void sendPacket()
 void loop()
 {
         boolean tuneP = true;
-        boolean tuneI = true;
-        boolean tuneD = true;
+        boolean tuneI = false;
+        boolean tuneD = false;
         
         int P = readPGain() - 1;
         int I = readIGain() - 1;
         int D = readDGain() - 1;
+        
         printData(P, I, D);
         
         bool send = checkWriteButton(digitalRead(12));
@@ -126,7 +128,7 @@ void loop()
         {
                 Serial.println("Sending P gain wirelessly!!");
                 packet[0] |= B11111111;
-                packet[1] = 0x01;        // Message code
+                packet[1] = 0x0C;        // Message code
                 packet[2] = 0x00;
                 packet[3] = (char)(P >> 8);
                 packet[4] = (char)((P << 8) >> 8);
@@ -140,7 +142,7 @@ void loop()
         {
                 Serial.println("Sending I gain wirelessly!!");
                 packet[0] |= B11111111;
-                packet[1] = 0x02;        // Message code
+                packet[1] = 0x0D;        // Message code
                 packet[2] = 0x00;
                 packet[3] = (uint8_t)(I >> 8);
                 packet[4] = (uint8_t)((I << 8) >> 8);
@@ -154,7 +156,7 @@ void loop()
         {
                 Serial.println("Sending D gain wirelessly!!");
                 packet[0] |= B11111111;
-                packet[1] = 0x03;        // Message code
+                packet[1] = 0x0E;        // Message code
                 packet[2] = 0x00;
                 packet[3] = (uint8_t)(D >> 8);
                 packet[4] = (uint8_t)((D << 8) >> 8);

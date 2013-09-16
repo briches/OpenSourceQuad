@@ -8,8 +8,7 @@
 	Date		: August 2013
 	License		: GNU Public License
 
-	This library interfaces with the BMP085 pressure sensor to return temperature
-	calibrated altitude measurements.
+	This library implements the standard form PID controller
 
 	Copyright (C) 2013  Brandon Riches
 
@@ -39,13 +38,13 @@
 
 #include <Limits.h>
 
-#define anglekP 35                        // TODO:
-#define anglekI 85
-#define anglekD 30
+double anglekP = 0;                        // TODO:
+double anglekI = 0;
+double anglekD = 0;
 
-#define altitudekP 0
-#define altitudekI 0
-#define altitudekD 0
+double altitudekP = 0;
+double altitudekI = 0;
+double altitudekD = 0;
 
 struct PID_t
 {

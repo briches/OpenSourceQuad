@@ -161,7 +161,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
                 kinematics.pitch_gyro    += wy * elapsed_time;
                 kinematics.roll_gyro     += wx * elapsed_time;
-                kinematics.yaw_gyro	    += wz * elapsed_time;
+                kinematics.yaw_gyro	 += wz * elapsed_time;
 
                 kinematics.phi = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
                 pitch_accel = atan2( ax, sqrt(ay*ay + az*az)) * 180 / Pi;
@@ -172,7 +172,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
 
                 kinematics.pitch = complementary(pitch_accel, 0, pitchRollCoeff);
-                kinematics.roll  = complementary(roll_accel, 1, pitchRollCoeff);
+                kinematics.roll  = -complementary(roll_accel, 1, pitchRollCoeff);
                 kinematics.yaw   = complementary(kinematics.yaw_mag, 2, yawCoeff);
                 }
 };

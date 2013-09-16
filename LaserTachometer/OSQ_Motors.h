@@ -85,7 +85,7 @@
  		  1
  		 ||
  		 ||
- ||
+                 ||
  	 	 ||
  /      front        \
  |      usb ^        |
@@ -204,20 +204,6 @@ void OSQ_MotorControl :: startMotors()
                 // Perform motor sweep
                 for(int i = 0; i<4; i++)
                 {
-                        // Upwards sweep
-                        for (DC = MIN_COMMAND; DC <= MAX_COMMAND; DC+= 10)
-                        {
-                                motorSpeeds[i] = DC;
-                                writeMotors();
-                                delay(10);
-                        }
-                        // Down sweep
-                        for (DC = MAX_COMMAND; DC >= MIN_COMMAND; DC-= 10)
-                        {
-                                motorSpeeds[i] = DC;
-                                writeMotors();
-                                delay(10);
-                        }
                 }
 
                 motorSpeeds[0] = MIN_COMMAND+25;

@@ -55,7 +55,7 @@
 #define MSG_SIZE	(5)			// Number of bytes in each message
                                                 // | Start_Char | Message ID | Data * 3 |
 #define START_CHAR	(0xFF)			// Signifies start of message
-#define timeoutMicros   (15000)                 // Number of microseconds to wait for more data once a message is started
+#define timeoutMicros   (500000)                 // Number of microseconds to wait for more data once a message is started
 
 
 /*================================================================================
@@ -67,6 +67,9 @@ enum messages  // Customize these.
 
         disarm = 0,	//0x00
         on = 1,	        //0x01
+        setAngleP = 0x0C,
+        setAngleI = 0x0D,
+        setAngleD = 0x0E,
         err = -1, // Must have this one
         count = 2  // Set this to the number of messages you used, NOT including "err"
 };
@@ -77,10 +80,7 @@ enum {  FIRSTBYTE,
         DATA2,
         DATA3};
 
-/*================================================================================
- 	Internal Message Data Type
- 	-----------------------------------------------------------------------------*/
-static SoftwareSerial modemXB(RX_PIN, TX_PIN);
+extern SoftwareSerial modemXB(TX_PIN, RX_PIN);
 
 class NoWire
 {
@@ -98,7 +98,6 @@ class NoWire
                 bool	msgInProgress(bool loc[MSG_SIZE]);
                 int	findNextByte(bool loc[MSG_SIZE]);
                 void 	deleteMessage(void);
-                void    timeout(void);
 };
 
 NoWire :: NoWire() {
@@ -106,8 +105,6 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-        timeout(); // Check for timeout.
-
         if(modemXB.available() > 0)
         {
                 timestamp = micros();
@@ -118,6 +115,7 @@ int NoWire :: ScanForMessages()
                         int nextByte = findNextByte(msgCurrentLoc);
 
                         newMessage[nextByte] = modemXB.read();
+                        
                         msgCurrentLoc[nextByte] = true;
 
                         // Oops, dropped some bytes somehow
@@ -152,14 +150,6 @@ int NoWire :: ScanForMessages()
         }
         return err; // Full message not yet recieved;
 };
-
-void  NoWire :: timeout(void)
-{
-        if((micros() - timestamp) > timeoutMicros)
-        {
-                deleteMessage();
-        }
-}
 
 void NoWire :: deleteMessage()
 {

@@ -8,8 +8,7 @@
 	Date		: September 2013
 	License		: GNU Public License
 
-	This library interfaces with the BMP085 pressure sensor to return temperature
-	calibrated altitude measurements.
+	Main file for OSQ firmware
 
 	Copyright (C) 2013  Brandon Riches
 
@@ -84,6 +83,8 @@ char logFilename[] = "OSQ_Log.txt";
  scanTelemetry()
  Watches for new commands sent via radio
  -----------------------------------------------------------------------*/
+ 
+bool gotPID = false;
 void scanTelemetry()
 {
         switch(receiver.ScanForMessages())
@@ -92,10 +93,30 @@ void scanTelemetry()
                 break;
 
         case disarm:
+                Serial.println("Received DISARM command");
                 motorControl.motorDISARM();
                 break;
-
-                // Put messages here
+                
+        case setAngleP:
+                anglekP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+                Serial.print("Received kP: ");
+                Serial.println(anglekP);
+                gotPID = true;
+                break;
+        
+        case setAngleI:
+               anglekI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+               Serial.print("Received kI: ");
+               Serial.println(anglekI);
+               gotPID = true;
+               break;
+        
+        case setAngleD:
+               anglekD = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+               Serial.print("Received kD: ");
+               Serial.println(anglekD);
+               gotPID = true;
+               break;
         }
 }
 /*=========================================================================
@@ -268,6 +289,13 @@ void setup()
         
         // Start the radio
         receiver.start();
+        
+        // Receive PID coefficients from basestation
+        gotPID = true;
+        while(!gotPID)
+        {
+                scanTelemetry();
+        }
 
         Serial.println("Initializing PID"); // Initialize PID
         PID_init();   
@@ -315,7 +343,7 @@ void _100HzTask()
 
         calculatePID(&pitchPID, kinematics.pitch);
         calculatePID(&rollPID, kinematics.roll);
-
+        
         motorControl.updateMotors(pitchPID.output, rollPID.output, 0.0, altitudePID.output);
 
         t_100Hz = micros();
@@ -338,8 +366,7 @@ void _70HzTask()
  -----------------------------------------------------------------------*/
 void _20HzTask()
 {
-        barometer.updatePTA();                    
-        scanTelemetry();
+        barometer.updatePTA(); 
 
         // Print data to the SD logFile, using some RTC data
         logData();
@@ -424,6 +451,9 @@ void loop()
                 statusLED(-1);
                 while(1);
         }
+        
+        
+        scanTelemetry();
 
         // Track the number of elapsed cycles
         cycleCount++;
