@@ -37,12 +37,8 @@
 #include "WProgram.h"
 #endif
 
-
-
-#include <I2C.h>
 #include <Wire.h>
 #include <math.h>
-#include <Servo.h>
 
 /*=========================================================================
  General IO pins
@@ -119,13 +115,6 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
         kinematics->io_wx /= offset_counter;
         kinematics->io_wy /= offset_counter;
         kinematics->io_wz /= offset_counter;
-
-        Serial.println(kinematics->io_ax);
-        Serial.println(kinematics->io_ay);
-        Serial.println(kinematics->io_az);
-        Serial.println(kinematics->io_wx);
-        Serial.println(kinematics->io_wy);
-        Serial.println(kinematics->io_wz);
 
 };
 

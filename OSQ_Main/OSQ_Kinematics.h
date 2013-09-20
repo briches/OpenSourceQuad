@@ -40,7 +40,6 @@
 #include "OSQ_SENSORLIB.h"
 #include "OSQ_Motors.h"
 #include <Wire.h>
-#include <I2C.h>
 
 bool startup = true;
 

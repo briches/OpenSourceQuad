@@ -101,7 +101,7 @@ void loop()
 
         static int PulseCount;
 
-        if ( abs(diodeFrequency - laserFrequency) < 0.5 ) 
+        if (diodeFrequency < 10 ) //ghfgfdfgdf
         {
                 while(1) {
                         Serial.print("HOLY SHIT, it's the answer! The frequency is: ");
@@ -112,7 +112,7 @@ void loop()
                 PulseCount++; 
         }
 
-        if (PulseCount == 10)
+        if (PulseCount == 1000)
         {
                 pulseCount = 0;
                 phi += laserPeriod / 100;

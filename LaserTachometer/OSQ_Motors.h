@@ -85,7 +85,7 @@
  		  1
  		 ||
  		 ||
-                 ||
+ ||
  	 	 ||
  /      front        \
  |      usb ^        |
@@ -137,6 +137,8 @@ void commandAllMotors(int speed)
         motorSpeeds[1] = speed;
         motorSpeeds[2] = speed;
         motorSpeeds[3] = speed;
+        
+        writeMotors();
 };
 
 class OSQ_MotorControl
@@ -193,7 +195,7 @@ void OSQ_MotorControl :: startMotors()
                 int dutyCycleTarget = (MIN_COMMAND);
 
                 int DC;
-                
+
                 motorSpeeds[0] = MIN_COMMAND;
                 motorSpeeds[1] = MIN_COMMAND;
                 motorSpeeds[2] = MIN_COMMAND;
@@ -214,10 +216,7 @@ void OSQ_MotorControl :: startMotors()
         }
 };
 
-void OSQ_MotorControl :: updateMotors(	double pitchPID,
-double rollPID,
-double yawPID,
-double elevPID)
+void OSQ_MotorControl :: updateMotors(	double pitchPID, double rollPID, double yawPID, double elevPID)
 {
         if (MOTORS_ARMED)
         {
@@ -233,11 +232,11 @@ double elevPID)
 
                 // Restrict duty cycle to max/min
                 motorSpeeds[0] = constrain(	motorSpeeds[0], passiveMIN, passiveMAX);
-                
+
                 motorSpeeds[1] = constrain(	motorSpeeds[1], passiveMIN, passiveMAX);
-                
+
                 motorSpeeds[2] = constrain(	motorSpeeds[2], passiveMIN, passiveMAX);
-                
+
                 motorSpeeds[3] = constrain(	motorSpeeds[3], passiveMIN, passiveMAX);
 
 
@@ -262,6 +261,8 @@ void OSQ_MotorControl :: motorDISARM()
         motorSpeeds[1] = 1000;
         motorSpeeds[2] = 1000;
         motorSpeeds[3] = 1000;
+        
+        writeMotors();
 
         MOTORS_ARMED = false;
 };
@@ -271,5 +272,6 @@ OSQ_MotorControl   		motorControl;
 
 
 #endif // FQ_MOTORS_H_INCLUDED
+
 
 

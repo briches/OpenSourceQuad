@@ -1,5 +1,5 @@
 /*=====================================================================
- 	OSQ_Quadcopter library
+ 	OSQ_AltitudeProcessor library
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
@@ -8,8 +8,7 @@
  	Date		: August 2013
  	License		: GNU Public License
 
- 	This library is designed to abstract away some of the craft management functions
- 	from the main file (OSQ_Main.ino)
+ 	This library is designed to manage altitude measurement and control algorithms
 
  	Copyright (C) 2013  Brandon Riches
 
@@ -54,7 +53,6 @@ static double previousAltitude = 0;
 static double sensorAltitude = 0;
 static double sensorCovariance = 1;
 
-boolean altitudeDebug = false;
 
 void setInitialAltitude(double GPS, double baro);
 bool checkUSRF(double hieght);
@@ -114,19 +112,6 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         // Update covariance with "movement step"
         sensorCovariance += abs(previousAltitude - sensorAltitude);
 
-        if(altitudeDebug)
-        {
-                Serial.print(" GPS: ");
-                Serial.print(GPS);
-                Serial.print(" Baro: ");
-                Serial.print(baro);
-                Serial.print(" USRF: ");
-                Serial.print(USRF);
-                Serial.print(" 'Accurate Altitude' : ");
-                Serial.print(sensorAltitude);
-                Serial.print(" Altitude covariance: ");
-                Serial.println(sensorCovariance);
-        }
 
         return sensorAltitude;
 

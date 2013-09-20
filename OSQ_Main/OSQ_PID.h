@@ -63,6 +63,7 @@ struct PID_t
 
 PID_t pitchPID;
 PID_t rollPID;
+PID_t yawPID;
 PID_t altitudePID;
 
 enum {lower, upper};

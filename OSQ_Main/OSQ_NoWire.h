@@ -80,24 +80,17 @@ enum {  FIRSTBYTE,
         DATA2,
         DATA3};
 
-extern SoftwareSerial modemXB(TX_PIN, RX_PIN);
+SoftwareSerial modemXB(TX_PIN, RX_PIN);
 
 class NoWire
 {
         public:
                 NoWire();
                 int ScanForMessages();
-                bool	start();
+                bool start();
 
-                uint8_t newMessage[MSG_SIZE];
+                unsigned char newMessage[MSG_SIZE];
                 long timestamp;
-
-        private:
-                bool	msgCurrentLoc[MSG_SIZE];
-                bool 	startMessage(void);
-                bool	msgInProgress(bool loc[MSG_SIZE]);
-                int	findNextByte(bool loc[MSG_SIZE]);
-                void 	deleteMessage(void);
 };
 
 NoWire :: NoWire() {
@@ -105,92 +98,21 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-        if(modemXB.available() > 0)
+        if(modemXB.available() >= MSG_SIZE)
         {
-                timestamp = micros();
-
-                // Message in progress, receive next bytes
-                if(msgInProgress(msgCurrentLoc))	// MSG in progress, find spot and fill it.
+                unsigned char firstByte = modemXB.read();
+                if(firstByte == START_CHAR)
                 {
-                        int nextByte = findNextByte(msgCurrentLoc);
-
-                        newMessage[nextByte] = modemXB.read();
+                        timestamp = micros();
+                        newMessage[FIRSTBYTE] = firstByte;
+                        newMessage[M_ID] = modemXB.read();
+                        newMessage[DATA1] = modemXB.read();
+                        newMessage[DATA2] = modemXB.read();
+                        newMessage[DATA3] = modemXB.read();
                         
-                        msgCurrentLoc[nextByte] = true;
-
-                        // Oops, dropped some bytes somehow
-                        if(newMessage[FIRSTBYTE] != START_CHAR)
-                        {
-                                deleteMessage();
-                                return err;
-                        }
-                        if(newMessage[nextByte] == START_CHAR)
-                        {
-                                newMessage[nextByte]--;
-                        }
-
-                        if ( (nextByte+1) == MSG_SIZE) // No more bytes to receive
-                        {
-
-                                for(int i = 0; i<MSG_SIZE; i++)
-                                {
-                                        msgCurrentLoc[i] = false;
-                                }
-
-                                return newMessage[M_ID];	// Full message read.
-                        }
-                        return err;
-                }
-                // Message not in progress, check if we recieved a start char yet
-                if(!msgInProgress(msgCurrentLoc))
-                {
-                        msgCurrentLoc[FIRSTBYTE] = startMessage();
-                        return err;	// Message may or may not now be in progress, but either way, it's not finished.
-                }
+                }return newMessage[M_ID];
         }
         return err; // Full message not yet recieved;
-};
-
-void NoWire :: deleteMessage()
-{
-        for(int i = 0; i<MSG_SIZE; i++)
-        {
-                newMessage[i] = 0;
-                msgCurrentLoc[i] = false;
-        }
-};
-
-int NoWire :: findNextByte(bool loc[MSG_SIZE])
-{
-        int result = 0;
-        for(int i = 0; i<MSG_SIZE; i++)
-        {
-                if(loc[i] == 1) result++;
-        }
-        return result;
-};
-
-bool NoWire :: msgInProgress(bool loc[MSG_SIZE])
-{
-        int result = 0;
-        for(int i = 0; i< MSG_SIZE; i++)
-        {
-                result += loc[i];
-        }
-        return (result != 0);		// Returns true if result isnt zero, so a message is in progress.
-};
-
-bool NoWire :: startMessage()
-{
-        uint8_t x = modemXB.read();
-
-        if(x == START_CHAR)
-        {
-                deleteMessage();
-                newMessage[FIRSTBYTE] = x;
-                msgCurrentLoc[FIRSTBYTE] = true;
-        }
-        return msgCurrentLoc[FIRSTBYTE];
 };
 
 bool NoWire :: start()
