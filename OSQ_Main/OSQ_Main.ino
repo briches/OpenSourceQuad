@@ -47,6 +47,7 @@
 double softwareVersion;
 double flightNumber;
 uint32_t cycleCount;
+bool receivedStartupCommand = false;
 
 /** Debugging Options **/
 #define serialDebug        // Must be defined to use any of the other debuggers
@@ -78,6 +79,8 @@ File logFile;
 bool gotPID = false;
 void scanTelemetry()
 {
+        unsigned char packet[5] = {0xFF, 0x00, 0x00, 0x00, 0x00};
+        
         switch(receiver.ScanForMessages())
         {
         case err:
@@ -94,7 +97,40 @@ void scanTelemetry()
                 motorControl.motorDISARM();
                 break;
                 
+        case autoland:
+        
+                #ifdef serialDebug
+                        #ifdef rx_txDebug
+                                Serial.println("Received autoland command!");
+                        #endif
+                #endif
+                
+                // Autoland
+                break;
+                
+        case start:
+        
+                #ifdef serialDebug
+                        #ifdef rx_txDebug
+                                Serial.println("Received start command!");
+                        #endif
+                #endif
+                
+                receivedStartupCommand = true;
+                break;
+                
+        case broadcastData:
+        
+                #ifdef serialDebug
+                        #ifdef rx_txDebug
+                                Serial.println("Received autoland command!");
+                        #endif
+                #endif
+                // send packets
+                break;
+                
         case setAngleP:
+        
                 anglekP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
                 
                 #ifdef serialDebug
@@ -355,17 +391,15 @@ void setup()
 
         
         /*****************************/
-        /* Initialize PID */
+        /* Wait for start command and receive data */
         /*****************************/
         
         #ifdef serialDebug
-                Serial.println("Initializing PID Control Algorithms"); 
+                Serial.println("Waiting for start command"); 
         #endif
         
         statusLED(6);
-        // Receive PID coefficients from basestation
-        gotPID = true;
-        while(!gotPID)
+        while(!receivedStartupCommand)
         {
                 scanTelemetry();
         }

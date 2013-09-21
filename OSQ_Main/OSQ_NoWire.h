@@ -65,13 +65,14 @@
 enum messages  // Customize these.
 {
 
-        disarm = 0,	//0x00
-        on = 1,	        //0x01
+        disarm = 0x00,
+        autoland = 0x01,
+        start = 0x02,
+        broadcastData = 0x03,
         setAngleP = 0x0C,
         setAngleI = 0x0D,
         setAngleD = 0x0E,
         err = -1, // Must have this one
-        count = 2  // Set this to the number of messages you used, NOT including "err"
 };
 
 enum {  FIRSTBYTE,
@@ -109,7 +110,7 @@ int NoWire :: ScanForMessages()
                         newMessage[DATA1] = modemXB.read();
                         newMessage[DATA2] = modemXB.read();
                         newMessage[DATA3] = modemXB.read();
-                        
+
                 }return newMessage[M_ID];
         }
         return err; // Full message not yet recieved;

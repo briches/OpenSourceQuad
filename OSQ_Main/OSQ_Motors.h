@@ -188,10 +188,6 @@ void OSQ_MotorControl :: startMotors()
 {
         if(this->ESC_READY)
         {
-                int dutyCycleTarget = (MIN_COMMAND);
-
-                int DC;
-
                 motorSpeeds[0] = MIN_COMMAND;
                 motorSpeeds[1] = MIN_COMMAND;
                 motorSpeeds[2] = MIN_COMMAND;
@@ -212,7 +208,7 @@ void OSQ_MotorControl :: updateMotors(	double pitchPID, double rollPID, double y
 {
         if (MOTORS_ARMED)
         {
-                
+
         #ifdef _PLUSconfig
 
                 #ifdef USE_4MOTORS
@@ -222,7 +218,7 @@ void OSQ_MotorControl :: updateMotors(	double pitchPID, double rollPID, double y
                         motorSpeeds[2]	+= pitchPID;
                         motorSpeeds[3]	-= pitchPID;
                 #endif
-                
+
                 #ifdef USE_4MOTORS
                         // Control elevation
                         motorSpeeds[0] += elevPID;
@@ -230,7 +226,7 @@ void OSQ_MotorControl :: updateMotors(	double pitchPID, double rollPID, double y
                         motorSpeeds[2] += elevPID;
                         motorSpeeds[3] += elevPID;
                 #endif
-                
+
                 #ifdef USE_4MOTORS
                         // Control yaw
                         motorSpeeds[0] += yawPID;        // CW
@@ -238,8 +234,8 @@ void OSQ_MotorControl :: updateMotors(	double pitchPID, double rollPID, double y
                         motorSpeeds[2] -= yawPID;        // CCW
                         motorSpeeds[3] -= yawPID;
                 #endif
-                
-                
+
+
 
                 // Restrict duty cycle to max/min
                 motorSpeeds[0] = constrain(motorSpeeds[0], passiveMIN, passiveMAX);

@@ -3,29 +3,29 @@
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
- 
+
  	Author		: Brandon Riches
  	Date		: August 2013
  	License		: GNU Public License
- 
+
  	This library implements sensor measuments to update the measured state
  	of the craft.
- 
+
  	Copyright (C) 2013  Brandon Riches
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
  	-----------------------------------------------------------------------------*/
 
 #ifndef OSQ_KINEMATICS_H_INCLUDED
@@ -113,17 +113,17 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         if(eventType == 1)
         {
                 mag->getEvent(&mag_event);
-                
+
                 double mx = mag_event.magnetic.z;
                 double my = -(mag_event.magnetic.y);
                 double mz = mag_event.magnetic.x;
-                
+
                 double alpha = -kinematics.pitch * Pi/180;
                 double beta = -kinematics.roll * Pi/180;
-                
-                
+
+
                 kinematics.yaw_mag = atan2(cos(beta)*my + sin(beta)*mz, cos(alpha)*mx + sin(alpha)*sin(beta)*my - sin(alpha)*cos(beta)*mz) * 180/Pi;
-                
+
                 if(startup)
                 {
                         kinematics.yaw_gyro = kinematics.yaw_mag;        // Setup heading
@@ -140,11 +140,11 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 double ax = accel_event.acceleration.z - kinematics.io_az;
                 double ay = -(accel_event.acceleration.y - kinematics.io_ay);
                 double az = accel_event.acceleration.x - kinematics.io_ax + SENSORS_GRAVITY_STANDARD;
-                
+
                 double wx =  gyro_event.gyro.z - kinematics.io_wz;
                 double wy =  gyro_event.gyro.x - kinematics.io_wx;
-                double wz =  gyro_event.gyro.y - kinematics.io_wy; 
-                
+                double wz =  gyro_event.gyro.y - kinematics.io_wy;
+
                 // Compute a Chebyshev 4th order filter
                 ax = computeFourthOrder(ax, &fourthOrderXAXIS);
                 ay = computeFourthOrder(ay, &fourthOrderYAXIS);
@@ -190,6 +190,7 @@ double complementary(double mynum, int select, double coeff)
         {
                 return coeff * kinematics.yaw_gyro	+ (1 - coeff) * mynum;
         }
+        return 0;
 };
 
 double computeFourthOrder(	double currentInput,

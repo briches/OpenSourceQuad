@@ -30,12 +30,12 @@
 #include <SoftwareSerial.h>
 #include <Adafruit_GPS.h>
 
-typedef struct gpsdata_t
+struct gpsdata_t
 {
 	int		fix, quality;	// Is fixed or no
-	int    		satellites;		// number of sats
-	double 		altitude,		// in m, apparently. this seems to be fucked
-		        angle,			// in deg, based of movement
+	int    	satellites;		// number of sats
+	double 	altitude,		// in m, apparently. this seems to be fucked
+			angle,			// in deg, based off movement vector
 			lat,			// in degrees, decimal minutes
 			lon,			// degrees, decimal minutes
 			spd;			// converted to m/s, direction of motion
@@ -71,7 +71,7 @@ void getGPS_Data()
         // Call in the 1Hz loop
         GPSDATA.fix = GPS.fix;
         GPSDATA.quality = (uint8_t)GPS.fixquality;
-        GPSDATA.altitude = GPS.altitude;		
+        GPSDATA.altitude = GPS.altitude;
         GPSDATA.satellites = (int8_t)GPS.satellites;
         GPSDATA.angle = GPS.angle;
         GPSDATA.lat = GPS.lat;
@@ -98,7 +98,7 @@ void initGPS()
  -----------------------------------------------------------------------*/
 SIGNAL(TIMER0_COMPA_vect)
 {
-        char c = GPS.read();
+        GPS.read();
 }
 
 
