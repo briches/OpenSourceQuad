@@ -55,7 +55,7 @@
 #define MSG_SIZE	(5)			// Number of bytes in each message
                                                 // | Start_Char | Message ID | Data * 3 |
 #define START_CHAR	(0xFF)			// Signifies start of message
-#define timeoutMicros   (15000)                 // Number of microseconds to wait for more data once a message is started
+#define timeoutMicros   (500000)                 // Number of microseconds to wait for more data once a message is started
 
 
 /*================================================================================
@@ -65,13 +65,14 @@
 enum messages  // Customize these.
 {
 
-        disarm = 0,	//0x00
-        on = 1,	        //0x01
+        disarm = 0x00,
+        autoland = 0x01,
+        start = 0x02,
+        broadcastData = 0x03,
         setAngleP = 0x0C,
         setAngleI = 0x0D,
         setAngleD = 0x0E,
         err = -1, // Must have this one
-        count = 2  // Set this to the number of messages you used, NOT including "err"
 };
 
 enum {  FIRSTBYTE,
@@ -80,28 +81,17 @@ enum {  FIRSTBYTE,
         DATA2,
         DATA3};
 
-/*================================================================================
- 	Internal Message Data Type
- 	-----------------------------------------------------------------------------*/
-static SoftwareSerial modemXB(RX_PIN, TX_PIN);
+SoftwareSerial modemXB(TX_PIN, RX_PIN);
 
 class NoWire
 {
         public:
                 NoWire();
                 int ScanForMessages();
-                bool	start();
+                bool start();
 
-                uint8_t newMessage[MSG_SIZE];
+                unsigned char newMessage[MSG_SIZE];
                 long timestamp;
-
-        private:
-                bool	msgCurrentLoc[MSG_SIZE];
-                bool 	startMessage(void);
-                bool	msgInProgress(bool loc[MSG_SIZE]);
-                int	findNextByte(bool loc[MSG_SIZE]);
-                void 	deleteMessage(void);
-                void    timeout(void);
 };
 
 NoWire :: NoWire() {
@@ -109,101 +99,21 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-        timeout(); // Check for timeout.
-
-        if(modemXB.available() > 0)
+        if(modemXB.available() >= MSG_SIZE)
         {
-                timestamp = micros();
-
-                // Message in progress, receive next bytes
-                if(msgInProgress(msgCurrentLoc))	// MSG in progress, find spot and fill it.
+                unsigned char firstByte = modemXB.read();
+                if(firstByte == START_CHAR)
                 {
-                        int nextByte = findNextByte(msgCurrentLoc);
+                        timestamp = micros();
+                        newMessage[FIRSTBYTE] = firstByte;
+                        newMessage[M_ID] = modemXB.read();
+                        newMessage[DATA1] = modemXB.read();
+                        newMessage[DATA2] = modemXB.read();
+                        newMessage[DATA3] = modemXB.read();
 
-                        newMessage[nextByte] = modemXB.read();
-                        msgCurrentLoc[nextByte] = true;
-
-                        // Oops, dropped some bytes somehow
-                        if(newMessage[FIRSTBYTE] != START_CHAR)
-                        {
-                                deleteMessage();
-                                return err;
-                        }
-                        if(newMessage[nextByte] == START_CHAR)
-                        {
-                                newMessage[nextByte]--;
-                        }
-
-                        if ( (nextByte+1) == MSG_SIZE) // No more bytes to receive
-                        {
-
-                                for(int i = 0; i<MSG_SIZE; i++)
-                                {
-                                        msgCurrentLoc[i] = false;
-                                }
-
-                                return newMessage[M_ID];	// Full message read.
-                        }
-                        return err;
-                }
-                // Message not in progress, check if we recieved a start char yet
-                if(!msgInProgress(msgCurrentLoc))
-                {
-                        msgCurrentLoc[FIRSTBYTE] = startMessage();
-                        return err;	// Message may or may not now be in progress, but either way, it's not finished.
-                }
+                }return newMessage[M_ID];
         }
         return err; // Full message not yet recieved;
-};
-
-void  NoWire :: timeout(void)
-{
-        if((micros() - timestamp) > timeoutMicros)
-        {
-                deleteMessage();
-        }
-}
-
-void NoWire :: deleteMessage()
-{
-        for(int i = 0; i<MSG_SIZE; i++)
-        {
-                newMessage[i] = 0;
-                msgCurrentLoc[i] = false;
-        }
-};
-
-int NoWire :: findNextByte(bool loc[MSG_SIZE])
-{
-        int result = 0;
-        for(int i = 0; i<MSG_SIZE; i++)
-        {
-                if(loc[i] == 1) result++;
-        }
-        return result;
-};
-
-bool NoWire :: msgInProgress(bool loc[MSG_SIZE])
-{
-        int result = 0;
-        for(int i = 0; i< MSG_SIZE; i++)
-        {
-                result += loc[i];
-        }
-        return (result != 0);		// Returns true if result isnt zero, so a message is in progress.
-};
-
-bool NoWire :: startMessage()
-{
-        uint8_t x = modemXB.read();
-
-        if(x == START_CHAR)
-        {
-                deleteMessage();
-                newMessage[FIRSTBYTE] = x;
-                msgCurrentLoc[FIRSTBYTE] = true;
-        }
-        return msgCurrentLoc[FIRSTBYTE];
 };
 
 bool NoWire :: start()
