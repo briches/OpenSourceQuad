@@ -5,6 +5,10 @@ Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
 Date   : May 2013 <br />
 Version: 0.91 <br />
 
+Programming the flight controller:
+avrdude -P comport -b 19200 -c avrisp -p m2560 -v -e -U flash:w:hexfilename.hex
+
+
 Description
 -----------
 
