@@ -155,6 +155,18 @@ void executeInstruction(int selection)
                 sendPacket();
                 Serial.println("Sending broadcast data instruction!");
         }
+        if(selection == 5)
+        {
+                // Send reset angle command
+                packet[FIRSTBYTE] = 0xFF;
+                packet[M_ID] = 0x10;
+                packet[DATA1] = 0x33;
+                packet[DATA2] = 0x33;
+                packet[DATA3] = 0x33;
+                sendPacket();
+                Serial.println("Sending broadcast data instruction!");
+                
+        }
         if(selection == 7)
         {
                 // setAngleP

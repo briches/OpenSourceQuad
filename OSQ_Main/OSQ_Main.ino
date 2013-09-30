@@ -54,8 +54,10 @@ bool receivedStartupCommand = false;
 //#define attitudeDebug     
 //#define altitudeDebug
 #define rx_txDebug
+//#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
+//#define rollPIDdebug
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -63,8 +65,6 @@ bool receivedStartupCommand = false;
 /** Sensor analog pins      **/
 #define USRF_PIN (0x0)        
 
-/** Battery Monitor **/
-#define NOMINAL_V 11.1
 
 /** SD logging definitions **/
 #define chipSelect  (53)
@@ -80,6 +80,7 @@ bool gotPID = false;
 void scanTelemetry()
 {
         unsigned char packet[5] = {0xFF, 0x00, 0x00, 0x00, 0x00};
+        int EEPROMselectionPID;
         
         switch(receiver.ScanForMessages())
         {
@@ -95,6 +96,8 @@ void scanTelemetry()
                 #endif
                 
                 motorControl.motorDISARM();
+                logFile.close();
+                while(1);
                 break;
                 
         case autoland:
@@ -123,7 +126,7 @@ void scanTelemetry()
         
                 #ifdef serialDebug
                         #ifdef rx_txDebug
-                                Serial.println("Received autoland command!");
+                                Serial.println("Received broadcast data command!");
                         #endif
                 #endif
                 // send packets
@@ -131,12 +134,17 @@ void scanTelemetry()
                 
         case setAngleP:
         
-                anglekP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+                EEPROMselectionPID = 3;
+                
+                RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+                EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
                 
                 #ifdef serialDebug
                         #ifdef rx_txDebug
                                 Serial.print("Received kP: ");
-                                Serial.println(anglekP);
+                                Serial.println(RATE_ATT_KP,3);
+                                Serial.print("Wrote PID Value: ");
+                                Serial.println(EEPROMreadPIDCoefficients(EEPROMselectionPID));
                         #endif
                 #endif
                 
@@ -144,29 +152,40 @@ void scanTelemetry()
                 break;
         
         case setAngleI:
-               anglekI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+              
+               EEPROMselectionPID = 4;
+              
+               RATE_ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);              
+               EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
                
                #ifdef serialDebug
                        #ifdef rx_txDebug
                                Serial.print("Received kI: ");
-                               Serial.println(anglekI);
+                               Serial.println(RATE_ATT_KI, 3);
+                               Serial.print("Wrote PID Value: ");
+                               Serial.println(EEPROMreadPIDCoefficients(EEPROMselectionPID));
                        #endif
                #endif
                
                gotPID = true;
                break;
+               
+        case resetPitchRoll:
+                
+                pitchPID.integratedError = 0;
+                rollPID.integratedError = 0;
+                
+                kinematics.pitch = 0;
+                kinematics.roll = 0;
+                
+                #ifdef serialDebug
+                        #ifdef rx_txDebug
+                                Serial.println("Received reset Pitch and Roll command! ");                          
+                        #endif
+                #endif
+                
+                break;
         
-        case setAngleD:
-               anglekD = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
-               
-               #ifdef serialDebug
-                       #ifdef rx_txDebug
-                               Serial.print("Received kD: ");
-                               Serial.println(anglekD);
-                       #endif
-               #endif
-               gotPID = true;
-               break;
         }
 }
 /*=========================================================================
@@ -193,13 +212,15 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        initializePID(&pitchPID, anglekP, anglekI, anglekD);
-        initializePID(&rollPID, anglekP, anglekI, anglekD);
-        initializePID(&altitudePID, altitudekP, altitudekI, altitudekD);
+        initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
+        initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
+        initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
+        initializePID(&altitudePID, altitudekP, altitudekI, 0, 0);
         
-        setPoint(&pitchPID, 0);
-        setPoint(&rollPID, 0);
-        setPoint(&altitudePID, 1.5);
+        #ifdef serialDebug
+                Serial.println(SET_ATT_KP);
+                Serial.println(SET_ATT_KI);
+        #endif
         
 }
 /*=========================================================================
@@ -217,9 +238,13 @@ void logData()
                 logFile.print(",");
                 logFile.print(kinematics.roll);
                 logFile.print(",");
-                logFile.print(pitchPID.output);
+                logFile.print(pitchPID.desiredRate);
                 logFile.print(",");
-                logFile.println(rollPID.output);
+                logFile.print(rollPID.desiredRate);
+                logFile.print(",");
+                logFile.print(pitchPID.motorOutput);
+                logFile.print(",");
+                logFile.println(pitchPID.motorOutput);
         }
         else
         {
@@ -320,6 +345,7 @@ void setup()
         writeConfigBlock();
         softwareVersion = EEPROM_read8(_software_version_addr);
         flightNumber = EEPROM_read8(_flight_number_addr);
+        
 
         /*****************************/
         /* Initialize Serial Monitor */
@@ -399,11 +425,28 @@ void setup()
         #endif
         
         statusLED(6);
-        while(!receivedStartupCommand)
+        long timer = micros();
+        while(receivedStartupCommand == false) 
         {
+                
+                #ifdef serialDebug
+                        if(micros() - timer > 1000000)
+                        {
+                                timer = micros();
+                                Serial.println("Waiting for start command...");
+                        }
+                #endif
                 scanTelemetry();
         }
-
+        
+        /*****************************/
+        /* Initialize PID */
+        /*****************************/
+        #ifdef serialDebug
+                Serial.println("Initializing PID controllers");
+        #endif
+        
+        statusLED(4);
         PID_init();
         statusLED(1);
         
@@ -450,15 +493,31 @@ void _100HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
 
-        calculatePID(&pitchPID, kinematics.pitch);
-        calculatePID(&rollPID, kinematics.roll);
+        calculateSET_PID(&pitchPID, kinematics.pitch);
+        calculateSET_PID(&rollPID, kinematics.roll);
+        
+        calculateRATE_PID(&pitchPID,  kinematics.ratePITCH);        
+        calculateRATE_PID(&rollPID,  kinematics.rateROLL);
         // TODO: add other PID calculatePID
         
-        motorControl.updateMotors(pitchPID.output, rollPID.output, 0.0, altitudePID.output);
+        motorControl.updateMotors(&pitchPID.motorOutput, &rollPID.motorOutput, &yawPID.motorOutput, &altitudePID.motorOutput);
+        
         
         t_100Hz = micros();
         
         #ifdef serialDebug        // Debug Section
+        
+                Serial.println(rollPID.motorOutput);
+        
+                #ifdef rollPIDdebug
+                        Serial.print("Roll: ");
+                        Serial.print(kinematics.roll);
+                        Serial.print(" Desired Rate: ");
+                        Serial.print(rollPID.motorOutput);
+                        Serial.print(" motorOutput: ");
+                        Serial.println(rollPID.motorOutput);
+                        Serial.println("");
+                #endif
         
                 #ifdef attitudeDebug
                         Serial.print(" Pitch: ");
@@ -467,14 +526,6 @@ void _100HzTask()
                         Serial.print(kinematics.roll);
                         Serial.print(" Yaw: ");
                         Serial.println(kinematics.yaw);
-                        
-                        Serial.print(" pPIDo: ");
-                        Serial.print(pitchPID.output);
-                        Serial.print(" rPIDo: ");
-                        Serial.print(rollPID.output);
-                        Serial.print(" yPIDo: ");
-                        Serial.println(yawPID.output);
-                        Serial.println();
                 #endif
                 
                 #ifdef altitudeDebug
@@ -486,7 +537,7 @@ void _100HzTask()
                         Serial.println(barometer.altitude);
                         
                         Serial.print(" altitudePIDo: ");
-                        Serial.println(altitudePID.output);
+                        Serial.println(altitudePID.motorOutput);
                         Serial.println();
                 #endif
                 
@@ -494,7 +545,8 @@ void _100HzTask()
                         Serial.print(" Motor speeds: ");
                         for(int i = 0; i<8; i++)
                         {
-                                Serial.println(motorSpeeds[i]);
+                                Serial.print(motorSpeeds[i]);
+                                Serial.print("    ");
                         }
                         Serial.println();
                 #endif
@@ -534,7 +586,8 @@ void _20HzTask()
 void _10HzTask()
 {
         kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
-        calculatePID(&altitudePID, kinematics.altitude);
+        calculateSET_PID(&altitudePID, kinematics.altitude); // TODO
+        //calculateRATE_PID(&altitudePID,  measuredRate)
         
         checkGPS(); // Check for GPS data fully received, uses ISR
 
@@ -598,16 +651,6 @@ void loop()
                 statusLED(3);
         }
 
-        // Stop after some logging is done for debugging
-        if (millis() >= 60000)
-        {
-                logFile.close();
-                motorControl.motorDISARM();
-                statusLED(-1);
-                while(1);
-        }
-        
-        
         scanTelemetry();
 
         // Track the number of elapsed cycles

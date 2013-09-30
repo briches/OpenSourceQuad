@@ -72,6 +72,7 @@ enum messages  // Customize these.
         setAngleP = 0x0C,
         setAngleI = 0x0D,
         setAngleD = 0x0E,
+        resetPitchRoll = 0x10,
         err = -1, // Must have this one
 };
 

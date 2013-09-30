@@ -37,15 +37,8 @@
 #define altKi       (0.0)
 #define altKd       (0.0)
 
-
-static boolean altitudeHold  = false;
-
 static boolean isSetInitialAltitudeBarometer = false;
 static boolean isSetInitialAltitudeGPS = false;
-static boolean changedFromInitial = false;
-
-static double barometerOffset = 0;
-static double GPSOffset = 0;
 
 static double initialAltitudeBarometer = 0;    // From sea level;
 static double initialAltitudeGPS = 0;    // From sea level;
@@ -60,7 +53,6 @@ bool checkUSRF(double hieght);
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
         static int barometerSampleCount = 0;
-        static boolean calibratedUSRF = false;
         double GPSCovar = 3;        // Assume covariance in GPS            // 1
         double baroCovar = 1;       // Assume covariance in barometer      // 2
         double USRFCovar = 0.1;     // Assume covariance in USRF           // 3

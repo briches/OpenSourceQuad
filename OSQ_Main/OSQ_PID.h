@@ -38,106 +38,99 @@
 
 #include <Limits.h>
 
-double anglekP = 0;                        // TODO:
-double anglekI = 0;
-double anglekD = 0;
+double SET_ATT_KP = 1;                        // TODO:
+double SET_ATT_KI = 0.0;
+
+double RATE_ATT_KP = 0;
+double RATE_ATT_KI = 0;
 
 double altitudekP = 0;
 double altitudekI = 0;
-double altitudekD = 0;
 
-struct PID_t
+
+struct RATE_PID_t
 {
-	unsigned long timestamp;
-	double kP, kI, kD;
+	unsigned long lastTimestamp;
+	double RATE_KP, RATE_KI;
 
 	double windupGuard; // When set point changes by a lot, the i-term may get really large.
-	double lastError;
-	double iTerm;
-	double setpoint;
-	double output;
+	double integratedError;
+	double target;
 
-	bool limitsSet;
-	double limits[2];
 };
 
-PID_t pitchPID;
-PID_t rollPID;
-PID_t yawPID;
-PID_t altitudePID;
+struct SET_PID_t
+{
+	unsigned long lastTimestamp;
+	double SET_KP, SET_KI;
+
+	double windupGuard; // When set point changes by a lot, the i-term may get really large.
+	double integratedError;
+	double target;
+	double desiredRate;
+        double motorOutput;
+
+        // Rate pid controller nested in the target controller, makes it easy to set targets
+        RATE_PID_t RATE_PID;         
+};
+
+SET_PID_t pitchPID;
+SET_PID_t rollPID;
+SET_PID_t yawPID;
+SET_PID_t altitudePID;
+
 
 enum {lower, upper};
 
-void setPoint(struct PID_t *PID, double newSetpoint)
+void calculateRATE_PID(struct SET_PID_t *PID, double measuredRate)
 {
-	PID->setpoint = newSetpoint;
+        double dt = (micros() - PID->RATE_PID.lastTimestamp)/1000000.;
+        
+        double error = measuredRate - PID->RATE_PID.target;
+        
+        PID->RATE_PID.integratedError += PID->RATE_PID.RATE_KI * error * dt;
+        PID->RATE_PID.integratedError = constrain(PID->RATE_PID.integratedError, -PID->RATE_PID.windupGuard, PID->RATE_PID.windupGuard);
+        
+        PID->motorOutput = PID->RATE_PID.RATE_KP * error;
+        PID->motorOutput += PID->RATE_PID.integratedError;
+        
+        PID->RATE_PID.lastTimestamp = micros();
 };
 
-void initializePID(struct PID_t *PID, double kP, double kI, double kD)
+void calculateSET_PID(struct SET_PID_t *PID, double measuredAttitude)
 {
-	PID->kP = kP;
-	PID->kI = kI;
-	PID->kD = kD;
-	PID->setpoint = 0;
-	PID->output = 0;
-	PID->timestamp = 0;
+        // Outputs a target RATE for the inner RATE PID controller to achieve.
+	double dt = (micros() - PID->lastTimestamp)/1000000.;
+
+        // Error signal
+	double error = measuredAttitude - PID->target;	
+
+        // Integrate
+	PID->integratedError += PID->SET_KI * error * dt; 
+
+	PID->integratedError = constrain(PID->integratedError,-PID->windupGuard, PID->windupGuard);
+
+	PID->desiredRate = PID-> SET_KP * error; // P
+	PID->desiredRate += PID-> integratedError; // P + I + D
+
+
+	PID->lastTimestamp = micros();
+
+        PID->RATE_PID.target = PID->desiredRate;
+};
+
+void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, double RATE_KI)
+{
+	PID->SET_KP = kP;
+	PID->SET_KI = kI;
+        PID->RATE_PID.RATE_KP = RATE_KP;
+        PID->RATE_PID.RATE_KI = RATE_KI;
+	PID->target = 0;
+	PID->desiredRate = 0;
+	PID->lastTimestamp = 0;
 	PID->windupGuard = LONG_MAX;
-	PID->lastError = 0;
-	PID->iTerm = 0;
-	PID->limitsSet = false;
-	PID->limits[lower] = 0;
-        PID->limits[upper] = 0;
+	PID->integratedError = 0;
 
 };
 
-void setWindupGuard(struct PID_t *PID, double windupGuard)
-{
-	PID->windupGuard = windupGuard;
-};
-
-void checkWindupGuard(struct PID_t *PID)
-{
-	if(PID->iTerm > PID->windupGuard)
-	{
-		PID->iTerm = PID->windupGuard;
-	}
-
-	if(PID->iTerm < -PID->windupGuard)
-	{
-		PID->iTerm = -PID->windupGuard;
-	}
-};
-
-void constrainToLimits(struct PID_t *PID)
-{
-	if(PID->output > PID->limits[upper])
-	{
-		PID->output = PID->limits[upper];
-	}
-	if(PID->output < PID->limits[lower])
-	{
-		PID->output = PID->limits[lower];
-	}
-};
-
-
-void calculatePID(struct PID_t *PID, double input)
-{
-	double dt = (micros() - PID->timestamp)/1000000.;
-
-	double error = input - PID->setpoint;	// Error signal
-
-	PID->iTerm += PID->kI * error * dt; // Integrate
-
-	checkWindupGuard(PID); //Check for integral windup
-
-	PID->output = PID->kP * error + PID->kD * (PID->lastError - error) / dt; // P + D
-	PID->output += PID->iTerm; // P + I + D
-
-	if(PID->limitsSet) constrainToLimits(PID);	// Exceed limits?
-
-	PID->timestamp = micros();
-	PID->lastError = error;
-
-};
 #endif // OSQ_PID_H_INCLUDED

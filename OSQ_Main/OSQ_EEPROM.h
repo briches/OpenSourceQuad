@@ -50,7 +50,7 @@
 #define _0_04_Hz_waypoints_addr		(0x200)	// Stores 320 seconds worth of waypoints (lat/long), with 16 separate waypoints.
 
 /* DATA BLOCK 3*/
-
+#define _pid_coefficient_data_addr      (0x300) // Stores saved pid coefficients (16 bits each) in the following order: xAlt, yAlt, zAlt, xAng, yAng, zAng.
 
 
 unsigned char EEPROM_read8(unsigned int uiAddress)
@@ -88,5 +88,18 @@ void writeConfigBlock()
 	EEPROM_write8(_flight_number_addr, flightNumber+1);
 };
 
+void EEPROMwritePIDCoefficients(int selection, unsigned int x1, unsigned int x2) 
+{
+        selection *= 2;
+        EEPROM_write8(_pid_coefficient_data_addr + selection, x1);
+        EEPROM_write8(_pid_coefficient_data_addr + selection + 1, x2);
+}        
 
+double EEPROMreadPIDCoefficients(int selection)
+{
+        return( 256 * EEPROM_read8(_pid_coefficient_data_addr + 2 * selection ) + EEPROM_read8 ( _pid_coefficient_data_addr + 1 + 2 * selection ) );
+}
+        
+        
+        
 #endif // OSQ_EEPROM_H_INCLUDED

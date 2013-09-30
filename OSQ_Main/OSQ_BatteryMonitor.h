@@ -37,11 +37,11 @@
 #endif
 
 #define nominalBatteryVoltage	(11.1)		// Nominal operating voltage
-#define softAlarmVoltage		(10.5)		// Battery voltage low
+#define softAlarmVoltage	(10.5)		// Battery voltage low
 #define	criticalAlarmVoltage	(10.0)		// Battery voltage critical
-#define soundAlarmCount			(100)		// For critical alarm; counter increments when below
-#define analogPositivePin		(5)		// Connect red wire to this pin
-#define voltageConversion		(0.2475F)	// From voltage divider
+#define soundAlarmCount		(100)		// For critical alarm; counter increments when below
+#define analogPositivePin	(5)		// Connect red wire to this pin
+#define voltageConversion	(0.2475F)	// From voltage divider
 
 bool	softAlarm = false;
 bool	criticalAlarm = false;

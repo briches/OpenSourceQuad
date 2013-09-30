@@ -68,6 +68,10 @@ struct kinematicData
         roll,
         yaw,
         phi,        // used for USRF altitude calcs
+        
+        ratePITCH,
+        rateROLL,
+        rateYAW,
 
         altitude,
 
