@@ -4,7 +4,7 @@
  	-------------------------------------------------------------------*/
 /*================================================================================
 
- 	Author		: Brandon Riches
+ 	Author		: Brandon Riches and Andrew Coulthard
  	Date		: August 2013
  	License		: GNU Public License
 
