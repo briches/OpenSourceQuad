@@ -111,7 +111,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
         double 	elapsed_time = 0,t_convert = 1000000;
 
-        double 	pitch_accel, roll_accel, pitchRollCoeff = 0.9, yawCoeff = 0.9;
+        double 	pitch_accel, roll_accel, pitchRollCoeff = 0.85, yawCoeff = 0.9;
 
 
         if(eventType == 1)
@@ -145,7 +145,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 double ay = -(accel_event.acceleration.y - kinematics.io_ay);
                 double az = accel_event.acceleration.x - kinematics.io_ax + SENSORS_GRAVITY_STANDARD;
 
-                double wx =  gyro_event.gyro.z - kinematics.io_wz;
+                double wx =  -(gyro_event.gyro.z - kinematics.io_wz);
                 double wy =  gyro_event.gyro.x - kinematics.io_wx;
                 double wz =  gyro_event.gyro.y - kinematics.io_wy;
 
@@ -173,6 +173,13 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 // Remove pesky NaNs that seem to occur around 0.
                 // Check the quadrant of vector
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
+                
+                Serial.println();
+                Serial.print("Accel roll: ");
+                Serial.print(roll_accel);
+                Serial.print(" Gyro roll: ");
+                Serial.println(kinematics.roll_gyro);
+                Serial.println();
 
                 kinematics.pitch = complementary(pitch_accel, 0, pitchRollCoeff);
                 kinematics.roll  = -complementary(roll_accel, 1, pitchRollCoeff);

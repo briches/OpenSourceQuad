@@ -53,7 +53,7 @@ bool receivedStartupCommand = false;
 #define serialDebug        // Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
-#define rx_txDebug
+//#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
@@ -244,7 +244,7 @@ void logData()
                 logFile.print(",");
                 logFile.print(pitchPID.motorOutput);
                 logFile.print(",");
-                logFile.println(pitchPID.motorOutput);
+                logFile.println(rollPID.motorOutput);
         }
         else
         {
@@ -506,8 +506,6 @@ void _100HzTask()
         t_100Hz = micros();
         
         #ifdef serialDebug        // Debug Section
-        
-                Serial.println(rollPID.motorOutput);
         
                 #ifdef rollPIDdebug
                         Serial.print("Roll: ");

@@ -167,7 +167,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->MOTORS_ARMED 	= false;
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
-        this->passiveMAX	= MAX_COMMAND;
+        this->passiveMAX	= MAX_COMMAND-200;
 };
 
 void OSQ_MotorControl :: calibrateESC(int numESC)
