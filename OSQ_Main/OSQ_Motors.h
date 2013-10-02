@@ -36,7 +36,7 @@
 #include "WProgram.h"
 #endif
 
-#define USE_400HZ_PWM 
+#define USE_300HZ_PWM 
 #define USE_4MOTORS
 
 #ifdef USE_150HZ_PWM
@@ -229,10 +229,10 @@ void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, dou
 
                 #ifdef USE_4MOTORS
                         // Control pitch/roll
-                        motorSpeeds[motor1] 	+= pitchPID;
-                        motorSpeeds[motor2] 	-= rollPID;
-                        motorSpeeds[motor3]	+= rollPID;
-                        motorSpeeds[motor4]	-= pitchPID;
+                        motorSpeeds[motor1] += pitchPID;
+                        motorSpeeds[motor2] = 1350 - rollPID;
+                        motorSpeeds[motor3] = 1350 + rollPID;
+                        motorSpeeds[motor4] -= pitchPID;
                 #endif
 
                 #ifdef USE_4MOTORS
@@ -284,10 +284,10 @@ void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, dou
 void OSQ_MotorControl :: motorDISARM()
 {
         #ifdef USE_4MOTORS
-                motorSpeeds[motor1] = 1000;
-                motorSpeeds[motor2] = 1000;
-                motorSpeeds[motor3] = 1000;
-                motorSpeeds[motor4] = 1000;
+                motorSpeeds[motor1] = 950;
+                motorSpeeds[motor2] = 950;
+                motorSpeeds[motor3] = 950;
+                motorSpeeds[motor4] = 950;
         #endif
 
         writeMotors();
@@ -296,7 +296,4 @@ void OSQ_MotorControl :: motorDISARM()
 };
 
 OSQ_MotorControl   		motorControl;
-
-
-
 #endif // FQ_MOTORS_H_INCLUDED

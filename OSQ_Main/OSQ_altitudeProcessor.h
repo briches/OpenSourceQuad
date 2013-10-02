@@ -31,6 +31,12 @@
 #ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 #define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
 #define Pi  	    (3.14159265359F)	// Its pi.
 
 #define altKp       (0.0)
@@ -119,5 +125,6 @@ bool checkUSRF(double hieght)
 
 
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+
 
 

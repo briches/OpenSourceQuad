@@ -31,26 +31,34 @@
 #ifndef OSQ_EEPROM_H_INCLUDED
 #define OSQ_EEPROM_H_INCLUDED
 
-#define SOFTWARE_VERSION                (91)
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+#define SOFTWARE_VERSION_MINOR (85)
+#define SOFTWARE_VERSION_MAJOR (0)
 
 
 // Each block will be 256 bytes
-#define MAX_ADDRESS		        4096
+#define MAX_ADDRESS (4096)
 
 /* CONFIG BLOCK */
-#define _software_version_addr		(0x000)
-#define _flight_number_addr		(0x001)
+#define software_version_addr (0x000) 	// 0x000 L, 0x001 H
+#define flight_number_addr (0x002)	// 0x002 L, 0x003 H
 
 /* DATA BLOCK 1*/
-#define _previous_flight_times_addr	(0x100)	// Stores 10 previous flight times, type double, in seconds. Most recent at lower address.
-#define	_flight_start_location_addr	(0x10A)	// Stores 30 double values for lat/lon/alt, most recent at lower address.
+#define previous_flight_times_addr (0x100)	// Stores 10 previous flight times, type double, in seconds. Most recent at lower address.
+#define	flight_start_location_addr (0x10A)	// Stores 30 double values for lat/lon/alt, most recent at lower address.
 
 
 /* DATA BLOCK 2*/
-#define _0_04_Hz_waypoints_addr		(0x200)	// Stores 320 seconds worth of waypoints (lat/long), with 16 separate waypoints.
+#define _0_04_Hz_waypoints_addr (0x200)	// Stores 320 seconds worth of waypoints (lat/long), with 16 separate waypoints.
 
 /* DATA BLOCK 3*/
-#define _pid_coefficient_data_addr      (0x300) // Stores saved pid coefficients (16 bits each) in the following order: xAlt, yAlt, zAlt, xAng, yAng, zAng.
+#define pid_coefficient_data_addr (0x300) // Stores saved pid coefficients (2 bytes each) in the following order: xAlt, yAlt, zAlt, xAng, yAng, zAng.
+
 
 
 unsigned char EEPROM_read8(unsigned int uiAddress)
@@ -81,25 +89,35 @@ void EEPROM_write8(unsigned int uiAddress, unsigned char ucData)
 
 void writeConfigBlock()
 {
-	double flightNumber = EEPROM_read8(_flight_number_addr);
+	unsigned char flightNumberH = EEPROM_read8(flight_number_addr + 1);
+        unsigned char flightNumberL = EEPROM_read8(flight_number_addr);
 
-	EEPROM_write8(_software_version_addr, SOFTWARE_VERSION);
+	EEPROM_write8(software_version_addr, SOFTWARE_VERSION_MINOR);
+	EEPROM_write8(software_version_addr+1, SOFTWARE_VERSION_MAJOR);
 
-	EEPROM_write8(_flight_number_addr, flightNumber+1);
+        if(flightNumberL == 0xFF)
+        {
+                flightNumberH += 1;
+                flightNumberL = 0;
+        }
+
+	EEPROM_write8(flight_number_addr + 1,  flightNumberH);
+	EEPROM_write8(flight_number_addr, flightNumberL+1);
 };
 
-void EEPROMwritePIDCoefficients(int selection, unsigned int x1, unsigned int x2) 
+void EEPROMwritePIDCoefficients(int selection, unsigned int x1, unsigned int x2)
 {
         selection *= 2;
-        EEPROM_write8(_pid_coefficient_data_addr + selection, x1);
-        EEPROM_write8(_pid_coefficient_data_addr + selection + 1, x2);
-}        
+        EEPROM_write8(pid_coefficient_data_addr + selection, x1);
+        EEPROM_write8(pid_coefficient_data_addr + selection + 1, x2);
+};
 
 double EEPROMreadPIDCoefficients(int selection)
 {
-        return( 256 * EEPROM_read8(_pid_coefficient_data_addr + 2 * selection ) + EEPROM_read8 ( _pid_coefficient_data_addr + 1 + 2 * selection ) );
-}
-        
-        
-        
+        return( 256 * EEPROM_read8(pid_coefficient_data_addr + 2 * selection ) + EEPROM_read8 (pid_coefficient_data_addr + 1 + 2 * selection ) );
+};
+
+
+
 #endif // OSQ_EEPROM_H_INCLUDED
+

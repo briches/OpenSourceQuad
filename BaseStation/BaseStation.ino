@@ -216,7 +216,7 @@ void loop()
         Serial.println("   3 :    Autoland");
         Serial.println();
         Serial.print("4 : Broadcast Data");
-        Serial.print("  5 :              ");
+        Serial.print("  5 : Reset angles/PID ");
         Serial.println("   6 :               ");
         Serial.println();
         Serial.print("7 : Set P attitude");

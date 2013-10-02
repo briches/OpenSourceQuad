@@ -55,9 +55,7 @@ struct fourthOrderData
         double outputTm1, outputTm2, outputTm3, outputTm4;
 };
 
-fourthOrderData fourthOrderXAXIS,
-fourthOrderYAXIS,
-fourthOrderZAXIS;
+fourthOrderData fourthOrderXAXIS, fourthOrderYAXIS, fourthOrderZAXIS;
 
 /*=========================================================================
  Kinematics Data Type
@@ -91,7 +89,7 @@ struct kinematicData
         unsigned long timestamp;
 };
 
-kinematicData	  		kinematics;
+kinematicData	  kinematics;
 
 #define XAXIS   (0)
 #define YAXIS	(1)
@@ -315,4 +313,5 @@ void nan_quad_Check(double num1, double num2, double num3)
 
 
 #endif // KINEMATICS_H_INCLUDED
+
 

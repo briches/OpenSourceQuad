@@ -44,13 +44,14 @@
 #include <SD.h>
 
 /** Program Specifications **/
-double softwareVersion;
-double flightNumber;
+int softwareVersionMajor;
+int softwareVersionMinor;
+unsigned int flightNumber;
 uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // Must be defined to use any of the other debuggers
+//#define serialDebug        // Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
@@ -120,6 +121,7 @@ void scanTelemetry()
                 #endif
                 
                 receivedStartupCommand = true;
+                commandAllMotors(1300);
                 break;
                 
         case broadcastData:
@@ -137,7 +139,11 @@ void scanTelemetry()
                 EEPROMselectionPID = 3;
                 
                 RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
-                EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
+                //EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
+                rollPID.RATE_PID.RATE_KP += 0.1;
+                rollPID.RATE_PID.RATE_KI = rollPID.RATE_PID.RATE_KP * 4;
+                rollPID.RATE_PID.RATE_KD = rollPID.RATE_PID.RATE_KP / 8;
+                
                 
                 #ifdef serialDebug
                         #ifdef rx_txDebug
@@ -212,10 +218,10 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
-        initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
-        initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI);
-        initializePID(&altitudePID, altitudekP, altitudekI, 0, 0);
+        initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
+        initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
+        initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, 0);
+        initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
         
         #ifdef serialDebug
                 Serial.println(SET_ATT_KP);
@@ -244,7 +250,11 @@ void logData()
                 logFile.print(",");
                 logFile.print(pitchPID.motorOutput);
                 logFile.print(",");
-                logFile.println(rollPID.motorOutput);
+                logFile.print(rollPID.motorOutput);
+                logFile.print(",");
+                logFile.print(motorSpeeds[motor2]);
+                logFile.print(",");
+                logFile.println(motorSpeeds[motor3]);
         }
         else
         {
@@ -293,7 +303,9 @@ void logFileStart()
                 logFile.println("-----OpenSourceQuad-----");
                 logFile.println();
                 logFile.print("Software version: ");
-                logFile.println(softwareVersion);
+                logFile.print(softwareVersionMajor);
+                logFile.print(".");
+                logFile.println(softwareVersionMinor);
                 logFile.print("Flight Number: ");
                 logFile.println(flightNumber);
                 logFile.println("Runtime data: ");
@@ -342,29 +354,41 @@ void setup()
         /*****************************/
         /* Initialize EEPROM */
         /*****************************/
-        writeConfigBlock();
-        softwareVersion = EEPROM_read8(_software_version_addr);
-        flightNumber = EEPROM_read8(_flight_number_addr);
         
-
+        statusLED(4);
+        
+        writeConfigBlock();
+        softwareVersionMinor = EEPROM_read8(software_version_addr);
+        softwareVersionMajor = EEPROM_read8(software_version_addr + 1);
+        flightNumber = ((EEPROM_read8(flight_number_addr + 1))<<8) | EEPROM_read8(flight_number_addr);
+        
+        statusLED(1);
+        
         /*****************************/
         /* Initialize Serial Monitor */
         /*****************************/
+        
+        statusLED(4);
         #ifdef serialDebug
                 Serial.println("------------------------OpenSourceQuad------------------------");
                 Serial.println();
-                Serial.print("Software version: ");
-                Serial.print("0.");
-                Serial.println(softwareVersion,0);
+                Serial.print("Software version: ");               
+                Serial.print(softwareVersionMajor);
+                Serial.print(".");          
+                Serial.println(softwareVersionMinor);
                 Serial.print("Flight number: ");
-                Serial.println(flightNumber, 0);
+                Serial.println(flightNumber);
                 Serial.println();
                 Serial.println("--------------------------------------------------------------");
         #endif
+        statusLED(1);
+        
 
         /*****************************/
         /* Initialize data file. */
         /*****************************/
+        
+        statusLED(5);
         
         #ifdef serialDebug
                 Serial.println("Initializing SD Card");
@@ -373,6 +397,9 @@ void setup()
         // Open a .txt file for data logging and debugging
         logFileStart();
         logFile = SD.open(logFilename, FILE_WRITE);
+        
+        statusLED(2);
+        
 
         /*****************************/
         /* Initialize sensors. */
@@ -382,7 +409,7 @@ void setup()
                 Serial.println("Initializing Sensors");
         #endif
         
-        statusLED(5);
+        statusLED(6);
         
         while(!initSensor(accel, mag,  gyro, &kinematics));
         
@@ -399,7 +426,7 @@ void setup()
         GPS.begin(9600);
         initGPS();
         
-        statusLED(1);
+        statusLED(3);
         
         
         
@@ -411,7 +438,7 @@ void setup()
                 Serial.println("Initializing RX/TX");
         #endif
         
-        statusLED(5);
+        statusLED(4);
         receiver.start();
         statusLED(1);
 
@@ -424,7 +451,7 @@ void setup()
                 Serial.println("Waiting for start command"); 
         #endif
         
-        statusLED(6);
+        statusLED(-1);
         long timer = micros();
         while(receivedStartupCommand == false) 
         {
@@ -438,6 +465,8 @@ void setup()
                 #endif
                 scanTelemetry();
         }
+        statusLED(1);
+        
         
         /*****************************/
         /* Initialize PID */

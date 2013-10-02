@@ -38,11 +38,12 @@
 
 #include <Limits.h>
 
-double SET_ATT_KP = 10;                        // TODO:
-double SET_ATT_KI = 2;
+double SET_ATT_KP = 5;                        // TODO:
+double SET_ATT_KI = 0;
 
-double RATE_ATT_KP = 1.5;
-double RATE_ATT_KI = 1.5;
+double RATE_ATT_KP = 0.1;
+double RATE_ATT_KI = RATE_ATT_KP * 4;
+double RATE_ATT_KD = RATE_ATT_KP / 8;
 
 double altitudekP = 0;
 double altitudekI = 0;
@@ -51,7 +52,9 @@ double altitudekI = 0;
 struct RATE_PID_t
 {
 	unsigned long lastTimestamp;
-	double RATE_KP, RATE_KI;
+	double RATE_KP, RATE_KI, RATE_KD;
+
+        double lastError;
 
 	double windupGuard; // When set point changes by a lot, the i-term may get really large.
 	double integratedError;
@@ -93,6 +96,7 @@ void calculateRATE_PID(struct SET_PID_t *PID, double measuredRate)
         
         PID->motorOutput = PID->RATE_PID.RATE_KP * error;
         PID->motorOutput += PID->RATE_PID.integratedError;
+        PID->motorOutput += (error  - PID->RATE_PID.lastError) * PID->RATE_PID.RATE_KD / dt;
         
         PID->RATE_PID.lastTimestamp = micros();
 };
@@ -119,12 +123,13 @@ void calculateSET_PID(struct SET_PID_t *PID, double measuredAttitude)
         PID->RATE_PID.target = PID->desiredRate;
 };
 
-void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, double RATE_KI)
+void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, double RATE_KI, double RATE_KD)
 {
 	PID->SET_KP = kP;
 	PID->SET_KI = kI;
         PID->RATE_PID.RATE_KP = RATE_KP;
         PID->RATE_PID.RATE_KI = RATE_KI;
+        PID->RATE_PID.RATE_KD = RATE_KD;
 	PID->target = 0;
 	PID->desiredRate = 0;
 	PID->lastTimestamp = 0;
@@ -134,3 +139,4 @@ void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, 
 };
 
 #endif // OSQ_PID_H_INCLUDED
+
