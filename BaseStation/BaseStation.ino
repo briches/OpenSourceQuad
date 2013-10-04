@@ -11,6 +11,7 @@ uint8_t packet[5] = {0,0,0,0,0};
 
 boolean selectionMade = false;
 
+double rateKP = 0;
 
 int readPGain()
 {
@@ -109,6 +110,7 @@ void setup()
         D = readDGain() - 1;
 }
 
+
 void executeInstruction(int selection)
 {
         if(selection == 1)
@@ -170,6 +172,7 @@ void executeInstruction(int selection)
         if(selection == 7)
         {
                 // setAngleP
+                rateKP += 0.1;
                 packet[FIRSTBYTE] = 0xFF;
                 packet[M_ID] = 0x0C;
                 packet[DATA1] = 0x00;
@@ -177,6 +180,8 @@ void executeInstruction(int selection)
                 packet[DATA3] = (uint8_t)((P << 8) >> 8);
                 sendPacket();
                 Serial.println("Sending set P gain instruction!");
+                Serial.print("RateKP set to: ");
+                Serial.println(rateKP);
         }
         if(selection == 8)
         {

@@ -171,13 +171,6 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 // Remove pesky NaNs that seem to occur around 0.
                 // Check the quadrant of vector
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
-                
-                Serial.println();
-                Serial.print("Accel roll: ");
-                Serial.print(roll_accel);
-                Serial.print(" Gyro roll: ");
-                Serial.println(kinematics.roll_gyro);
-                Serial.println();
 
                 kinematics.pitch = complementary(pitch_accel, 0, pitchRollCoeff);
                 kinematics.roll  = -complementary(roll_accel, 1, pitchRollCoeff);

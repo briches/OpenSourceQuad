@@ -141,8 +141,8 @@ void scanTelemetry()
                 RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
                 //EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
                 rollPID.RATE_PID.RATE_KP += 0.1;
-                rollPID.RATE_PID.RATE_KI = rollPID.RATE_PID.RATE_KP * 4;
-                rollPID.RATE_PID.RATE_KD = rollPID.RATE_PID.RATE_KP / 8;
+                rollPID.RATE_PID.RATE_KI = 0;
+                rollPID.RATE_PID.RATE_KD = 0;
                 
                 
                 #ifdef serialDebug
@@ -617,6 +617,8 @@ void _10HzTask()
         //calculateRATE_PID(&altitudePID,  measuredRate)
         
         checkGPS(); // Check for GPS data fully received, uses ISR
+        
+        Serial.println(rollPID.RATE_PID.RATE_KP);
 
         t_10Hz = micros();
 }

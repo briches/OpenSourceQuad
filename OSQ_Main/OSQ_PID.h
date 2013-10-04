@@ -38,12 +38,12 @@
 
 #include <Limits.h>
 
-double SET_ATT_KP = 5;                        // TODO:
+double SET_ATT_KP = 6;                        // TODO:
 double SET_ATT_KI = 0;
 
-double RATE_ATT_KP = 0.1;
-double RATE_ATT_KI = RATE_ATT_KP * 4;
-double RATE_ATT_KD = RATE_ATT_KP / 8;
+double RATE_ATT_KP = 2.0;
+double RATE_ATT_KI = 0.0;
+double RATE_ATT_KD = 0.0;
 
 double altitudekP = 0;
 double altitudekI = 0;

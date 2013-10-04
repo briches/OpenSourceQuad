@@ -218,9 +218,6 @@ void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, dou
         double yawPID = (*p_yawPID) / PID_scalar;
         double elevPID = (*p_elevPID) / PID_scalar;
         
-        rollPID = constrain(rollPID, -50, 50);
-        pitchPID = constrain(pitchPID, -50, 50);
-        
         
         if (MOTORS_ARMED)
         {
