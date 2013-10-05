@@ -1,19 +1,23 @@
-OpenSourceQuad
+<b>OpenSourceQuad</b>
 ==========
 
-Authors: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
-Date   : May 2013 <br />
-Version: 0.91 <br />
+<b>Authors</b>: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
+<b>Date</b>   : May 2013 <br />
+<b>Version</b>: 0.91 <br />
 
-Programming the flight controller:  
-<<<<<<< HEAD
-avrdude -P comport -b 19200 -c avrisp -p m2560 -v -e -U flash:w:hexfilename.hex
-=======
+<b>Programming the flight controller:</b>  
 Using arduino avrisp:  
 <code>avrdude -P comport -b 19200 -c avrisp -p m2560 -v -e -U flash:w:hexfilename.hex</code>  
 Using USBasp  
 <code>avrdude -c usbasp -p m328p -u -U flash:w:hexfilename.hex</code>
 
+<b>ESC Settings</b>  
+- Batt Type: LiXX
+- Cut off: high
+- Cut off Type: hard
+- Brake: off
+- Timing: auto
+- Start up: medium
 
 Description
 -----------
