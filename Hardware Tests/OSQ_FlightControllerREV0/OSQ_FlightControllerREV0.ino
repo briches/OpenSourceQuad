@@ -7,5 +7,6 @@ void setup()
 
 void loop()
 {
-        Serial.println(1);
+        Serial.println("Hello World!");
+        delay(2000);
 }

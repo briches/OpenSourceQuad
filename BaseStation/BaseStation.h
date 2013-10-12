@@ -50,18 +50,21 @@ int scanButtonInput()
 
         */
 
-        int d9state, d8state, d7state, d6state, d5state, d4state, d3state, d2state, dSTARstate, d1state;
+        int d9state, d8state, d7state, d6state, d5state, d4state, d3state, d2state, d10state, d1state,d11state,d12state;
 
-        d3state = digitalRead(11);
-        d6state = digitalRead(10);
-        d9state = digitalRead(9);
-        d2state = digitalRead(8);
-        d5state = digitalRead(7);
-        d8state = digitalRead(6);
-        d1state = digitalRead(5);
-        d4state = digitalRead(4);
-        d7state = digitalRead(3);
-        dSTARstate = digitalRead(2);
+        d1state = digitalRead(30);
+        d2state = digitalRead(31);
+        d3state = digitalRead(32);
+        d4state = digitalRead(33);
+        d5state = digitalRead(34);
+        d6state = digitalRead(35);
+        d7state = digitalRead(36);
+        d8state = digitalRead(37);
+        d9state = digitalRead(38);
+        d10state = digitalRead(39);
+        d11state = digitalRead(40);
+        d12state = digitalRead(41);
+        
 
         if(d1state) Serial.println("You selected 1");
         if(d2state) Serial.println("You selected 2");
@@ -72,12 +75,9 @@ int scanButtonInput()
         if(d7state) Serial.println("You selected 7");
         if(d8state) Serial.println("You selected 8");
         if(d9state) Serial.println("You selected 9");
-        if(dSTARstate) Serial.println("You selected *");
-        
-        pinMode(8, OUTPUT);
-        pinMode(11,OUTPUT);
-        digitalWrite(8,LOW);
-        digitalWrite(11,LOW);
+        if(d10state) Serial.println("You selected *");        
+        if(d11state) Serial.println("You selected 0");
+        if(d12state) Serial.println("You selected #");
         
         if(d1state) return 1;
         if(d2state) return 2;
@@ -88,12 +88,14 @@ int scanButtonInput()
         if(d7state) return 7;
         if(d8state) return 8;
         if(d9state) return 9;
-        if(dSTARstate) return 10;
+        if(d10state) return 10;
+        if(d11state) return 11;
+        if(d12state) return 12;
         
         
         if(analogRead(0) > 512)
         {
-                return 11;
+                return 100;
                 Serial.println("Saving PID coefficients: ");
         }
         

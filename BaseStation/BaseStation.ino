@@ -2,7 +2,6 @@
 #include "OSQ_NoWire.h"
 #include "BaseStation.h"
 
-SoftwareSerial XBee(12, 13);
 int filterP[10];
 int filterI[10];
 int filterD[10];
@@ -81,29 +80,32 @@ int readDGain()
 
 void sendPacket()
 {
-        XBee.write(packet[0]);
-        XBee.write(packet[1]);
-        XBee.write(packet[2]);
-        XBee.write(packet[3]);
-        XBee.write(packet[4]);
+        Serial3.write(packet[0]);
+        Serial3.write(packet[1]);
+        Serial3.write(packet[2]);
+        Serial3.write(packet[3]);
+        Serial3.write(packet[4]);
 }
 
 void setup()
 {
-        Serial.begin(19200);
-        XBee.begin(19200);
+        Serial.begin(115200);
+        Serial3.begin(19200);
         Serial.println();
-        pinMode(12, INPUT);
-        pinMode(11, INPUT);
-        pinMode(10, INPUT);
-        pinMode(9, INPUT);
-        pinMode(8, INPUT);
-        pinMode(7, INPUT);
-        pinMode(6, INPUT);
-        pinMode(5, INPUT);
-        pinMode(4, INPUT);
-        pinMode(3, INPUT);
-        pinMode(2, INPUT);
+        
+        pinMode(30, OUTPUT);
+        pinMode(31, OUTPUT);
+        pinMode(32, OUTPUT);
+        pinMode(33, OUTPUT);
+        pinMode(34, OUTPUT);
+        pinMode(35, OUTPUT);
+        pinMode(36, OUTPUT);
+        pinMode(37, OUTPUT);
+        pinMode(38, OUTPUT);
+        pinMode(39, OUTPUT);
+        pinMode(40, OUTPUT);
+        pinMode(41, OUTPUT);
+        
         
         P = readPGain() - 1;
         I = readIGain() - 1;
@@ -249,20 +251,18 @@ void loop()
                 if(millis() - selectionTimer > 500)
                 {
                         int selection = scanButtonInput();
-                        if((selection > 0) && (selection != 11))
+                        if((selection > 0) && (selection != 100))
                         {
                                 selectionMade = true;
                                 selectionTimer = millis();
                                 Serial.println("Please wait 500 ms");
                                 delay(500);
-                                pinMode(8, INPUT);
-                                pinMode(11,INPUT);
                                 
                                 executeInstruction(selection); // The meat and potatoes
                                 
                         }
                         
-                        else if(selection == 11)
+                        else if(selection == 100)
                         {
                                 P = readPGain() - 1;
                                 I = readIGain() - 1;
@@ -272,8 +272,6 @@ void loop()
                                 Serial.println();
                         }
                         
-                        pinMode(8, INPUT);
-                        pinMode(11,INPUT);
                 }
         }
         selectionMade = false;
