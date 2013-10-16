@@ -6,6 +6,11 @@
 <b>Version</b>: 0.91 <br />
 
 <b>Programming the flight controller:</b>  
+----
+
+(Finally) <b>Safe Fuse Bytes</b>  
+<code>lfuse = 0xD6, hfuse = 0xB1, efuse = 0xfd</code>  
+
 Using arduino avrisp:  
 <code>avrdude -P comport -b 19200 -c avrisp -p m2560 -v -e -U flash:w:hexfilename.hex</code>  
 Using USBasp  
