@@ -26,9 +26,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	-----------------------------------------------------------------------------*/
-	
-#include <iostream>
-#include <string.h>
+
+#ifndef OSQ_KALMAN_H_INCLUDED
+#define OSQ_KALMAN_H_INCLUDED
+
+
 using namespace std;
 
 double P0 = 1000;
@@ -91,7 +93,7 @@ double KalmanUpdate(float z) {
 	P0 += P1 + P2 + P3;
 	P1 += P3;
 	P2 += P3;
-	
+
 	return(x1);
 }
 
@@ -99,3 +101,4 @@ double KalmanSpeedReturn() {
 return(x2);
 }
 
+#endif // OSQ_KALMAN_H_INCLUDED
