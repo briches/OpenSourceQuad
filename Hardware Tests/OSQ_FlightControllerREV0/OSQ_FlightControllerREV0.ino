@@ -2,11 +2,13 @@
 
 void setup()
 {
-        Serial.begin(9600);
+        Serial.begin(19200);
 }
 
 void loop()
 {
-        Serial.println("Hello World!");
-        delay(2000);
+        if(Serial.available())
+        {
+                Serial.print((char)Serial.read());
+        }
 }
