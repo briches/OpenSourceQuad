@@ -167,7 +167,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->MOTORS_ARMED 	= false;
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
-        this->passiveMAX	= MAX_COMMAND-200;
+        this->passiveMAX	= MAX_COMMAND-100;
 };
 
 void OSQ_MotorControl :: calibrateESC(int numESC)
@@ -211,13 +211,12 @@ void OSQ_MotorControl :: startMotors()
 
 void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, double *p_yawPID, double *p_elevPID)
 {
-        double PID_scalar = 50;
+        double PID_scalar = 1;
         
         double rollPID = (*p_rollPID) / PID_scalar;
         double pitchPID = (*p_pitchPID) / PID_scalar;
         double yawPID = (*p_yawPID) / PID_scalar;
         double elevPID = (*p_elevPID) / PID_scalar;
-        
         
         if (MOTORS_ARMED)
         {

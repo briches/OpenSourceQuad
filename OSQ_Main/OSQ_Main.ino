@@ -51,12 +51,12 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // Must be defined to use any of the other debuggers
+#define serialDebug        // Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
-//#define motorsDebug
+#define motorsDebug
 //#define sdDebug
 //#define rollPIDdebug
 
@@ -138,11 +138,15 @@ void scanTelemetry()
         
                 EEPROMselectionPID = 3;
                 
-                RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
-                //EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
-                rollPID.RATE_PID.RATE_KP += 0.1;
-                rollPID.RATE_PID.RATE_KI = 0;
-                rollPID.RATE_PID.RATE_KD = 0;
+                #ifdef NESTED_PID
+                        RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+                #endif
+                
+                #ifdef SINGLE_PID
+                        ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
+                #endif
+                
+                EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
                 
                 
                 #ifdef serialDebug
@@ -160,8 +164,15 @@ void scanTelemetry()
         case setAngleI:
               
                EEPROMselectionPID = 4;
-              
-               RATE_ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);              
+               
+               #ifdef NESTED_PID
+                       RATE_ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);           
+               #endif  
+               
+               #ifdef SINGLE_PID
+                       ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]); 
+               #endif
+               
                EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
                
                #ifdef serialDebug
@@ -218,14 +229,30 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
-        initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
-        initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, 0);
-        initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
+        #ifdef NESTED_PID
+                initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
+                initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
+                initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, 0);
+                initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
+        #endif
+        
+        #ifdef SINGLE_PID
+                initializePID(&pitchPID, ATT_KP, ATT_KI, 0, 0, 0);
+                initializePID(&rollPID, ATT_KP, ATT_KI, 0, 0, 0);
+                initializePID(&yawPID, ATT_KP, ATT_KI, 0, 0, 0);
+                initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
+        #endif
         
         #ifdef serialDebug
-                Serial.println(SET_ATT_KP);
-                Serial.println(SET_ATT_KI);
+                #ifdef NESTED_PID
+                        Serial.println(SET_ATT_KP);
+                        Serial.println(SET_ATT_KI);
+                #endif
+                #ifdef SINGLE_PID
+                        Serial.println(ATT_KP);
+                        Serial.println(ATT_KI);
+                        Serial.println(ATT_KD);
+                #endif
         #endif
         
 }
@@ -521,12 +548,10 @@ double t_1Hz;
 void _100HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
-
-        calculateSET_PID(&pitchPID, kinematics.pitch);
-        calculateSET_PID(&rollPID, kinematics.roll);
         
-        calculateRATE_PID(&pitchPID,  kinematics.ratePITCH);        
-        calculateRATE_PID(&rollPID,  kinematics.rateROLL);
+        rollPitchPID(&pitchPID, &rollPID, kinematics.pitch, kinematics.roll, kinematics.ratePITCH, kinematics.rateROLL);
+
+        
         // TODO: add other PID calculatePID
         
         motorControl.updateMotors(&pitchPID.motorOutput, &rollPID.motorOutput, &yawPID.motorOutput, &altitudePID.motorOutput);
@@ -570,7 +595,7 @@ void _100HzTask()
                 
                 #ifdef motorsDebug
                         Serial.print(" Motor speeds: ");
-                        for(int i = 0; i<8; i++)
+                        for(int i = 0; i<4; i++)
                         {
                                 Serial.print(motorSpeeds[i]);
                                 Serial.print("    ");

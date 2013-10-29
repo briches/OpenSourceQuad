@@ -38,16 +38,30 @@
 
 #include <Limits.h>
 
-double SET_ATT_KP = 6;                        // TODO:
-double SET_ATT_KI = 0;
+#define SINGLE_PID
+//#define NESTED_PID
 
-double RATE_ATT_KP = 2.0;
-double RATE_ATT_KI = 0.0;
-double RATE_ATT_KD = 0.0;
+#ifdef NESTED_PID
+        double SET_ATT_KP = 6;                        // TODO:
+        double SET_ATT_KI = 0;
+        
+        double RATE_ATT_KP = 2.0;
+        double RATE_ATT_KI = 0.0;
+        double RATE_ATT_KD = 0.0;
+        
+        double altitudekP = 0;
+        double altitudekI = 0;
+#endif
 
-double altitudekP = 0;
-double altitudekI = 0;
+#ifdef SINGLE_PID
+        double ATT_KP = 5;
+        double ATT_KI = 0.1;
+        double ATT_KD = 2;
+#endif
 
+#define altitudekI (0)
+#define altitudekP (0)
+#define altitudekD (0)
 
 struct RATE_PID_t
 {
@@ -84,6 +98,8 @@ SET_PID_t altitudePID;
 
 
 enum {lower, upper};
+
+
 
 void calculateRATE_PID(struct SET_PID_t *PID, double measuredRate)
 {
@@ -136,6 +152,25 @@ void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, 
 	PID->windupGuard = LONG_MAX;
 	PID->integratedError = 0;
 
+};
+
+void rollPitchPID(struct SET_PID_t *pPID, struct SET_PID_t *rPID, double measuredPitch, double measuredRoll, double measuredPitchRate, double measuredRollRate)
+{
+        #ifdef SINGLE_PID
+                calculateSET_PID(&pitchPID, kinematics.pitch);
+                calculateSET_PID(&rollPID, kinematics.roll);
+                
+                pPID->motorOutput = pPID->desiredRate;
+                rPID->motorOutput = rPID->desiredRate;
+        #endif
+        
+        #ifdef NESTED_PID
+                calculateSET_PID(&pitchPID, kinematics.pitch);
+                calculateSET_PID(&rollPID, kinematics.roll);
+                
+                calculateRATE_PID(&pitchPID,  kinematics.ratePITCH);        
+                calculateRATE_PID(&rollPID,  kinematics.rateROLL);
+        #endif
 };
 
 #endif // OSQ_PID_H_INCLUDED
