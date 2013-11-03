@@ -9,7 +9,7 @@
  	License		: GNU Public License
 
  	This library is designed to allow easy communication between two
- 	microcontrollers through wireless Serial3s. It should abstract away the serial
+ 	microcontrollers through wireless modemXBs. It should abstract away the serial
  	communication part of the interation, and leave just the message send/recieve
  	functionality easily accessible by the user.
 
@@ -39,10 +39,14 @@
 #include "WProgram.h"
 #endif
 
+#include <SoftwareSerial.h>
+
 /*================================================================================
- 	Serial3 settings
+ 	modemXB settings
  	-----------------------------------------------------------------------------*/
-#define BAUD		(19200)			// Baud rate of XB
+#define BAUD		(19200)			// Baud rate of modemXBs
+#define RX_PIN		12			// Change this to the pin RX is connected to
+#define TX_PIN		13			// Change this to the pin TX is connected to
 #define	PAN_ID		(1234)			// Network ID for communication
 
 /*================================================================================
@@ -78,6 +82,8 @@ enum {  FIRSTBYTE,
         DATA2,
         DATA3};
 
+SoftwareSerial modemXB(TX_PIN, RX_PIN);
+
 class NoWire
 {
         public:
@@ -94,17 +100,17 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-        if(Serial3.available() >= MSG_SIZE)
+        if(modemXB.available() >= MSG_SIZE)
         {
-                unsigned char firstByte = Serial3.read();
+                unsigned char firstByte = modemXB.read();
                 if(firstByte == START_CHAR)
                 {
                         timestamp = micros();
                         newMessage[FIRSTBYTE] = firstByte;
-                        newMessage[M_ID] = Serial3.read();
-                        newMessage[DATA1] = Serial3.read();
-                        newMessage[DATA2] = Serial3.read();
-                        newMessage[DATA3] = Serial3.read();
+                        newMessage[M_ID] = modemXB.read();
+                        newMessage[DATA1] = modemXB.read();
+                        newMessage[DATA2] = modemXB.read();
+                        newMessage[DATA3] = modemXB.read();
 
                 }return newMessage[M_ID];
         }
@@ -113,13 +119,12 @@ int NoWire :: ScanForMessages()
 
 bool NoWire :: start()
 {
-        Serial3.begin(BAUD);
+        modemXB.begin(BAUD);
         return 1;
 };
 
-NoWire receiver;
+NoWire                  receiver;
 
 #endif // OSQ_NOWIRE_H_INCLUDED
-
 
 

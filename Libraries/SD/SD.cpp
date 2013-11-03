@@ -340,7 +340,7 @@ boolean SDClass::begin(uint8_t csPin, int8_t mosi, int8_t miso, int8_t sck) {
     Return true if initialization succeeds, false otherwise.
 
    */
-  return card.init(SPI_FULL_SPEED, csPin, mosi, miso, sck) &&
+  return card.init(SPI_HALF_SPEED, csPin, mosi, miso, sck) &&
          volume.init(card) &&
          root.openRoot(volume);
 }

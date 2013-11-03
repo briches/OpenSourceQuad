@@ -1,5 +1,5 @@
 /*=====================================================================
- 	OSQ_Quadcopter library
+ 	OSQ_AltitudeProcessor library
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
@@ -8,8 +8,7 @@
  	Date		: August 2013
  	License		: GNU Public License
 
- 	This library is designed to abstract away some of the craft management functions
- 	from the main file (OSQ_Main.ino)
+ 	This library is designed to manage altitude measurement and control algorithms
 
  	Copyright (C) 2013  Brandon Riches
 
@@ -32,21 +31,20 @@
 #ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 #define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
 #define Pi  	    (3.14159265359F)	// Its pi.
 
 #define altKp       (0.0)
 #define altKi       (0.0)
 #define altKd       (0.0)
 
-
-static boolean altitudeHold  = false;
-
 static boolean isSetInitialAltitudeBarometer = false;
 static boolean isSetInitialAltitudeGPS = false;
-static boolean changedFromInitial = false;
-
-static double barometerOffset = 0;
-static double GPSOffset = 0;
 
 static double initialAltitudeBarometer = 0;    // From sea level;
 static double initialAltitudeGPS = 0;    // From sea level;
@@ -54,7 +52,6 @@ static double previousAltitude = 0;
 static double sensorAltitude = 0;
 static double sensorCovariance = 1;
 
-boolean altitudeDebug = false;
 
 void setInitialAltitude(double GPS, double baro);
 bool checkUSRF(double hieght);
@@ -62,7 +59,6 @@ bool checkUSRF(double hieght);
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
         static int barometerSampleCount = 0;
-        static boolean calibratedUSRF = false;
         double GPSCovar = 3;        // Assume covariance in GPS            // 1
         double baroCovar = 1;       // Assume covariance in barometer      // 2
         double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
@@ -114,19 +110,6 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         // Update covariance with "movement step"
         sensorCovariance += abs(previousAltitude - sensorAltitude);
 
-        if(altitudeDebug)
-        {
-                Serial.print(" GPS: ");
-                Serial.print(GPS);
-                Serial.print(" Baro: ");
-                Serial.print(baro);
-                Serial.print(" USRF: ");
-                Serial.print(USRF);
-                Serial.print(" 'Accurate Altitude' : ");
-                Serial.print(sensorAltitude);
-                Serial.print(" Altitude covariance: ");
-                Serial.println(sensorCovariance);
-        }
 
         return sensorAltitude;
 
@@ -142,5 +125,6 @@ bool checkUSRF(double hieght)
 
 
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+
 
 
