@@ -32,6 +32,8 @@
 #ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 #define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 
+#include "OSQ_Kalman.h"
+
 #define Pi  	    (3.14159265359F)	// Its pi.
 
 #define altKp       (0.0)
@@ -66,6 +68,10 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         double GPSCovar = 3;        // Assume covariance in GPS            // 1
         double baroCovar = 1;       // Assume covariance in barometer      // 2
         double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
+        
+        double baro_micros;
+        double gps_micros;
+        double USRF_micros;
 
         previousAltitude = sensorAltitude;
 
@@ -75,8 +81,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
         if(isSetInitialAltitudeBarometer)	// Wait at least 150 ms into the loop() to get barometer altitudes
         {
                 baro -= initialAltitudeBarometer;
-                sensorAltitude = baro;
-                sensorCovariance = baroCovar;
+                sensorAltitude = KalmanUpdate(baro);
         }
 
         else if(baro != 0)
