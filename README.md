@@ -2,8 +2,7 @@
 ==========
 
 <b>Authors</b>: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
-<b>Date</b>   : May 2013 <br />
-<b>Version</b>: 0.91 <br />
+Started in May of 2013.  <br />
 
 <b>Programming the flight controller:</b>  
 ----
