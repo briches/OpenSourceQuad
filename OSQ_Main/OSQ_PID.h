@@ -54,9 +54,9 @@
 #endif
 
 #ifdef SINGLE_PID
-        double ATT_KP = 5;
-        double ATT_KI = 0.5;
-        double ATT_KD = 2;
+        double ATT_KP = 3;
+        double ATT_KI = 0.8;
+        double ATT_KD = 0.4;
 #endif
 
 double altitudekP = 0;

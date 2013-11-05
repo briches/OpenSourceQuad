@@ -51,14 +51,14 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // <- Must be defined to use any of the other debuggers
+//#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
-#define rollPIDdebug
+//#define rollPIDdebug
 //#define pitchPIDdebug
 
 /** Math related definitions **/
@@ -271,11 +271,7 @@ void logData()
         {
                 logFile.print(micros());
                 logFile.print(",");
-                logFile.print(kinematics.pitch);
-                logFile.print(",");
                 logFile.print(kinematics.roll);
-                logFile.print(",");
-                logFile.print(pitchPID.output);
                 logFile.print(",");
                 logFile.print(rollPID.output);
                 logFile.print(",");
@@ -555,6 +551,8 @@ void _100HzTask()
         // TODO: add other PID calculatePID
         motorControl.updateMotors(0., rollOut, 0., 0.);
         
+        // Print data to the SD logFile
+        logData();
         
         t_100Hz = micros();
         
@@ -629,9 +627,6 @@ void _70HzTask()
 void _20HzTask()
 {
         barometer.updatePTA(); 
-
-        // Print data to the SD logFile, using some RTC data
-        logData();
 
         t_20Hz = micros();
 }
