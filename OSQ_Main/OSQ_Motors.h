@@ -147,7 +147,7 @@ public:
         void calibrateESC(int numESC = 4);
         void motorDISARM();
         void startMotors();
-        void updateMotors(double *pitchPID, double *rollPID, double *yawPID, double *elevPID);
+        void updateMotors(double pitchPID, double rollPID, double yawPID, double elevPID);
 
 
 
@@ -209,14 +209,14 @@ void OSQ_MotorControl :: startMotors()
         }
 };
 
-void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, double *p_yawPID, double *p_elevPID)
+void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, double p_yawPID, double p_elevPID)
 {
         double PID_scalar = 1;
         
-        double rollPID = (*p_rollPID) / PID_scalar;
-        double pitchPID = (*p_pitchPID) / PID_scalar;
-        double yawPID = (*p_yawPID) / PID_scalar;
-        double elevPID = (*p_elevPID) / PID_scalar;
+        double rollPID = (p_rollPID) / PID_scalar;
+        double pitchPID = (p_pitchPID) / PID_scalar;
+        double yawPID = (p_yawPID) / PID_scalar;
+        double elevPID = (p_elevPID) / PID_scalar;
         
         if (MOTORS_ARMED)
         {
@@ -226,8 +226,8 @@ void OSQ_MotorControl :: updateMotors(double *p_pitchPID, double *p_rollPID, dou
                 #ifdef USE_4MOTORS
                         // Control pitch/roll
                         motorSpeeds[motor1] += pitchPID;
-                        motorSpeeds[motor2] = 1350 - rollPID;
-                        motorSpeeds[motor3] = 1350 + rollPID;
+                        motorSpeeds[motor2] = 1350 + rollPID;
+                        motorSpeeds[motor3] = 1350 - rollPID;
                         motorSpeeds[motor4] -= pitchPID;
                 #endif
 

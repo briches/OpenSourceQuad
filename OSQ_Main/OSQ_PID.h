@@ -41,136 +41,170 @@
 #define SINGLE_PID
 //#define NESTED_PID
 
+// TODO:
 #ifdef NESTED_PID
-        double SET_ATT_KP = 6;                        // TODO:
+        double SET_ATT_KP = 6;
         double SET_ATT_KI = 0;
-        
+        double SET_ATT_KD = 0;
+
         double RATE_ATT_KP = 2.0;
         double RATE_ATT_KI = 0.0;
         double RATE_ATT_KD = 0.0;
-        
-        double altitudekP = 0;
-        double altitudekI = 0;
+
 #endif
 
 #ifdef SINGLE_PID
         double ATT_KP = 5;
-        double ATT_KI = 0.1;
+        double ATT_KI = 0.5;
         double ATT_KD = 2;
 #endif
 
-#define altitudekI (0)
-#define altitudekP (0)
-#define altitudekD (0)
+double altitudekP = 0;
+double altitudekI = 0;
+double altitudekD = 0;
 
-struct RATE_PID_t
+enum{pitch, roll, yaw, altitude};
+enum{lower, upper};
+
+struct PID_Gain
+{
+
+	double setP, setI, setD;
+
+	#ifdef NESTED_PID
+		double rateP, rateI, rateD;
+	#endif
+
+}PID_GAINS[6];
+
+typedef struct PID_Manager_t
 {
 	unsigned long lastTimestamp;
-	double RATE_KP, RATE_KI, RATE_KD;
+	int ID;
 
-        double lastError;
 
-	double windupGuard; // When set point changes by a lot, the i-term may get really large.
-	double integratedError;
-	double target;
+	// Set variables
+	double windupGuard;
+	double setIntegratedError;
+	double setLastError;
+	double setTarget;
+	double output;
 
+	#ifdef NESTED_PID
+	// Rate variables
+		double rateIntegratedError;
+		double rateLastError;
+	#endif
+
+	// Constructor
+	PID_Manager_t(int selection);
 };
 
-struct SET_PID_t
+PID_Manager_t :: PID_Manager_t(int selection)
 {
-	unsigned long lastTimestamp;
-	double SET_KP, SET_KI;
-
-	double windupGuard; // When set point changes by a lot, the i-term may get really large.
-	double integratedError;
-	double target;
-	double desiredRate;
-        double motorOutput;
-
-        // Rate pid controller nested in the target controller, makes it easy to set targets
-        RATE_PID_t RATE_PID;         
+	ID = selection;
 };
 
-SET_PID_t pitchPID;
-SET_PID_t rollPID;
-SET_PID_t yawPID;
-SET_PID_t altitudePID;
+PID_Manager_t pitchPID(pitch);
+PID_Manager_t rollPID(roll);
+PID_Manager_t yawPID(yaw);
+PID_Manager_t altitudePID(altitude);
 
-
-enum {lower, upper};
-
-
-
-void calculateRATE_PID(struct SET_PID_t *PID, double measuredRate)
+double calculatePID(struct PID_Manager_t *PID, double measuredValue, double measuredRate)
 {
-        double dt = (micros() - PID->RATE_PID.lastTimestamp)/1000000.;
-        
-        double error = measuredRate - PID->RATE_PID.target;
-        
-        PID->RATE_PID.integratedError += PID->RATE_PID.RATE_KI * error * dt;
-        PID->RATE_PID.integratedError = constrain(PID->RATE_PID.integratedError, -PID->RATE_PID.windupGuard, PID->RATE_PID.windupGuard);
-        
-        PID->motorOutput = PID->RATE_PID.RATE_KP * error;
-        PID->motorOutput += PID->RATE_PID.integratedError;
-        PID->motorOutput += (error  - PID->RATE_PID.lastError) * PID->RATE_PID.RATE_KD / dt;
-        
-        PID->RATE_PID.lastTimestamp = micros();
-};
-
-void calculateSET_PID(struct SET_PID_t *PID, double measuredAttitude)
-{
-        // Outputs a target RATE for the inner RATE PID controller to achieve.
+	// Timestep, seconds
 	double dt = (micros() - PID->lastTimestamp)/1000000.;
 
-        // Error signal
-	double error = measuredAttitude - PID->target;	
-
-        // Integrate
-	PID->integratedError += PID->SET_KI * error * dt; 
-
-	PID->integratedError = constrain(PID->integratedError,-PID->windupGuard, PID->windupGuard);
-
-	PID->desiredRate = PID-> SET_KP * error; // P
-	PID->desiredRate += PID-> integratedError; // P + I + D
 
 
-	PID->lastTimestamp = micros();
+	#ifdef SINGLE_PID
+		double error = measuredValue - PID->setTarget;
 
-        PID->RATE_PID.target = PID->desiredRate;
+		// Integral response
+		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
+		PID->setIntegratedError = constrain(PID->setIntegratedError, -PID->windupGuard, PID->windupGuard);
+
+                // Proportional Response
+                double pTerm = error * PID_GAINS[PID->ID].setP;
+                
+                // Derivative response.
+                double dTerm = (error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt;
+                
+		PID->output = PID->setIntegratedError + pTerm + dTerm;
+
+		PID->lastTimestamp = micros();
+                PID->setLastError = error;
+
+		return PID->output;
+	#endif
+
+	#ifdef NESTED_PID
+		double error = measuredAttitude - PID->setTarget;
+
+		// Exterior PID set loop
+		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
+
+		PID->setIntegratedError = constrain(PID->setIntegratedError, -PID->windupGuard, PID->windupGuard);
+
+		PID->output = 	PID->setIntegratedError +
+						error * PID_GAINS[PID->ID].setP + // P
+						(error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt; // D
+
+		// Interior PID rate loop
+		double rateError = measuredRate - PID->output;
+
+		PID->rateIntegratedError += PID_GAINS[PID->ID].rateI * rateError * dt;
+
+		PID->output = 	PID->rateIntegratedError +
+						rateError * PID_GAINS[PID->ID].rateP +
+						(rateError - PID->rateLastError) * PID_GAINS[PID->ID].setD / dt;
+
+		PID->lastTimestamp = micros();
+                PID->setLastError = error;
+                PID->rateLastError = error;
+
+		return PID->output;
+	#endif
 };
 
-void initializePID(struct SET_PID_t *PID, double kP, double kI, double RATE_KP, double RATE_KI, double RATE_KD)
+void initializePID(struct PID_Manager_t *PID)
 {
-	PID->SET_KP = kP;
-	PID->SET_KI = kI;
-        PID->RATE_PID.RATE_KP = RATE_KP;
-        PID->RATE_PID.RATE_KI = RATE_KI;
-        PID->RATE_PID.RATE_KD = RATE_KD;
-	PID->target = 0;
-	PID->desiredRate = 0;
-	PID->lastTimestamp = 0;
-	PID->windupGuard = LONG_MAX;
-	PID->integratedError = 0;
+	PID->windupGuard = INT_MAX;
+	PID->setIntegratedError = 0;
+	PID->setTarget = 0;
+	PID->output = 0;
+	PID->setLastError = 0;
 
-};
+	if(PID->ID < altitude)
+	{
+	#ifdef SINGLE_PID
+		PID_GAINS[PID->ID].setP = ATT_KP;
+		PID_GAINS[PID->ID].setI = ATT_KI;
+		PID_GAINS[PID->ID].setD = ATT_KD;
+	#endif
 
-void rollPitchPID(struct SET_PID_t *pPID, struct SET_PID_t *rPID, double measuredPitch, double measuredRoll, double measuredPitchRate, double measuredRollRate)
-{
-        #ifdef SINGLE_PID
-                calculateSET_PID(&pitchPID, kinematics.pitch);
-                calculateSET_PID(&rollPID, kinematics.roll);
-                
-                pPID->motorOutput = pPID->desiredRate;
-                rPID->motorOutput = rPID->desiredRate;
-        #endif
-        
-        #ifdef NESTED_PID
-                calculateSET_PID(&pitchPID, kinematics.pitch);
-                calculateSET_PID(&rollPID, kinematics.roll);
-                
-                calculateRATE_PID(&pitchPID,  kinematics.ratePITCH);        
-                calculateRATE_PID(&rollPID,  kinematics.rateROLL);
-        #endif
+	#ifdef NESTED_PID
+		PID_GAINS[PID->ID].setP = SET_ATT_KP;
+		PID_GAINS[PID->ID].setI = SET_ATT_KI;
+		PID_GAINS[PID->ID].setD = SET_ATT_KD;
+
+		PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
+		PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
+		PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
+
+		PID->rateLastError = 0;
+	#endif
+	}
+	else
+	{
+		PID_GAINS[PID->ID].setP = altitudekP;
+		PID_GAINS[PID->ID].setI = altitudekI;
+		PID_GAINS[PID->ID].setD = altitudekD;
+	}
+
+        Serial.println("PID init: ");
+        Serial.print("ID: "); Serial.println(PID->ID);
+
 };
 
 #endif // OSQ_PID_H_INCLUDED

@@ -51,14 +51,15 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
-#define motorsDebug
+//#define motorsDebug
 //#define sdDebug
-//#define rollPIDdebug
+#define rollPIDdebug
+//#define pitchPIDdebug
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -188,12 +189,21 @@ void scanTelemetry()
                break;
                
         case resetPitchRoll:
+                // Reset the values we are holding onto.
+                pitchPID.setIntegratedError = 0;
+                rollPID.setIntegratedError = 0;
                 
-                pitchPID.integratedError = 0;
-                rollPID.integratedError = 0;
+                
+                #ifdef NESTED_PID
+                        rollPID.rateIntegratedError = 0;
+                        pitchPID.rateIntegratedError = 0;
+                        kinematics.ratePITCH = 0;
+                        kinematics.rateROLL = 0;
+                #endif
                 
                 kinematics.pitch = 0;
                 kinematics.roll = 0;
+                kinematics.rateROLL = 0;
                 
                 #ifdef serialDebug
                         #ifdef rx_txDebug
@@ -229,19 +239,13 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        #ifdef NESTED_PID
-                initializePID(&pitchPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
-                initializePID(&rollPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, RATE_ATT_KD);
-                initializePID(&yawPID, SET_ATT_KP, SET_ATT_KI, RATE_ATT_KP, RATE_ATT_KI, 0);
-                initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
-        #endif
         
-        #ifdef SINGLE_PID
-                initializePID(&pitchPID, ATT_KP, ATT_KI, 0, 0, 0);
-                initializePID(&rollPID, ATT_KP, ATT_KI, 0, 0, 0);
-                initializePID(&yawPID, ATT_KP, ATT_KI, 0, 0, 0);
-                initializePID(&altitudePID, altitudekP, altitudekI, 0, 0, 0);
-        #endif
+        initializePID(&pitchPID);
+        initializePID(&rollPID);
+        initializePID(&yawPID);
+        initializePID(&altitudePID);
+        
+        rollPID.windupGuard = 50; // TODO
         
         #ifdef serialDebug
                 #ifdef NESTED_PID
@@ -271,13 +275,9 @@ void logData()
                 logFile.print(",");
                 logFile.print(kinematics.roll);
                 logFile.print(",");
-                logFile.print(pitchPID.desiredRate);
+                logFile.print(pitchPID.output);
                 logFile.print(",");
-                logFile.print(rollPID.desiredRate);
-                logFile.print(",");
-                logFile.print(pitchPID.motorOutput);
-                logFile.print(",");
-                logFile.print(rollPID.motorOutput);
+                logFile.print(rollPID.output);
                 logFile.print(",");
                 logFile.print(motorSpeeds[motor2]);
                 logFile.print(",");
@@ -549,12 +549,11 @@ void _100HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
         
-        rollPitchPID(&pitchPID, &rollPID, kinematics.pitch, kinematics.roll, kinematics.ratePITCH, kinematics.rateROLL);
-
+        //double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
+        double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rateROLL);
         
         // TODO: add other PID calculatePID
-        
-        motorControl.updateMotors(&pitchPID.motorOutput, &rollPID.motorOutput, &yawPID.motorOutput, &altitudePID.motorOutput);
+        motorControl.updateMotors(0., rollOut, 0., 0.);
         
         
         t_100Hz = micros();
@@ -564,10 +563,16 @@ void _100HzTask()
                 #ifdef rollPIDdebug
                         Serial.print("Roll: ");
                         Serial.print(kinematics.roll);
-                        Serial.print(" Desired Rate: ");
-                        Serial.print(rollPID.motorOutput);
                         Serial.print(" motorOutput: ");
-                        Serial.println(rollPID.motorOutput);
+                        Serial.println(rollPID.output);
+                        Serial.println("");
+                #endif
+                
+                #ifdef pitchPIDdebug
+                        Serial.print("Roll: ");
+                        Serial.print(kinematics.pitch);
+                        Serial.print(" motorOutput: ");
+                        Serial.println(pitchPID.output);
                         Serial.println("");
                 #endif
         
@@ -638,12 +643,11 @@ void _20HzTask()
 void _10HzTask()
 {
         kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
-        calculateSET_PID(&altitudePID, kinematics.altitude); // TODO
         //calculateRATE_PID(&altitudePID,  measuredRate)
+        //TODO: Make sure Altitude PID is working.
         
+        //TODO: Make sure GPS is working fully
         checkGPS(); // Check for GPS data fully received, uses ISR
-        
-        Serial.println(rollPID.RATE_PID.RATE_KP);
 
         t_10Hz = micros();
 }

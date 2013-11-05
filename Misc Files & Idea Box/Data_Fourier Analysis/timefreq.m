@@ -19,6 +19,9 @@ function [f,ffty] = timefreq(y,dt,meanrem,window,linetype,plottype)
 
 % set some defaults
 
+f = 0;
+ffty = 0;
+
 if nargin == 0, fprintf('\n  Error: specify an input data vector!\n\n'); return; end
 if nargin == 1, dt=1; meanrem=0; window=0; linetype=0; plottype=1; end
 if nargin == 2,       meanrem=0; window=0; linetype=0; plottype=1; end
