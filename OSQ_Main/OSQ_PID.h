@@ -8,7 +8,9 @@
 	Date		: August 2013
 	License		: GNU Public License
 
-	This library implements the standard form PID controller
+	This library implements the standard form PID controller with multiple modes
+	of operation: Single PID, for "acrobatic mode" quad flight. and Nested PID loop
+	for "stable mode" flight.
 
 	Copyright (C) 2013  Brandon Riches
 
