@@ -280,10 +280,10 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
 void OSQ_MotorControl :: motorDISARM()
 {
         #ifdef USE_4MOTORS
-                motorSpeeds[motor1] = 950;
-                motorSpeeds[motor2] = 950;
-                motorSpeeds[motor3] = 950;
-                motorSpeeds[motor4] = 950;
+                motorSpeeds[motor1] = 900;
+                motorSpeeds[motor2] = 900;
+                motorSpeeds[motor3] = 900;
+                motorSpeeds[motor4] = 900;
         #endif
 
         writeMotors();

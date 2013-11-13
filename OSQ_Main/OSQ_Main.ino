@@ -133,6 +133,15 @@ void scanTelemetry()
                         #endif
                 #endif
                 // send packets
+                packet[0] = 0xFF;
+                packet[1] = (unsigned char)(millis() >> 24);
+                packet[2] = (unsigned char)((millis() << 8)>>24);
+                packet[3] = (unsigned char)((millis() << 16)>>24);
+                packet[4] = (unsigned char)((millis() << 24)>>24);
+                for(int i = 0; i < 5; i++)
+                {
+                        Serial3.print(packet[i]);
+                }
                 break;
                 
         case setAngleP:
@@ -325,13 +334,17 @@ void logFileStart()
         if (logFile) {
                 logFile.println("-----OpenSourceQuad-----");
                 logFile.println();
+                logFile.print("Date: ");
+                logFile.println(__DATE__);
+                logFile.print("Time: ");
+                logFile.println(__TIME__);
                 logFile.print("Software version: ");
                 logFile.print(softwareVersionMajor);
                 logFile.print(".");
                 logFile.println(softwareVersionMinor);
                 logFile.print("Flight Number: ");
                 logFile.println(flightNumber);
-                logFile.println("Runtime data: ");
+                logFile.println("Runtime data: \n\n");
         } 
         else {
                 // if the file didn't open, print an error:
@@ -488,6 +501,8 @@ void setup()
                 #endif
                 scanTelemetry();
         }
+        //Set the timestamp to now so angle doesnt fly out of control
+        kinematics.timestamp = micros();
         statusLED(1);
         
         

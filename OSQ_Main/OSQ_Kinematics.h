@@ -70,6 +70,12 @@ struct kinematicData
         ratePITCH,
         rateROLL,
         rateYAW,
+        
+        lastPitch,
+        lastRoll,
+        lastYaw,
+        
+        accelPrev[30][3], // Used for running average
 
         altitude,
 
@@ -87,6 +93,8 @@ struct kinematicData
         yaw_mag;
 
         unsigned long timestamp;
+        
+        int accelPointer; // Used to point to next val in running average
 };
 
 kinematicData	  kinematics;
@@ -107,9 +115,9 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
         sensors_event_t	accel_event, mag_event, gyro_event;
 
-        double 	elapsed_time = 0,t_convert = 1000000;
+        double 	elapsed_time = 0, t_convert = 1000000;
 
-        double 	pitch_accel, roll_accel, pitchRollCoeff = 0.85, yawCoeff = 0.9;
+        double 	pitch_accel, roll_accel, pitchRollCoeff = 1, yawCoeff = 0.9;
 
 
         if(eventType == 1)
@@ -137,6 +145,10 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         {
                 accel->getEvent(&accel_event);
                 gyro->getEvent(&gyro_event);
+                
+                kinematics.lastPitch = kinematics.pitch;
+                kinematics.lastRoll = kinematics.roll;
+                kinematics.lastYaw = kinematics.yaw;
 
                 /// Store Raw values from the sensor registers, and remove initial offsets
                 double ax = accel_event.acceleration.z - kinematics.io_az;
@@ -171,10 +183,49 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 // Remove pesky NaNs that seem to occur around 0.
                 // Check the quadrant of vector
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
-
-                kinematics.pitch = complementary(pitch_accel, 0, pitchRollCoeff);
-                kinematics.roll  = -complementary(roll_accel, 1, pitchRollCoeff);
+                
+                
+                kinematics.accelPrev[kinematics.accelPointer][XAXIS] = pitch_accel;
+                kinematics.accelPrev[kinematics.accelPointer][YAXIS] = roll_accel;
+                kinematics.accelPrev[kinematics.accelPointer][ZAXIS] = kinematics.phi;
+                
+                pitch_accel = 0;
+                roll_accel = 0;
+                kinematics.phi = 0;
+                
+                // Huge time average of acceleration
+                for(int i = 0; i < 30; i++)
+                {
+                        pitch_accel += kinematics.accelPrev[i][XAXIS];
+                }
+                for(int i = 0; i < 30; i++)
+                {
+                        roll_accel += kinematics.accelPrev[i][YAXIS];
+                }
+                for(int i = 0; i < 30; i++)
+                {
+                        kinematics.phi += kinematics.accelPrev[i][ZAXIS];
+                }
+                pitch_accel /= 30;
+                roll_accel /= 30;
+                kinematics.phi /= 30;
+                
+                kinematics.accelPointer += 1;
+                
+                if(kinematics.accelPointer == 30) kinematics.accelPointer = 0;
+                
+                //Testing
+                //Serial.println(pitch_accel);
+                
+                
+                // Final values
+                kinematics.pitch = kinematics.pitch_gyro;
+                kinematics.roll  = -kinematics.roll_gyro;
                 kinematics.yaw   = complementary(kinematics.yaw_mag, 2, yawCoeff);
+                
+                kinematics.ratePITCH = kinematics.pitch - kinematics.lastPitch;
+                kinematics.rateROLL = kinematics.roll - kinematics.lastRoll;
+                kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw;
                 }
 };
 

@@ -6,16 +6,20 @@ import java.io.*;
 PImage background; // Background image
 PFont mono; // Font
 String time; // Prog time
-char[] flightTime = new char[7]; // Flight time from start
+String flightTimeStr; // Flight millis
+byte flightTime1; // Flight time from start, unsigned long = 4 bytes
+byte flightTime2;
+byte flightTime3;
+byte flightTime4;
 boolean connection = false; // Connected to copter, or no.
-int[] serialSelection = new int[3];
 
 // Button states
 boolean overSendButton;
 boolean haveClicked = false;
 
-// Packet
-byte[] packet = new byte[5];
+// txPacket
+byte[] txPacket = new byte[5];
+byte[] rxPacket = new byte[5];
 int startByte = 0, mID = 1, data1 = 2, data2 = 3, data3 = 4;
 int[] pGain = new int[3];
 int[] iGain = new int[3];
@@ -30,10 +34,10 @@ int windowY = 600;
 int bannerY = 60;
 int bannerX = windowX;
 
-int packetLX = 240;
-int packetLY = 35;
-int packetSX = 20;
-int packetSY = 30;
+int txPacketLX = 240;
+int txPacketLY = 35;
+int txPacketSX = 20;
+int txPacketSY = 30;
 
 int sendButtonX = 285;
 int sendButtonY = 105;
@@ -43,8 +47,8 @@ int sendButtonRadius = 0;
 Serial myPort;
 
 /*================================================================================
-         Processing doesnt have structs.
-         -----------------------------------------------------------------------------*/
+     Processing doesnt have structs.
+     -----------------------------------------------------------------------------*/
 static class PID
 {
     static double setP, setI, setD;
@@ -53,8 +57,8 @@ static class PID
 }
 
 /*================================================================================
-         Setup of UI window
-         -----------------------------------------------------------------------------*/
+     Setup of UI window
+     -----------------------------------------------------------------------------*/
 void setup()
 {
     //Set up the serial port
@@ -77,8 +81,8 @@ void setup()
     fillColors[2] = 255;
 }
 /*================================================================================
-         Draw() - main loop in processing
-         -----------------------------------------------------------------------------*/
+     Draw() - main loop in processing
+     -----------------------------------------------------------------------------*/
 void draw()
 {
     // Set up the title text
@@ -122,14 +126,54 @@ void draw()
     fillColors[1] = 255;
     fillColors[2] = 255;
 
-    // Display packet
+    // Display txPacket
     fill(fillColors[0], fillColors[1], fillColors[2]);
-    displayPacket();
+    displaytxPacket();
 }  
+/*================================================================================
+     End Draw!!
+     -----------------------------------------------------------------------------*/
 
 /*================================================================================
-         Scan Keyboard Input
-         -----------------------------------------------------------------------------*/
+     Serial Event: Used to RX data
+     -----------------------------------------------------------------------------*/
+void serialEvent(Serial myPort)
+{
+    connection = true;
+    if(myPort.available() >= 5)
+    {
+        rxPacket[0] = byte(myPort.read());
+        if(rxPacket[0] == 0xFF)
+        {
+            rxPacket[1] = byte(myPort.read());
+            rxPacket[2] = byte(myPort.read());
+            rxPacket[3] = byte(myPort.read());
+            rxPacket[4] = byte(myPort.read());
+            
+            flightTime1 = rxPacket[1];
+            flightTime2 = rxPacket[2];
+            flightTime3 = rxPacket[3];
+            flightTime4 = rxPacket[4];
+            
+            println(flightTime1);
+            println(flightTime2);
+            println(flightTime3);
+            println(flightTime4);
+        }
+        else
+        {
+            for(int i = 0; i<= myPort.available(); i++)
+            {
+                rxPacket[0] = byte(myPort.read());
+                println(rxPacket[0]);
+            }
+        }
+    }
+}
+
+/*================================================================================
+     Scan Keyboard Input
+     -----------------------------------------------------------------------------*/
 void keyPressed()
 {
     println(key);
@@ -138,51 +182,51 @@ void keyPressed()
     {
         case 'X':
         case 'x':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x00);
-            packet[2] = byte(0x00);
-            packet[3] = byte(0x00);
-            packet[4] = byte(0x00);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x00);
+            txPacket[2] = byte(0x00);
+            txPacket[3] = byte(0x00);
+            txPacket[4] = byte(0x00);
             break;
         case 'S':
         case 's':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x02);
-            packet[2] = byte(0x00);
-            packet[3] = byte(0x00);
-            packet[4] = byte(0x00);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x02);
+            txPacket[2] = byte(0x00);
+            txPacket[3] = byte(0x00);
+            txPacket[4] = byte(0x00);
             break;
         case 'B':
         case 'b':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x03);
-            packet[2] = byte(0x00);
-            packet[3] = byte(0x00);
-            packet[4] = byte(0x00);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x03);
+            txPacket[2] = byte(0x00);
+            txPacket[3] = byte(0x00);
+            txPacket[4] = byte(0x00);
             break;
         case 'P':
         case 'p':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x0C);
-            packet[2] = byte(pGain[2]);
-            packet[3] = byte(pGain[1]);
-            packet[4] = byte(pGain[0]);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x0C);
+            txPacket[2] = byte(pGain[2]);
+            txPacket[3] = byte(pGain[1]);
+            txPacket[4] = byte(pGain[0]);
             break;
         case 'I':
         case 'i':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x0D);
-            packet[2] = byte(iGain[2]);
-            packet[3] = byte(iGain[1]);
-            packet[4] = byte(iGain[0]);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x0D);
+            txPacket[2] = byte(iGain[2]);
+            txPacket[3] = byte(iGain[1]);
+            txPacket[4] = byte(iGain[0]);
             break;
         case 'D':
         case 'd':
-            packet[0] = byte(0xFF);
-            packet[1] = byte(0x0E);
-            packet[2] = byte(dGain[2]);
-            packet[3] = byte(dGain[1]);
-            packet[4] = byte(dGain[0]);
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x0E);
+            txPacket[2] = byte(dGain[2]);
+            txPacket[3] = byte(dGain[1]);
+            txPacket[4] = byte(dGain[0]);
             break;
             
         default:
@@ -193,8 +237,8 @@ void keyPressed()
 }
 
 /*================================================================================
-         // Button Actions and menu stuff abouts here
-         -----------------------------------------------------------------------------*/
+     Button Actions and menu stuff abouts here
+     -----------------------------------------------------------------------------*/
 void mousePressed()
 {
     // Check states
@@ -205,8 +249,8 @@ void mousePressed()
         fillColors[1] = 0;
         fillColors[2] = 0;
         
-        // Send dat packet, yo
-        sendPacket();
+        // Send dat txPacket, yo
+        sendtxPacket();
     }
     if (overSendButton && mouseButton == RIGHT)
     {
@@ -218,20 +262,19 @@ void mousePressed()
 }
 
 /*================================================================================
-         Send off the packet
-         -----------------------------------------------------------------------------*/
-void sendPacket()
+     Send off the txPacket
+     -----------------------------------------------------------------------------*/
+void sendtxPacket()
 {
     for(int i = 0; i<5; i++)
     {
-        myPort.write(packet[i]);
-        println(packet[i]);
+        myPort.write(txPacket[i]);
     }
 }
 
 /*================================================================================
-         Over the packet yo?
-         -----------------------------------------------------------------------------*/
+     Over the txPacket yo?
+     -----------------------------------------------------------------------------*/
 void checkOverButton()
 {
     // Check for send button
@@ -249,30 +292,30 @@ void checkOverButton()
 }
 
 /*================================================================================
-         Print dat packet
-         -----------------------------------------------------------------------------*/
-void displayPacket()
+     Print dat txPacket
+     -----------------------------------------------------------------------------*/
+void displaytxPacket()
 {
     //startByte = 0, mID = 1, data1 = 2, data2 = 3, data3 = 4
-    text("Outgoing Packet Contents: ", 25, 90);
+    text("Outgoing txPacket Contents: ", 25, 90);
     text("Send",280,90);
     fill(90, 90, 90, 120);
-    rect(25, 100, packetLX, packetLY);
+    rect(25, 100, txPacketLX, txPacketLY);
     fill(255);
-    text(hex(packet[0]), 30, 120);
+    text(hex(txPacket[0]), 30, 120);
     text(",", 65, 120);
-    text(hex(packet[1]), 75, 120);
+    text(hex(txPacket[1]), 75, 120);
     text(",", 110, 120);
-    text(hex(packet[2]), 120, 120);
+    text(hex(txPacket[2]), 120, 120);
     text(",", 155, 120);
-    text(hex(packet[3]), 165, 120);
+    text(hex(txPacket[3]), 165, 120);
     text(",", 200, 120);
-    text(hex(packet[4]), 210, 120);
+    text(hex(txPacket[4]), 210, 120);
 }
 
 /*================================================================================
-         What time is it
-         -----------------------------------------------------------------------------*/
+     What time is it
+     -----------------------------------------------------------------------------*/
 void displayTimes()
 {
     // Display current time.
@@ -280,33 +323,18 @@ void displayTimes()
     text(time, 15, 50);
 
     // Display flight time, from start.
-    getFlightTime(flightTime);
-    String myString = new String(flightTime);
+    flightTimeStr = str((int(flightTime1)*16777216) + (int(flightTime2)*65536) + (int(flightTime3)*256) + int(flightTime4));
     text("Flight time: ", 550, 50);
-    text(myString, 700, 50);
+    text(flightTimeStr, 700, 50);
 }
 
 /*================================================================================
-         Connected? Print it.
-         -----------------------------------------------------------------------------*/
+     Connected? Print it.
+     -----------------------------------------------------------------------------*/
 void checkConnection()
 {
     text("Connection Status: ", 496, 25);
     text(str(connection), 700, 25);
 }
 
-/*================================================================================
-         What time is it over there
-         -----------------------------------------------------------------------------*/
-void getFlightTime(char[] flightTime)
-{
-    // Lol function prototypes, who needs those.
 
-    flightTime[0] = 'h';
-    flightTime[1] = 'e';
-    flightTime[2] = 'l';
-    flightTime[3] = 'l';
-    flightTime[4] = 'o';
-    flightTime[5] = '!';
-    flightTime[6] = '!';
-}

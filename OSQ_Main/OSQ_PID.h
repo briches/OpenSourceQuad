@@ -54,11 +54,26 @@
         double RATE_ATT_KD = 0.0;
 
 #endif
+// Was 3,0.8,0.4
 
-#ifdef SINGLE_PID
-        double ATT_KP = 3;
-        double ATT_KI = 0.8;
-        double ATT_KD = 0.4;
+// 1,0,0 diverges slowly 
+// 2,0,0 diverges quickly -> Ku ~= 0.9?
+// 1,2,0.3 is close, maybe. ****
+// 1,1,0.6 is a little bit more unstable
+
+// 5.2782, 0.18026, 26.132 has tRise = 0.26, tSettle = 4.14.
+// Uses LB/I = 0.2
+//
+// 21.3323, 1.3674, 65.142 has tRise = 0.12, tSettle = 1.8
+// Uses LB/I = 0.16155
+
+// 2.9573, 0.s046838, 14.7171, has tRise = 0.6, tSettle = 7.7
+//LB/I = 0.16155
+
+#ifdef SINGLE_PID 
+        double ATT_KP = 0.48099;
+        double ATT_KI = 0.070461*2;
+        double ATT_KD = 0.43744;
 #endif
 
 double altitudekP = 0;
