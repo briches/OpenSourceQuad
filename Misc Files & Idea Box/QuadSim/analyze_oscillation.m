@@ -35,7 +35,7 @@ for i= 1:ITERATIONS
 	
 	rate_of_increase(i,2) = kp;
 	
-	kp = kp + 0.1;
+	kp = kp + 0.01;
 
 end
 final_kp = kp;

@@ -1,4 +1,4 @@
-function [STORE_MY_DEBUG] = QuadSim(filename,kp)
+function [angleVsTime] = QuadSim(filename,kp)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	QuadSim
 %
@@ -42,13 +42,12 @@ function [STORE_MY_DEBUG] = QuadSim(filename,kp)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Set the default filename
-if nargin == 0, filename = 'Test1_y_rotation.txt'; kp = 1.4;end
-if nargin == 1, kp = 1.4; end
+if nargin == 0, filename = 'Test1_y_rotation.txt'; end
+angleVsTime = 0;
 
-% clc; disp('********************QuadSim********************');
+clc; disp('********************QuadSim********************');
 
 %File open and read
-cd('C:\Users\Brandon\Dropbox\QuadSim'); %Set the CD
 TXT_ID = fopen(filename,'r+'); %Open the file
 TXT = fread(TXT_ID,'char'); %Read the file into MATLAB
 fclose(TXT_ID); %Close the file
@@ -67,10 +66,10 @@ Quad = struct('TestID', 0, ...
 Quad = ParseTXT(TXT,Quad);
 
 %Initialize State Variables and general constants
-MOTOR_PWM_MAX	= 2500; %Duration of HIGH pulse in motor signal, microseconds
-MOTOR_PWM_MIN	= 250;
+MOTOR_PWM_MAX	= 1600; %Duration of HIGH pulse in motor signal, microseconds
+MOTOR_PWM_MIN	= 900;
 
-MOTOR_START		= 750;  %Initialize motors to this speed
+MOTOR_START		= 1350;  %Initialize motors to this speed
 
 M1S				= MOTOR_START;	%Speed of the four motors, given in microseconds. 
 M2S				= MOTOR_START;	%The speed references the input signal to the speed
@@ -120,82 +119,76 @@ translate_z = Quad.TDOFA(3);
 
 %Set some infinitesimal initial offset. 
 [phi,theta,gamma] = rand_offset(phi, theta, gamma);
-
+phi = 1;
 SIM_ITERATIONS = 100000;
 
-ki = -1.1;
+ki = 0;
+kd = 0;
 I = 0;
 
-STORE_MY_DEBUG = zeros(SIM_ITERATIONS,1);
+angleVsTime = zeros(SIM_ITERATIONS,1);
 prev_time = 0;
+last_error = 0;
+
 %Set the timer running. Depending on what dt is, this sets the duration of
 %the simulation.
 for t = 0:SIM_ITERATIONS
-	
-	time = (t-1)*dt;					 
-	%Check for sim-allowed rotation around y-axis.
-	%Note: this case is analogous to our test apparatus and it's all im
-	%coding for now. 
 
-	STORE_MY_DEBUG(t+1) = phi;
-	
-	%Check the update time of PID
-	%Do PID update. Just using P.
-	if time-prev_time >= 0.01
-
-		P = kp * phi;
-        I = I + ki * phi * dt;
+        time = (t-1)*dt;					 
+        %Check for sim-allowed rotation around y-axis.
+        %Note: this case is analogous to our test apparatus and it's all im
+        %coding for now. 
         
-        C = P + I;
+        angleVsTime(t+1) = phi;
 
-		if (M1S < MOTOR_PWM_MIN) || (M1S > MOTOR_PWM_MAX)
-		else
-			M1S = M1S - C;
-		end
+        %Check the update time of PID
+        %Do PID update. 
+        if (time-prev_time) >= 0.01
+            
+            last_error = phi;
+            
+            P = kp * phi;
+            I = I + ki * phi * 0.01;
+            D = kd * (phi - last_error) / 0.1;
 
-		if (M4S < MOTOR_PWM_MIN) || (M4S > MOTOR_PWM_MAX)
-		else
-			M4S = M4S + P;
-		end	
-		prev_time = time;
-	end
-	
-	%Calculate the force in newtons each motor is applying by mapping the
-	%speed in microseconds to the current range, and then multplying by the
-	%thrust constant specified in the .txt (given in N/A)
-	FX_P = Quad.Thrust * ( ... 
-						( M1S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
-						 ); %Motor on positive end of x axis
-					 
-	FX_N = Quad.Thrust * ( ... 
-						( M4S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
-						 ); %Motor on negative end of x axis
-					 
-	FY_P = Quad.Thrust * ( ... 
-						( M2S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
-						 ); %Motor on positive end of y axis
-					 
-	FY_N = Quad.Thrust * ( ... 
-						( M3S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
-						 ); %Motor on negative end of y axis
-					 
-	%Calculate the torque, angular acceleration, angular velocity, and
-	%increase in angle
-	MOTOR_TORQUE_Y = FX_P * ARM_LENGTH - FX_N * ARM_LENGTH;	
-	
-	%Integrate values
-	alpha_y = MOTOR_TORQUE_Y / Quad.MomentInertia(2);
+            C = P + I + D;
+            
+            M1S = 1350 - C;
+            M4S = 1350 + C;
+           
+            prev_time = time;
+            
+        end
 
-	WY_a = WY_a + alpha_y * dt;
+        %Calculate the force in newtons each motor is applying by mapping the
+        %speed in microseconds to the current range, and then multplying by the
+        %thrust constant specified in the .txt (given in N/A)
+        
+        FX_P = Quad.Thrust * M1S; %Motor on positive end of x axis
 
-	phi = phi + WY_a * dt;
-	
-	
-	
-	
+        FX_N = Quad.Thrust * M4S; %Motor on negative end of x axis
+
+        FY_P = Quad.Thrust * ( ... 
+                            ( M2S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
+                             ); %Motor on positive end of y axis
+
+        FY_N = Quad.Thrust * ( ... 
+                            ( M3S - MOTOR_PWM_MIN ) * ( Quad.CurrentDraw(2)-Quad.CurrentDraw(1) )/( MOTOR_PWM_MAX - MOTOR_PWM_MIN ) + Quad.CurrentDraw(1) ...
+                             ); %Motor on negative end of y axis
+
+        %Calculate the torque, angular acceleration, angular velocity, and
+        %increase in angle
+        MOTOR_TORQUE_Y = FX_P * ARM_LENGTH - FX_N * ARM_LENGTH;	
+
+        %Integrate values
+        alphaR = MOTOR_TORQUE_Y / 0.02054;
+
+        WY_a = WY_a + alphaR * dt;
+
+        phi = phi + WY_a * dt;
 end
 
-
+plot(angleVsTime);
 
 end
 function [phi, theta, gamma] = rand_offset(phi, theta, gamma)
