@@ -114,7 +114,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
         double 	elapsed_time = 0, t_convert = 1000000;
 
-        double 	pitch_accel, roll_accel, pitchRollCoeff = 1, yawCoeff = 0.9;
+        double 	pitch_accel, roll_accel, pitchRollCoeff = 0.5, yawCoeff = 0.9;
 
 
         if(eventType == 1)
@@ -183,13 +183,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
                 
                 //Testing
-                Serial.print("Raw: ");
-                Serial.print(roll_accel);
-                
                 roll_accel = rollKalman.kalmanUpdate(roll_accel);
-                
-                Serial.print(" Kalman: ");
-                Serial.println(roll_accel);
                 
                 // Final values
                 kinematics.pitch = kinematics.pitch_gyro;

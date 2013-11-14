@@ -53,10 +53,15 @@
 
 #endif
 
+//#ifdef SINGLE_PID 
+//        double ATT_KP = 0.48099;
+//        double ATT_KI = 0.070461;
+//        double ATT_KD = 0.43744;
+//#endif
 #ifdef SINGLE_PID 
-        double ATT_KP = 0.48099;
-        double ATT_KI = 0.070461*2;
-        double ATT_KD = 0.43744;
+        double ATT_KP = 0.78353;
+        double ATT_KI = 0.11987*4;
+        double ATT_KD = 0.3874;
 #endif
 
 double altitudekP = 0;

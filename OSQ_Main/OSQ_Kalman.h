@@ -31,7 +31,7 @@
 #ifndef OSQ_KALMAN_H_INCLUDED
 #define OSQ_KALMAN_H_INCLUDED
 
-#define initialUncertainty (10)
+#define initialUncertainty (1000)
 
 typedef struct Kalman_t
 {
@@ -54,8 +54,8 @@ typedef struct Kalman_t
 };
 
 // Initialize the instances of Kalman Filter we will be using
-Kalman_t rollKalman(1);
-Kalman_t pitchKalman(1);
+Kalman_t rollKalman(10);
+Kalman_t pitchKalman(10);
 
 // Constructor, also initializes vars
 Kalman_t :: Kalman_t(double mNoise) 
@@ -92,24 +92,25 @@ double Kalman_t :: kalmanUpdate(double z)
 	Ky[1] = K[1]*y;
 	x1_ += Ky[0];
 	x2_ += Ky[1];
-
-	// P^ = (I - K*H) * P
-	a = P0_ * (1 - K[0]);
-	b = P1_ * (1 - K[0]);
-
-	P2_ += P0_ * (0 - K[1]);
-	P3_ += P1_ * (0 - K[1]);
-	P0_ = a;
-	P1_ = b;
-
+        
+        
         /** Prediction Step **/
+        double alpha, beta, gamma, epsilon;
+        
+        alpha =   P0_ - P0_ * P0_ / (P0_ + measurementNoise);
+        beta =    P1_ - P0_ * P1_ / (P0_ + measurementNoise);
+        gamma =   P2_ - P0_ * P2_ / (P0_ + measurementNoise);
+        epsilon = P3_ - P1_ * P2_ / (P0_ + measurementNoise);
+        
+        P0_ = alpha + dt * (gamma + beta) + dt * dt * epsilon;
+        P1_ = beta + dt * epsilon;
+        P2_ = gamma + dt * epsilon;
+        P3_ = epsilon;
+        
+        P0_ += abs(y); // Magic guess
+
 	// x
 	x1_ += x2_ * dt;
-
-	// P
-	P0_ += P1_ + P2_ + P3_;
-	P1_ += P3_;
-	P2_ += P3_;
 
 	return x1_; // position
 };

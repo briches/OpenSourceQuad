@@ -52,7 +52,7 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // <- Must be defined to use any of the other debuggers
+//#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
