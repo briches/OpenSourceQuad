@@ -8,9 +8,9 @@
 	Date		: August 2013
 	License		: GNU Public License
 
-	This library is designed to interface with and control brushless motor escs
+	Implements a two-dimensional Kalman Filter
 
-	Copyright (C) 2013  Brandon Riches
+	Copyright (C) 2013  Andrew Coulthard
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,79 +26,104 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	-----------------------------------------------------------------------------*/
+// Nice job andrew
 
 #ifndef OSQ_KALMAN_H_INCLUDED
 #define OSQ_KALMAN_H_INCLUDED
 
+#define initialUncertainty (10)
 
-using namespace std;
+typedef struct Kalman_t
+{
+        double  P0_,
+                P1_,
+                P2_,
+                P3_,
+                x1_,
+                x2_;
+        
+        unsigned long timestamp;
+        
+        double measurementNoise;
+        
+        double kalmanUpdate(double z); // Measurement and update
+        double kalmanSpeed(); // Returns x'
+        double kalmanCovariance(int selection); // Returns either P0_ or P3_
+        
+        Kalman_t(double mNoise);
+};
 
-double P0 = 1000;
-double P1 = 0;
-double P2 = 0;
-double P3 = 1000;
+// Initialize the instances of Kalman Filter we will be using
+Kalman_t rollKalman(1);
+Kalman_t pitchKalman(1);
 
-#define measurement_noise 1
+// Constructor, also initializes vars
+Kalman_t :: Kalman_t(double mNoise) 
+{
+        measurementNoise = mNoise;
+        P0_ = initialUncertainty;
+        P1_ = 0;
+        P2_ = 0;
+        P3_ = initialUncertainty;
+        x1_ = 0;
+        x2_ = 0;
+};
 
-double x1 = 0;
-double x2 = 0;
-
-double KalmanUpdate(float z) {
-
-/* Measurement Update */
-
+// Main update
+double Kalman_t :: kalmanUpdate(double z) 
+{
+        double y, S, K[2], Ky[2], a, b;
+        double dt = (micros() - timestamp)/1000000.;
+        /** Measurement Update **/
+        
 	// y = z - Hx
+	y = z - x1_;
 
-	float y;
-	y = z - x1;
 
 	// S = H*P*HT + measurement_noise
-
-	float S;
-	S = P0 + measurement_noise;
+	S = P0_ + measurementNoise;
 
 	// K = P*HT*S^-1
-
-	float K[2];
-	K[0] = P0 * (1 / S);
-	K[1] = P2 * (1 / S);
+	K[0] = P0_ * (1 / S);
+	K[1] = P2_ * (1 / S);
 
 	// X^ = X + K*y
-
-	float Ky[2];
 	Ky[0] = K[0]*y;
 	Ky[1] = K[1]*y;
-	x1 += Ky[0];
-	x2 += Ky[1];
+	x1_ += Ky[0];
+	x2_ += Ky[1];
 
 	// P^ = (I - K*H) * P
+	a = P0_ * (1 - K[0]);
+	b = P1_ * (1 - K[0]);
 
-	float a;
-	a = P0 * (1 - K[0]);
-	float b;
-	b = P1 * (1 - K[0]);
-	P2 += P0 * (0 - K[1]);
-	P3 += P1 * (0 - K[1]);
-	P0 = a;
-	P1 = b;
+	P2_ += P0_ * (0 - K[1]);
+	P3_ += P1_ * (0 - K[1]);
+	P0_ = a;
+	P1_ = b;
 
-/* Prediction */
-
+        /** Prediction Step **/
 	// x
-
-	x1 += x2;
+	x1_ += x2_ * dt;
 
 	// P
+	P0_ += P1_ + P2_ + P3_;
+	P1_ += P3_;
+	P2_ += P3_;
 
-	P0 += P1 + P2 + P3;
-	P1 += P3;
-	P2 += P3;
+	return x1_; // position
+};
 
-	return(x1);
-}
+double Kalman_t :: kalmanSpeed() 
+{
+        return x2_; // speed
+};
 
-double KalmanSpeedReturn() {
-return(x2);
-}
+double Kalman_t :: kalmanCovariance(int selection)
+{
+        if (selection == 0) return P0_; // position covar
+        if (selection == 1) return P3_; // speed covar
+        else return 0;
+};
 
 #endif // OSQ_KALMAN_H_INCLUDED

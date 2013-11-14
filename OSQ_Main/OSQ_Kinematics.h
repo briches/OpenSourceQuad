@@ -39,6 +39,7 @@
 
 #include "OSQ_SENSORLIB.h"
 #include "OSQ_Motors.h"
+#include "OSQ_Kalman.h"
 #include <Wire.h>
 
 bool startup = true;
@@ -75,8 +76,6 @@ struct kinematicData
         lastRoll,
         lastYaw,
         
-        accelPrev[30][3], // Used for running average
-
         altitude,
 
         io_ax,
@@ -93,8 +92,6 @@ struct kinematicData
         yaw_mag;
 
         unsigned long timestamp;
-        
-        int accelPointer; // Used to point to next val in running average
 };
 
 kinematicData	  kinematics;
@@ -179,53 +176,30 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 kinematics.phi = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
                 pitch_accel = atan2( ax, sqrt(ay*ay + az*az)) * 180 / Pi;
                 roll_accel = atan2( ay, sqrt(az*az + az*az)) * 180 / Pi;
-
+                
+                
                 // Remove pesky NaNs that seem to occur around 0.
                 // Check the quadrant of vector
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
                 
-                
-                kinematics.accelPrev[kinematics.accelPointer][XAXIS] = pitch_accel;
-                kinematics.accelPrev[kinematics.accelPointer][YAXIS] = roll_accel;
-                kinematics.accelPrev[kinematics.accelPointer][ZAXIS] = kinematics.phi;
-                
-                pitch_accel = 0;
-                roll_accel = 0;
-                kinematics.phi = 0;
-                
-                // Huge time average of acceleration
-                for(int i = 0; i < 30; i++)
-                {
-                        pitch_accel += kinematics.accelPrev[i][XAXIS];
-                }
-                for(int i = 0; i < 30; i++)
-                {
-                        roll_accel += kinematics.accelPrev[i][YAXIS];
-                }
-                for(int i = 0; i < 30; i++)
-                {
-                        kinematics.phi += kinematics.accelPrev[i][ZAXIS];
-                }
-                pitch_accel /= 30;
-                roll_accel /= 30;
-                kinematics.phi /= 30;
-                
-                kinematics.accelPointer += 1;
-                
-                if(kinematics.accelPointer == 30) kinematics.accelPointer = 0;
-                
                 //Testing
-                //Serial.println(pitch_accel);
+                Serial.print("Raw: ");
+                Serial.print(roll_accel);
                 
+                roll_accel = rollKalman.kalmanUpdate(roll_accel);
+                
+                Serial.print(" Kalman: ");
+                Serial.println(roll_accel);
                 
                 // Final values
                 kinematics.pitch = kinematics.pitch_gyro;
                 kinematics.roll  = -kinematics.roll_gyro;
                 kinematics.yaw   = complementary(kinematics.yaw_mag, 2, yawCoeff);
                 
-                kinematics.ratePITCH = kinematics.pitch - kinematics.lastPitch;
-                kinematics.rateROLL = kinematics.roll - kinematics.lastRoll;
-                kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw;
+                // Calculate time derivative of attitudes
+                kinematics.ratePITCH = (kinematics.pitch - kinematics.lastPitch) / elapsed_time;
+                kinematics.rateROLL = kinematics.roll - kinematics.lastRoll / elapsed_time;
+                kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw / elapsed_time;
                 }
 };
 

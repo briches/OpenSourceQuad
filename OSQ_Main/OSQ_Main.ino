@@ -37,6 +37,7 @@
 #include "OSQ_BatteryMonitor.h"
 #include "OSQ_PID.h"
 #include "OSQ_EEPROM.h"
+#include "OSQ_Kalman.h"
 
 #include <Adafruit_GPS.h>         
 #include <SoftwareSerial.h>
@@ -51,7 +52,7 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // <- Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug

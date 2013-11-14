@@ -202,9 +202,6 @@ void initializePID(struct PID_Manager_t *PID)
 		PID_GAINS[PID->ID].setD = altitudekD;
 	}
 
-        Serial.println("PID init: ");
-        Serial.print("ID: "); Serial.println(PID->ID);
-
 };
 
 #endif // OSQ_PID_H_INCLUDED
