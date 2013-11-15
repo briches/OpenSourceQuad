@@ -138,26 +138,30 @@ void commandAllMotors(int speed)
         writeMotors();
 };
 
+/** Main Class **/
 class OSQ_MotorControl
 {
-public:
-        OSQ_MotorControl(int num = 4);
-
-        // Function ideas //
-        void calibrateESC(int numESC = 4);
-        void motorDISARM();
-        void startMotors();
-        void updateMotors(double pitchPID, double rollPID, double yawPID, double elevPID);
-
-
-
-private:
-        bool 	MOTORS_ARMED;
-        bool	ESC_READY;
-        int 	NUM_MOTORS;
-
-        int 	passiveMIN;
-        int	passiveMAX;
+        public:
+                OSQ_MotorControl(int num = 4);
+        
+                // Function ideas //
+                void calibrateESC(int numESC = 4);
+                void motorDISARM();
+                void startMotors();
+                void updateMotors(double pitchPID, double rollPID, double yawPID, double elevPID);
+                
+                double changeOperatingPoint(double opChange);
+                
+                double operatingPoint;
+        
+        private:
+                bool 	MOTORS_ARMED;
+                bool	ESC_READY;
+                int 	NUM_MOTORS;
+                
+        
+                int 	passiveMIN;
+                int	passiveMAX;
 
 };
 
@@ -168,6 +172,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
         this->passiveMAX	= MAX_COMMAND-100;
+        this->operatingPoint    = 1200;
 };
 
 void OSQ_MotorControl :: calibrateESC(int numESC)
@@ -225,10 +230,10 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
 
                 #ifdef USE_4MOTORS
                         // Control pitch/roll
-                        motorSpeeds[motor1] += pitchPID;
-                        motorSpeeds[motor2] = 1350 + rollPID;
-                        motorSpeeds[motor3] = 1350 - rollPID;
-                        motorSpeeds[motor4] -= pitchPID;
+                        motorSpeeds[motor1] = operatingPoint - pitchPID;
+                        motorSpeeds[motor2] = operatingPoint + rollPID;
+                        motorSpeeds[motor3] = operatingPoint - rollPID;
+                        motorSpeeds[motor4] = operatingPoint + pitchPID;
                 #endif
 
                 #ifdef USE_4MOTORS
@@ -275,6 +280,14 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
         }
 
 
+};
+
+// Used to manually control altitude.
+double OSQ_MotorControl :: changeOperatingPoint(double opChange)
+{
+        operatingPoint += opChange;
+        constrain(operatingPoint, 1250, 1450);
+        return operatingPoint;
 };
 
 void OSQ_MotorControl :: motorDISARM()

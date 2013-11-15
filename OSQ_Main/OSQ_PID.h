@@ -53,15 +53,11 @@
 
 #endif
 
-//#ifdef SINGLE_PID 
-//        double ATT_KP = 0.48099;
-//        double ATT_KI = 0.070461;
-//        double ATT_KD = 0.43744;
-//#endif
+// These ones are pretty good. Keep these.
 #ifdef SINGLE_PID 
-        double ATT_KP = 0.78353;
-        double ATT_KI = 0.11987*4;
-        double ATT_KD = 0.3874;
+        double ATT_KP = 0.88151*1.5;
+        double ATT_KI = 0.15223;
+        double ATT_KD = 0.85251;
 #endif
 
 double altitudekP = 0;
@@ -114,6 +110,13 @@ PID_Manager_t pitchPID(pitch);
 PID_Manager_t rollPID(roll);
 PID_Manager_t yawPID(yaw);
 PID_Manager_t altitudePID(altitude);
+
+double incrementSetpoint(struct PID_Manager_t *PID, double changeAmount)
+{
+        PID->setTarget += changeAmount;
+        
+        return PID->setTarget;
+};
 
 double calculatePID(struct PID_Manager_t *PID, double measuredValue, double measuredRate)
 {

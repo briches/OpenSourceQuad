@@ -1,31 +1,31 @@
 /*=====================================================================
-	OSQ_Main
-	OpenSourceQuad
-	-------------------------------------------------------------------*/
+ 	OSQ_Main
+ 	OpenSourceQuad
+ 	-------------------------------------------------------------------*/
 /*================================================================================
-
-	Author		: Brandon Riches
-	Date		: September 2013
-	License		: GNU Public License
-
-	Main file for OSQ firmware
-
-	Copyright (C) 2013  Brandon Riches
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	-----------------------------------------------------------------------------*/
+ 
+ 	Author		: Brandon Riches
+ 	Date		: September 2013
+ 	License		: GNU Public License
+ 
+ 	Main file for OSQ firmware
+ 
+ 	Copyright (C) 2013  Brandon Riches
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ 	-----------------------------------------------------------------------------*/
 #include "OSQ_Kinematics.h"
 #include "OSQ_SENSORLIB.h"
 #include "OSQ_Quadcopter.h"
@@ -52,15 +52,15 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // <- Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
-//#define rx_txDebug
+#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
 //#define rollPIDdebug
-//#define pitchPIDdebug
+//#define pitchPIDdebugs
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -82,57 +82,58 @@ File logFile;
 bool gotPID = false;
 void scanTelemetry()
 {
-        unsigned char packet[5] = {0xFF, 0x00, 0x00, 0x00, 0x00};
+        unsigned char packet[5] = {
+                0xFF, 0x00, 0x00, 0x00, 0x00        };
         int EEPROMselectionPID;
-        
+
         switch(receiver.ScanForMessages())
         {
         case err:
                 break;
 
         case disarm:
-        
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.println("Received DISARM command!");
-                        #endif
-                #endif
-                
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.println("Received DISARM command!");
+#endif
+#endif
+
                 motorControl.motorDISARM();
                 logFile.close();
                 while(1);
                 break;
-                
+
         case autoland:
-        
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.println("Received autoland command!");
-                        #endif
-                #endif
-                
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.println("Received autoland command!");
+#endif
+#endif
+
                 // Autoland
                 break;
-                
+
         case start:
-        
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.println("Received start command!");
-                        #endif
-                #endif
-                
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.println("Received start command!");
+#endif
+#endif
+
                 receivedStartupCommand = true;
                 commandAllMotors(1300);
                 break;
-                
+
         case broadcastData:
-        
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.println("Received broadcast data command!");
-                        #endif
-                #endif
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.println("Received broadcast data command!");
+#endif
+#endif
                 // send packets
                 packet[0] = 0xFF;
                 packet[1] = (unsigned char)(millis() >> 24);
@@ -144,85 +145,113 @@ void scanTelemetry()
                         Serial3.print(packet[i]);
                 }
                 break;
-                
-        case setAngleP:
-        
-                EEPROMselectionPID = 3;
-                
-                #ifdef NESTED_PID
-                        RATE_ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
-                #endif
-                
-                #ifdef SINGLE_PID
-                        ATT_KP = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);
-                #endif
-                
-                EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
-                
-                
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.print("Received kP: ");
-                                Serial.println(RATE_ATT_KP,3);
-                                Serial.print("Wrote PID Value: ");
-                                Serial.println(EEPROMreadPIDCoefficients(EEPROMselectionPID));
-                        #endif
-                #endif
-                
-                gotPID = true;
+
+        case increaseOperatingPoint:
+                {
+                motorControl.changeOperatingPoint(1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received increase OP: ");
+                Serial.println(motorControl.operatingPoint);
+#endif
+#endif
+                }
                 break;
-        
-        case setAngleI:
-              
-               EEPROMselectionPID = 4;
-               
-               #ifdef NESTED_PID
-                       RATE_ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]);           
-               #endif  
-               
-               #ifdef SINGLE_PID
-                       ATT_KI = (65536 * receiver.newMessage[DATA1] + 256 * receiver.newMessage[DATA2] + receiver.newMessage[DATA3]); 
-               #endif
-               
-               EEPROMwritePIDCoefficients(EEPROMselectionPID, receiver.newMessage[DATA2], receiver.newMessage[DATA3]);
-               
-               #ifdef serialDebug
-                       #ifdef rx_txDebug
-                               Serial.print("Received kI: ");
-                               Serial.println(RATE_ATT_KI, 3);
-                               Serial.print("Wrote PID Value: ");
-                               Serial.println(EEPROMreadPIDCoefficients(EEPROMselectionPID));
-                       #endif
-               #endif
-               
-               gotPID = true;
-               break;
-               
+                 
+        case decreaseOperatingPoint:
+                {
+                motorControl.changeOperatingPoint(-1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received decrease OP: ");
+                Serial.println(motorControl.operatingPoint);
+#endif
+
+#endif
+                }
+                break;
+
+        case increasePitch:
+                {
+                double newSetpoint = incrementSetpoint(&pitchPID, 1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received increase pitch: ");
+                Serial.println(newSetpoint);
+#endif
+
+#endif
+                }
+                break;
+
+
+        case decreasePitch:
+                {
+                double newSetpoint = incrementSetpoint(&pitchPID, -1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received decrease pitch: ");
+                Serial.println(newSetpoint);
+#endif
+
+#endif
+                }
+                break;
+
+        case increaseRoll:
+                {
+                double newSetpoint = incrementSetpoint(&rollPID, 1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received increase roll: ");
+                Serial.println(newSetpoint);
+#endif  
+#endif
+                }
+                break;
+
+        case decreaseRoll:
+                {
+                double newSetpoint = incrementSetpoint(&rollPID, -1);
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.print("Received decrease roll: ");
+                Serial.println(newSetpoint);
+#endif        
+#endif
+                }
+                break;
+
         case resetPitchRoll:
                 // Reset the values we are holding onto.
                 pitchPID.setIntegratedError = 0;
                 rollPID.setIntegratedError = 0;
-                
-                
-                #ifdef NESTED_PID
-                        rollPID.rateIntegratedError = 0;
-                        pitchPID.rateIntegratedError = 0;
-                        kinematics.ratePITCH = 0;
-                        kinematics.rateROLL = 0;
-                #endif
-                
+
+
+#ifdef NESTED_PID
+                rollPID.rateIntegratedError = 0;
+                pitchPID.rateIntegratedError = 0;
+                kinematics.ratePITCH = 0;
+                kinematics.rateROLL = 0;
+#endif
+
                 kinematics.pitch = 0;
                 kinematics.roll = 0;
                 kinematics.rateROLL = 0;
-                
-                #ifdef serialDebug
-                        #ifdef rx_txDebug
-                                Serial.println("Received reset Pitch and Roll command! ");                          
-                        #endif
-                #endif
-                
+
+#ifdef serialDebug
+#ifdef rx_txDebug
+                Serial.println("Received reset Pitch and Roll command! ");                          
+#endif
+#endif
+
                 break;
-        
         }
 }
 /*=========================================================================
@@ -249,26 +278,26 @@ void processBatteryAlarms()
  -----------------------------------------------------------------------*/
 void PID_init()                                          
 {
-        
+
         initializePID(&pitchPID);
         initializePID(&rollPID);
         initializePID(&yawPID);
         initializePID(&altitudePID);
-        
+
         rollPID.windupGuard = 50; // TODO
-        
-        #ifdef serialDebug
-                #ifdef NESTED_PID
-                        Serial.println(SET_ATT_KP);
-                        Serial.println(SET_ATT_KI);
-                #endif
-                #ifdef SINGLE_PID
-                        Serial.println(ATT_KP);
-                        Serial.println(ATT_KI);
-                        Serial.println(ATT_KD);
-                #endif
-        #endif
-        
+
+#ifdef serialDebug
+#ifdef NESTED_PID
+        Serial.println(SET_ATT_KP);
+        Serial.println(SET_ATT_KI);
+#endif
+#ifdef SINGLE_PID
+        Serial.println(ATT_KP);
+        Serial.println(ATT_KI);
+        Serial.println(ATT_KD);
+#endif
+#endif
+
 }
 /*=========================================================================
  logData
@@ -302,22 +331,22 @@ void logData()
  -----------------------------------------------------------------------*/
 void logFileStart()
 {
-        #ifdef serialDebug
-                #ifdef sdDebug
-                        Serial.println("----Initializing .txt");
-                #endif
-        #endif
-        
+#ifdef serialDebug
+#ifdef sdDebug
+        Serial.println("----Initializing .txt");
+#endif
+#endif
+
         pinMode(SS, OUTPUT);
 
         if (!SD.begin(chipSelect)) {
-                
-                #ifdef serialDebug
-                        #ifdef sdDebug
-                                Serial.println("--------Initialization failed!");
-                        #endif
-                #endif
-                
+
+#ifdef serialDebug
+#ifdef sdDebug
+                Serial.println("--------Initialization failed!");
+#endif
+#endif
+
                 statusLED(-1);
                 return;
         }
@@ -349,11 +378,11 @@ void logFileStart()
         } 
         else {
                 // if the file didn't open, print an error:
-                #ifdef serialDebug
-                        #ifdef sdDebug
-                                Serial.println("--------Error opening file!");
-                        #endif
-                #endif
+#ifdef serialDebug
+#ifdef sdDebug
+                Serial.println("--------Error opening file!");
+#endif
+#endif
         }
 
         logFile.close();
@@ -366,12 +395,12 @@ void logFileStart()
 void setup()
 { 
         delay(100); // Power supply
-        
-        #ifdef serialDebug
+
+#ifdef serialDebug
         Serial.begin(115200); 
         Serial.println();
-        #endif
-        
+#endif
+
         Wire.begin();
 
         // Initialize various LED outputs
@@ -387,160 +416,160 @@ void setup()
         digitalWrite(YELLOW_LED1, LOW);
         digitalWrite(YELLOW_LED2, LOW);
         digitalWrite(YELLOW_LED3, LOW);
-        
+
         /*****************************/
         /* Initialize EEPROM */
         /*****************************/
-        
+
         statusLED(4);
-        
+
         writeConfigBlock();
         softwareVersionMinor = EEPROM_read8(software_version_addr);
         softwareVersionMajor = EEPROM_read8(software_version_addr + 1);
         flightNumber = ((EEPROM_read8(flight_number_addr + 1))<<8) | EEPROM_read8(flight_number_addr);
-        
+
         statusLED(1);
-        
+
         /*****************************/
         /* Initialize Serial Monitor */
         /*****************************/
-        
+
         statusLED(4);
-        #ifdef serialDebug
-                Serial.println("------------------------OpenSourceQuad------------------------");
-                Serial.println();
-                Serial.print("Software version: ");               
-                Serial.print(softwareVersionMajor);
-                Serial.print(".");          
-                Serial.println(softwareVersionMinor);
-                Serial.print("Flight number: ");
-                Serial.println(flightNumber);
-                Serial.println();
-                Serial.println("--------------------------------------------------------------");
-        #endif
+#ifdef serialDebug
+        Serial.println("------------------------OpenSourceQuad------------------------");
+        Serial.println();
+        Serial.print("Software version: ");               
+        Serial.print(softwareVersionMajor);
+        Serial.print(".");          
+        Serial.println(softwareVersionMinor);
+        Serial.print("Flight number: ");
+        Serial.println(flightNumber);
+        Serial.println();
+        Serial.println("--------------------------------------------------------------");
+#endif
         statusLED(1);
-        
+
 
         /*****************************/
         /* Initialize data file. */
         /*****************************/
-        
+
         statusLED(5);
-        
-        #ifdef serialDebug
-                Serial.println("Initializing SD Card");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing SD Card");
+#endif
+
         // Open a .txt file for data logging and debugging
         logFileStart();
         logFile = SD.open(logFilename, FILE_WRITE);
-        
+
         statusLED(2);
-        
+
 
         /*****************************/
         /* Initialize sensors. */
         /*****************************/
-        
-        #ifdef serialDebug
-                Serial.println("Initializing Sensors");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing Sensors");
+#endif
+
         statusLED(6);
-        
+
         while(!initSensor(accel, mag,  gyro, &kinematics));
-        
+
         barometer.readEEPROM();
         barometer.setSLP(29.908);
         barometer.setOSS(3);
-         
+
         setupFourthOrder();       // Initialize the fourth order struct
-        
-        #ifdef serialDebug
-                Serial.println("Initializing GPS");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing GPS");
+#endif
+
         GPS.begin(9600);
         initGPS();
-        
+
         statusLED(3);
-        
-        
-        
+
+
+
         /*****************************/
         /* Initialize telemetry */
         /*****************************/
-        
-        #ifdef serialDebug
-                Serial.println("Initializing RX/TX");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing RX/TX");
+#endif
+
         statusLED(4);
         receiver.start();
         statusLED(1);
 
-        
+
         /*****************************/
         /* Wait for start command and receive data */
         /*****************************/
-        
-        #ifdef serialDebug
-                Serial.println("Waiting for start command"); 
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Waiting for start command"); 
+#endif
+
         statusLED(-1);
         long timer = micros();
         while(receivedStartupCommand == false) 
         {
-                
-                #ifdef serialDebug
-                        if(micros() - timer > 1000000)
-                        {
-                                timer = micros();
-                                Serial.println("Waiting for start command...");
-                        }
-                #endif
+
+#ifdef serialDebug
+                if(micros() - timer > 1000000)
+                {
+                        timer = micros();
+                        Serial.println("Waiting for start command...");
+                }
+#endif
                 scanTelemetry();
         }
         //Set the timestamp to now so angle doesnt fly out of control
         kinematics.timestamp = micros();
         statusLED(1);
-        
-        
+
+
         /*****************************/
         /* Initialize PID */
         /*****************************/
-        #ifdef serialDebug
-                Serial.println("Initializing PID controllers");
-        #endif
-        
+#ifdef serialDebug
+        Serial.println("Initializing PID controllers");
+#endif
+
         statusLED(4);
         PID_init();
         statusLED(1);
-        
-        
+
+
         /*****************************/
         /* Arm and initialize motors */
         /*****************************/
         statusLED(4);
-        
-        #ifdef serialDebug
-                Serial.println("Initializing ESCs");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing ESCs");
+#endif
+
         motorControl.calibrateESC();
-        
-        #ifdef serialDebug
-                Serial.println("Initializing Motors");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Initializing Motors");
+#endif
+
         motorControl.startMotors();
 
-        
-        #ifdef serialDebug
-                Serial.println("Setup Complete");
-        #endif
-        
+
+#ifdef serialDebug
+        Serial.println("Setup Complete");
+#endif
+
         statusLED(1);    
 }
 
@@ -560,69 +589,71 @@ double t_1Hz;
 void _100HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
-        
+
         //double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
         double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rateROLL);
-        
+        double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
+
         // TODO: add other PID calculatePID
-        motorControl.updateMotors(0., rollOut, 0., 0.);
-        
+        motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
+
+
         // Print data to the SD logFile
         logData();
-        
+
         t_100Hz = micros();
-        
-        #ifdef serialDebug        // Debug Section
-        
-                #ifdef rollPIDdebug
-                        Serial.print("Roll: ");
-                        Serial.print(kinematics.roll);
-                        Serial.print(" motorOutput: ");
-                        Serial.println(rollPID.output);
-                        Serial.println("");
-                #endif
-                
-                #ifdef pitchPIDdebug
-                        Serial.print("Roll: ");
-                        Serial.print(kinematics.pitch);
-                        Serial.print(" motorOutput: ");
-                        Serial.println(pitchPID.output);
-                        Serial.println("");
-                #endif
-        
-                #ifdef attitudeDebug
-                        Serial.print(" Pitch: ");
-                        Serial.print(kinematics.pitch);
-                        Serial.print(" Roll: ");
-                        Serial.print(kinematics.roll);
-                        Serial.print(" Yaw: ");
-                        Serial.println(kinematics.yaw);
-                #endif
-                
-                #ifdef altitudeDebug
-                        Serial.print(" Altitude: ");
-                        Serial.print(kinematics.altitude);
-                        Serial.print(" GPS: ");
-                        Serial.print(GPSDATA.altitude);
-                        Serial.print(" Barometer: ");
-                        Serial.println(barometer.altitude);
-                        
-                        Serial.print(" altitudePIDo: ");
-                        Serial.println(altitudePID.motorOutput);
-                        Serial.println();
-                #endif
-                
-                #ifdef motorsDebug
-                        Serial.print(" Motor speeds: ");
-                        for(int i = 0; i<4; i++)
-                        {
-                                Serial.print(motorSpeeds[i]);
-                                Serial.print("    ");
-                        }
-                        Serial.println();
-                #endif
-        
-        #endif
+
+#ifdef serialDebug        // Debug Section
+
+#ifdef rollPIDdebug
+        Serial.print("Roll: ");
+        Serial.print(kinematics.roll);
+        Serial.print(" motorOutput: ");
+        Serial.println(rollPID.output);
+        Serial.println("");
+#endif
+
+#ifdef pitchPIDdebug
+        Serial.print("Pitch: ");
+        Serial.print(kinematics.pitch);
+        Serial.print(" motorOutput: ");
+        Serial.println(pitchPID.output);
+        Serial.println("");
+#endif
+
+#ifdef attitudeDebug
+        Serial.print(" Pitch: ");
+        Serial.print(kinematics.pitch);
+        Serial.print(" Roll: ");
+        Serial.print(kinematics.roll);
+        Serial.print(" Yaw: ");
+        Serial.println(kinematics.yaw);
+#endif
+
+#ifdef altitudeDebug
+        Serial.print(" Altitude: ");
+        Serial.print(kinematics.altitude);
+        Serial.print(" GPS: ");
+        Serial.print(GPSDATA.altitude);
+        Serial.print(" Barometer: ");
+        Serial.println(barometer.altitude);
+
+        Serial.print(" altitudePIDo: ");
+        Serial.println(altitudePID.motorOutput);
+        Serial.println();
+#endif
+
+#ifdef motorsDebug
+        Serial.print(" Motor speeds: ");
+        for(int i = 0; i<4; i++)
+        {
+                Serial.print(motorSpeeds[i]);
+                Serial.print("    ");
+        }
+        Serial.println();
+#endif
+
+#endif
 }
 
 /*=========================================================================
@@ -656,7 +687,7 @@ void _10HzTask()
         kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
         //calculateRATE_PID(&altitudePID,  measuredRate)
         //TODO: Make sure Altitude PID is working.
-        
+
         //TODO: Make sure GPS is working fully
         checkGPS(); // Check for GPS data fully received, uses ISR
 
@@ -673,10 +704,10 @@ void _1HzTask()
         //processBatteryAlarms();
         getGPS_Data();
         t_1Hz = micros();
-        
-        #ifdef serialDebug
-        
-        #endif
+
+#ifdef serialDebug
+
+#endif
 }
 
 /*=========================================================================
@@ -688,7 +719,7 @@ void loop()
         {
                 statusLED(4);
                 _100HzTask();
-               statusLED(1);
+                statusLED(1);
         }
 
         if(micros() - t_70Hz >= _70HzPeriod)
@@ -726,5 +757,6 @@ void loop()
         cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
+
 
 

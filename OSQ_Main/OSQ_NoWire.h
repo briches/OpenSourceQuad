@@ -65,10 +65,15 @@ enum messages  // Customize these.
         autoland = 0x01,
         start = 0x02,
         broadcastData = 0x03,
-        setAngleP = 0x0C,
-        setAngleI = 0x0D,
-        setAngleD = 0x0E,
-        resetPitchRoll = 0x10,
+        increaseOperatingPoint = 0x0C,
+        decreaseOperatingPoint = 0x0D,
+        
+        increasePitch = 0x0E,
+        decreasePitch = 0x0F,
+        increaseRoll = 0x10,
+        decreaseRoll = 0x11,
+        
+        resetPitchRoll = 0xC0,
         err = -1, // Must have this one
 };
 

@@ -7,11 +7,14 @@ PImage background; // Background image
 PFont mono; // Font
 String time; // Prog time
 String flightTimeStr; // Flight millis
+long connectTime;
 byte flightTime1; // Flight time from start, unsigned long = 4 bytes
 byte flightTime2;
 byte flightTime3;
 byte flightTime4;
 boolean connection = false; // Connected to copter, or no.
+
+int rollSetpoint, pitchSetpoint;
 
 // Button states
 boolean overSendButton;
@@ -96,14 +99,23 @@ void draw()
     // Setup other text.
     textFont(mono, 15);
     
-    text("Keyboard Options:", 25, 150);
+    text("Keyboard Options:        Press ENTER to send", 25, 150);
     text("X : Disarm", 25, 175);
     text("S : Start", 25, 200);
     text("B : Broadcast", 25, 225);
-    text("P : Set P", 25, 250);
-    text("I : Set I", 25, 275);
-    text("D : Set D", 25, 300);
-    text("R : Reset Attitude", 25, 325);
+    text("P : Go UP", 25, 250);
+    text("I : Go DOWN", 25, 275);
+    text("UP arrow: Pitch up", 25, 300);
+    text("DOWN arrow: Pitch down", 25, 325);
+    text("LEFT arrow: Roll up", 25, 350);
+    text("RIGHT arrow: Roll down", 25, 375);
+    text("R : Reset Attitude", 25, 400);
+    
+    text("Setpoints: ", 550, 90);
+    text("Pitch: ", 550, 115);
+    text(str(pitchSetpoint), 625, 115);
+    text("Roll: ", 550, 140);
+    text(str(rollSetpoint), 625, 140);
     
     // Display prog time and flight time
     displayTimes();
@@ -139,35 +151,10 @@ void draw()
      -----------------------------------------------------------------------------*/
 void serialEvent(Serial myPort)
 {
-    connection = true;
-    if(myPort.available() >= 5)
+    if(myPort.available() > 0)
     {
-        rxPacket[0] = byte(myPort.read());
-        if(rxPacket[0] == 0xFF)
-        {
-            rxPacket[1] = byte(myPort.read());
-            rxPacket[2] = byte(myPort.read());
-            rxPacket[3] = byte(myPort.read());
-            rxPacket[4] = byte(myPort.read());
-            
-            flightTime1 = rxPacket[1];
-            flightTime2 = rxPacket[2];
-            flightTime3 = rxPacket[3];
-            flightTime4 = rxPacket[4];
-            
-            println(flightTime1);
-            println(flightTime2);
-            println(flightTime3);
-            println(flightTime4);
-        }
-        else
-        {
-            for(int i = 0; i<= myPort.available(); i++)
-            {
-                rxPacket[0] = byte(myPort.read());
-                println(rxPacket[0]);
-            }
-        }
+        connection = true;
+        connectTime = millis();
     }
 }
 
@@ -176,7 +163,10 @@ void serialEvent(Serial myPort)
      -----------------------------------------------------------------------------*/
 void keyPressed()
 {
-    println(key);
+    if(key == CODED)
+    {
+        println(key);
+    }
     
     switch(key)
     {
@@ -220,17 +210,47 @@ void keyPressed()
             txPacket[3] = byte(iGain[1]);
             txPacket[4] = byte(iGain[0]);
             break;
-        case 'D':
-        case 'd':
-            txPacket[0] = byte(0xFF);
-            txPacket[1] = byte(0x0E);
-            txPacket[2] = byte(dGain[2]);
-            txPacket[3] = byte(dGain[1]);
-            txPacket[4] = byte(dGain[0]);
-            break;
+            
+        case ENTER:
+            sendtxPacket();
             
         default:
             // Hell yeah
+            break;
+    }
+    switch(keyCode)
+    {
+        
+        case UP: // Increase Pitch
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x0E);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            break;
+            
+        case DOWN: // Decrease Pitch
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x0F);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            break;
+            
+        case LEFT: // increase Roll
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x10);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            break;
+            
+        case RIGHT: // decrease Roll
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x11);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
             break;
     }
             
@@ -266,6 +286,43 @@ void mousePressed()
      -----------------------------------------------------------------------------*/
 void sendtxPacket()
 {
+    switch(txPacket[1])
+    {
+        case 0x00:
+        {
+            connection = false;
+            connectTime = 0;
+            pitchSetpoint = 0;
+            rollSetpoint = 0;
+            break;
+        }
+        case 0x0E:
+        {
+            pitchSetpoint = pitchSetpoint + 1;
+            break;
+        }
+        case 0x0F:
+        {
+            pitchSetpoint = pitchSetpoint - 1;
+            break;
+        }
+        case 0x10:
+        {
+            rollSetpoint = rollSetpoint + 1;
+            break;
+        }
+        case 0x11:
+        {
+            rollSetpoint = rollSetpoint - 1;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+            
+            
     for(int i = 0; i<5; i++)
     {
         myPort.write(txPacket[i]);
@@ -323,9 +380,12 @@ void displayTimes()
     text(time, 15, 50);
 
     // Display flight time, from start.
-    flightTimeStr = str((int(flightTime1)*16777216) + (int(flightTime2)*65536) + (int(flightTime3)*256) + int(flightTime4));
-    text("Flight time: ", 550, 50);
-    text(flightTimeStr, 700, 50);
+    flightTimeStr = str(millis() - connectTime);
+    if(connection == true)
+    {
+        text("Flight time: ", 550, 50);
+        text(flightTimeStr, 700, 50);
+    }
 }
 
 /*================================================================================
