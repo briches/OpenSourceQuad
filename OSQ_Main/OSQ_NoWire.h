@@ -11,7 +11,7 @@
  	This library is designed to allow easy communication between two
  	microcontrollers through wireless Serial3s. It should abstract away the serial
  	communication part of the interation, and leave just the message send/recieve
- 	functionality easily accessible by the user.
+ 	functionality easily accessible.
 
  	Copyright (C) 2013  Brandon Riches
 
