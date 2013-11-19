@@ -177,6 +177,7 @@ void keyPressed()
             txPacket[2] = byte(0x00);
             txPacket[3] = byte(0x00);
             txPacket[4] = byte(0x00);
+            sendtxPacket();
             break;
         case 'S':
         case 's':
@@ -185,6 +186,7 @@ void keyPressed()
             txPacket[2] = byte(0x00);
             txPacket[3] = byte(0x00);
             txPacket[4] = byte(0x00);
+            sendtxPacket();
             break;
         case 'B':
         case 'b':
@@ -193,6 +195,7 @@ void keyPressed()
             txPacket[2] = byte(0x00);
             txPacket[3] = byte(0x00);
             txPacket[4] = byte(0x00);
+            sendtxPacket();
             break;
         case 'P':
         case 'p':
@@ -201,6 +204,7 @@ void keyPressed()
             txPacket[2] = byte(pGain[2]);
             txPacket[3] = byte(pGain[1]);
             txPacket[4] = byte(pGain[0]);
+            sendtxPacket();
             break;
         case 'I':
         case 'i':
@@ -209,6 +213,7 @@ void keyPressed()
             txPacket[2] = byte(iGain[2]);
             txPacket[3] = byte(iGain[1]);
             txPacket[4] = byte(iGain[0]);
+            sendtxPacket();
             break;
             
         case ENTER:
@@ -227,6 +232,7 @@ void keyPressed()
             txPacket[2] = byte(0);
             txPacket[3] = byte(0);
             txPacket[4] = byte(0);
+            sendtxPacket();
             break;
             
         case DOWN: // Decrease Pitch
@@ -235,6 +241,7 @@ void keyPressed()
             txPacket[2] = byte(0);
             txPacket[3] = byte(0);
             txPacket[4] = byte(0);
+            sendtxPacket();
             break;
             
         case LEFT: // increase Roll
@@ -243,6 +250,7 @@ void keyPressed()
             txPacket[2] = byte(0);
             txPacket[3] = byte(0);
             txPacket[4] = byte(0);
+            sendtxPacket();
             break;
             
         case RIGHT: // decrease Roll
@@ -251,6 +259,7 @@ void keyPressed()
             txPacket[2] = byte(0);
             txPacket[3] = byte(0);
             txPacket[4] = byte(0);
+            sendtxPacket();
             break;
     }
             

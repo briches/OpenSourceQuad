@@ -43,22 +43,28 @@
 
 // TODO:
 #ifdef NESTED_PID
-        double SET_ATT_KP = 6;
-        double SET_ATT_KI = 0;
-        double SET_ATT_KD = 0;
+        double SET_ATT_KP = 0.1;
+        double SET_ATT_KI = 0.0;
+        double SET_ATT_KD = 0.0;
 
-        double RATE_ATT_KP = 2.0;
-        double RATE_ATT_KI = 0.0;
-        double RATE_ATT_KD = 0.0;
+        double RATE_ATT_KP = 0.88151;
+        double RATE_ATT_KI = 0.15223;
+        double RATE_ATT_KD = 0.85251;
 
 #endif
 
 // These ones are pretty good. Keep these.
 #ifdef SINGLE_PID 
-        double ATT_KP = 0.88151*1.5;
-        double ATT_KI = 0.15223;
-        double ATT_KD = 0.85251;
+        double ATT_KP = 3.3017;
+        double ATT_KI = 0.87416;
+        double ATT_KD = 0.65077;
 #endif
+
+//#ifdef SINGLE_PID 
+//        double ATT_KP = 0.7;
+//        double ATT_KI = 0.7/2.3;
+//        double ATT_KD = 0.28*0.7;
+//#endif
 
 double altitudekP = 0;
 double altitudekI = 0;
@@ -147,7 +153,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	#endif
 
 	#ifdef NESTED_PID
-		double error = measuredAttitude - PID->setTarget;
+		double error = measuredValue - PID->setTarget;
 
 		// Exterior PID set loop
 		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
@@ -166,6 +172,8 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 		PID->output = 	PID->rateIntegratedError +
 						rateError * PID_GAINS[PID->ID].rateP +
 						(rateError - PID->rateLastError) * PID_GAINS[PID->ID].setD / dt;
+
+                PID->output = -PID->output;
 
 		PID->lastTimestamp = micros();
                 PID->setLastError = error;

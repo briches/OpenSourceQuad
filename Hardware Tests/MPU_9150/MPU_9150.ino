@@ -4,8 +4,6 @@
 // Class initialization
 MPU_9150_c        MPU_9150;
 
-
-
 void setup()
 {
         Serial.begin(19200);
@@ -27,9 +25,21 @@ void setup()
         
         // Setup the MPU
         uint8_t deviceID = MPU_9150.initMPU();
-        Serial.println(deviceID);
+        Serial.print("This number should read 0x68:  0x");
+        Serial.println(deviceID, HEX);
 }
 
 void loop()
 {
+        sensors_event_t sensorEvent;
+        MPU_9150.newEvent(&sensorEvent);
+//        Serial.print("\n Accelerometer");
+//        Serial.print(" X: ");
+//        Serial.print(sensorEvent.acceleration.x);
+//        Serial.print(" Y: ");
+//        Serial.print(sensorEvent.acceleration.y);
+//        Serial.print(" Z: ");
+//        Serial.print(sensorEvent.acceleration.z);
+        
+        delay(10);
 }

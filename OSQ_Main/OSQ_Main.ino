@@ -52,15 +52,15 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // <- Must be defined to use any of the other debuggers
+//#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
-#define rx_txDebug
+//#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
 //#define rollPIDdebug
-//#define pitchPIDdebugs
+//#define pitchPIDdebug
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -83,7 +83,7 @@ bool gotPID = false;
 void scanTelemetry()
 {
         unsigned char packet[5] = {
-                0xFF, 0x00, 0x00, 0x00, 0x00        };
+                0xFF, 0x00, 0x00, 0x00, 0x00                };
         int EEPROMselectionPID;
 
         switch(receiver.ScanForMessages())
@@ -148,25 +148,25 @@ void scanTelemetry()
 
         case increaseOperatingPoint:
                 {
-                motorControl.changeOperatingPoint(1);
+                        motorControl.changeOperatingPoint(1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received increase OP: ");
-                Serial.println(motorControl.operatingPoint);
+                        Serial.print("Received increase OP: ");
+                        Serial.println(motorControl.operatingPoint);
 #endif
 #endif
                 }
                 break;
-                 
+
         case decreaseOperatingPoint:
                 {
-                motorControl.changeOperatingPoint(-1);
+                        motorControl.changeOperatingPoint(-1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received decrease OP: ");
-                Serial.println(motorControl.operatingPoint);
+                        Serial.print("Received decrease OP: ");
+                        Serial.println(motorControl.operatingPoint);
 #endif
 
 #endif
@@ -175,12 +175,12 @@ void scanTelemetry()
 
         case increasePitch:
                 {
-                double newSetpoint = incrementSetpoint(&pitchPID, 1);
+                        double newSetpoint = incrementSetpoint(&pitchPID, 1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received increase pitch: ");
-                Serial.println(newSetpoint);
+                        Serial.print("Received increase pitch: ");
+                        Serial.println(newSetpoint);
 #endif
 
 #endif
@@ -190,12 +190,12 @@ void scanTelemetry()
 
         case decreasePitch:
                 {
-                double newSetpoint = incrementSetpoint(&pitchPID, -1);
+                        double newSetpoint = incrementSetpoint(&pitchPID, -1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received decrease pitch: ");
-                Serial.println(newSetpoint);
+                        Serial.print("Received decrease pitch: ");
+                        Serial.println(newSetpoint);
 #endif
 
 #endif
@@ -204,12 +204,12 @@ void scanTelemetry()
 
         case increaseRoll:
                 {
-                double newSetpoint = incrementSetpoint(&rollPID, 1);
+                        double newSetpoint = incrementSetpoint(&rollPID, 1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received increase roll: ");
-                Serial.println(newSetpoint);
+                        Serial.print("Received increase roll: ");
+                        Serial.println(newSetpoint);
 #endif  
 #endif
                 }
@@ -217,12 +217,12 @@ void scanTelemetry()
 
         case decreaseRoll:
                 {
-                double newSetpoint = incrementSetpoint(&rollPID, -1);
+                        double newSetpoint = incrementSetpoint(&rollPID, -1);
 
 #ifdef serialDebug
 #ifdef rx_txDebug
-                Serial.print("Received decrease roll: ");
-                Serial.println(newSetpoint);
+                        Serial.print("Received decrease roll: ");
+                        Serial.println(newSetpoint);
 #endif        
 #endif
                 }
@@ -423,7 +423,6 @@ void setup()
 
         statusLED(4);
 
-        writeConfigBlock();
         softwareVersionMinor = EEPROM_read8(software_version_addr);
         softwareVersionMajor = EEPROM_read8(software_version_addr + 1);
         flightNumber = ((EEPROM_read8(flight_number_addr + 1))<<8) | EEPROM_read8(flight_number_addr);
@@ -534,7 +533,11 @@ void setup()
         //Set the timestamp to now so angle doesnt fly out of control
         kinematics.timestamp = micros();
         statusLED(1);
-
+        
+        /*****************************/
+        /* Write some EEPROM config data */
+        /*****************************/
+        writeConfigBlock();
 
         /*****************************/
         /* Initialize PID */
@@ -571,6 +574,8 @@ void setup()
 #endif
 
         statusLED(1);    
+        
+        
 }
 
 /*===============================================
@@ -630,18 +635,7 @@ void _100HzTask()
         Serial.println(kinematics.yaw);
 #endif
 
-#ifdef altitudeDebug
-        Serial.print(" Altitude: ");
-        Serial.print(kinematics.altitude);
-        Serial.print(" GPS: ");
-        Serial.print(GPSDATA.altitude);
-        Serial.print(" Barometer: ");
-        Serial.println(barometer.altitude);
 
-        Serial.print(" altitudePIDo: ");
-        Serial.println(altitudePID.motorOutput);
-        Serial.println();
-#endif
 
 #ifdef motorsDebug
         Serial.print(" Motor speeds: ");
@@ -684,7 +678,19 @@ void _20HzTask()
  -----------------------------------------------------------------------*/
 void _10HzTask()
 {
-        kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, analogRead(USRF_PIN)*0.01266762, kinematics.phi, GPSDATA.quality);
+        double altUSRF = analogRead(USRF_PIN)*0.01266762;
+        kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
+#ifdef altitudeDebug
+        Serial.print(" Altitude: ");
+        Serial.print(kinematics.altitude);
+        Serial.print(" USRF: ");
+        Serial.print(altUSRF);
+        Serial.print(" GPS: ");
+        Serial.print(GPSDATA.altitude);
+        Serial.print(" Barometer: ");
+        Serial.println(barometer.altitude);
+#endif
+
         //calculateRATE_PID(&altitudePID,  measuredRate)
         //TODO: Make sure Altitude PID is working.
 
@@ -757,6 +763,7 @@ void loop()
         cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
+
 
 
 

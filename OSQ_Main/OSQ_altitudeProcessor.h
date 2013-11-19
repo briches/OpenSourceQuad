@@ -39,18 +39,14 @@
 
 #define Pi  	    (3.14159265359F)	// Its pi.
 
-#define altKp       (0.0)
-#define altKi       (0.0)
-#define altKd       (0.0)
+boolean isSetInitialAltitudeBarometer = false;
+boolean isSetInitialAltitudeGPS = false;
 
-static boolean isSetInitialAltitudeBarometer = false;
-static boolean isSetInitialAltitudeGPS = false;
-
-static double initialAltitudeBarometer = 0;    // From sea level;
-static double initialAltitudeGPS = 0;    // From sea level;
-static double previousAltitude = 0;
-static double sensorAltitude = 0;
-static double sensorCovariance = 1;
+double initialAltitudeBarometer = 0;    // From sea level;
+double initialAltitudeGPS = 0;    // From sea level;
+double previousAltitude = 0;
+double sensorAltitude = 0;
+double sensorCovariance = 1;
 
 
 void setInitialAltitude(double GPS, double baro);

@@ -194,7 +194,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 kinematics.ratePITCH = (kinematics.pitch - kinematics.lastPitch) / elapsed_time;
                 kinematics.rateROLL = kinematics.roll - kinematics.lastRoll / elapsed_time;
                 kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw / elapsed_time;
-                }
+                
+        }
 };
 
 double complementary(double mynum, int select, double coeff)
