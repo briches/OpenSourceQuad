@@ -49,8 +49,8 @@ typedef struct Queue_t
 
 		~Queue_t(); // Destructor
 
-		bool qPutData(uint8_t data);
-		bool qGetData(uint8_t &data);
+		boolean qPutData(uint8_t data);
+		boolean qGetData(uint8_t &data);
 
 };
 
@@ -84,7 +84,7 @@ Queue_t :: ~Queue_t()
 /* Function takes byte input of data, stores to queue array if space
 is available. Will return true/false based on memory availability.
 */
-bool qPutData(uint8_t data) 
+boolean qPutData(uint8_t data) 
 {
 
 	if (size >= MAXIMUM_SIZE) 
@@ -104,7 +104,7 @@ bool qPutData(uint8_t data)
 the queue if it is available. Will return true/false based on memory
 availability.
 */
-bool qGetData(uint8_t &data) 
+boolean qGetData(uint8_t &data) 
 {
 
 	if (size < MINIMUM_SIZE)
