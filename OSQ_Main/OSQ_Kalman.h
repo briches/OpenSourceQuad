@@ -31,7 +31,7 @@
 #ifndef OSQ_KALMAN_H_INCLUDED
 #define OSQ_KALMAN_H_INCLUDED
 
-#define initialUncertainty (1000)
+#define initialUncertainty 1000
 
 typedef struct Kalman_t
 {
@@ -44,23 +44,24 @@ typedef struct Kalman_t
         
         unsigned long timestamp;
         
-        double measurementNoise;
+        double measurementNoise, processNoise;
         
         double kalmanUpdate(double z); // Measurement and update
         double kalmanSpeed(); // Returns x'
         double kalmanCovariance(int selection); // Returns either P0_ or P3_
         
-        Kalman_t(double mNoise);
+        Kalman_t(double mNoise, double pNoise);
 };
 
 // Initialize the instances of Kalman Filter we will be using
-Kalman_t rollKalman(10);
-Kalman_t pitchKalman(10);
+Kalman_t rollKalman(10., 0.5);
+Kalman_t pitchKalman(10., 0.5);
 
 // Constructor, also initializes vars
-Kalman_t :: Kalman_t(double mNoise) 
+Kalman_t :: Kalman_t(double mNoise, double pNoise) 
 {
         measurementNoise = mNoise;
+        processNoise = pNoise; // Gaussian rand added to final measurement
         P0_ = initialUncertainty;
         P1_ = 0;
         P2_ = 0;
@@ -72,16 +73,16 @@ Kalman_t :: Kalman_t(double mNoise)
 // Main update
 double Kalman_t :: kalmanUpdate(double z) 
 {
-        double y, S, K[2], Ky[2], a, b;
+        double y, S, K[2], Ky[2];
         double dt = (micros() - timestamp)/1000000.;
-        /** Measurement Update **/
         
+        /** Measurement Update **/
 	// y = z - Hx
 	y = z - x1_;
 
 
 	// S = H*P*HT + measurement_noise
-	S = P0_ + measurementNoise;
+	S = P0_ + measurementNoise * random(-1,1);
 
 	// K = P*HT*S^-1
 	K[0] = P0_ * (1 / S);
@@ -106,8 +107,6 @@ double Kalman_t :: kalmanUpdate(double z)
         P1_ = beta + dt * epsilon;
         P2_ = gamma + dt * epsilon;
         P3_ = epsilon;
-        
-        P0_ += abs(y); // Magic guess
 
 	// x
 	x1_ += x2_ * dt;

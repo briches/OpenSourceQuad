@@ -45,7 +45,7 @@ typedef struct Queue_t
         
         uint8_t * memory;
         
-		Queue_t(); // Constructor
+		Queue_t(uint8_t max, uint8_t min); // Constructor
 
 		~Queue_t(); // Destructor
 
@@ -80,7 +80,7 @@ Queue_t :: Queue_t(uint8_t max)
 Queue_t :: ~Queue_t()
 {
 	free(memory);
-}
+};
 
 /* Function takes byte input of data, stores to queue array if space
 is available. Will return true/false based on memory availability.
@@ -100,7 +100,7 @@ boolean qPutData(uint8_t data)
 		return true;
 	}
 
-}
+};
 /* Function takes input as location of byte of data, pulls data from
 the queue if it is available. Will return true/false based on memory
 availability.
@@ -120,6 +120,6 @@ boolean qGetData(uint8_t &data)
 		return true;
 	}
 
-}
+};
 
 #endif // OSQ_QUEUE_H_INCLUDED

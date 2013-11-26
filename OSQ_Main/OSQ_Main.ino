@@ -38,11 +38,13 @@
 #include "OSQ_PID.h"
 #include "OSQ_EEPROM.h"
 #include "OSQ_Kalman.h"
+#include "OSQ_Queue.h"
 
 #include <Adafruit_GPS.h>         
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <SD.h>
+#include <OSQ_Queue.h>
 
 /** Program Specifications **/
 int softwareVersionMajor;
@@ -52,7 +54,7 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // <- Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
@@ -680,6 +682,7 @@ void _10HzTask()
 {
         double altUSRF = analogRead(USRF_PIN)*0.01266762;
         kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
+#ifdef serialDebug
 #ifdef altitudeDebug
         Serial.print(" Altitude: ");
         Serial.print(kinematics.altitude);
@@ -689,6 +692,7 @@ void _10HzTask()
         Serial.print(GPSDATA.altitude);
         Serial.print(" Barometer: ");
         Serial.println(barometer.altitude);
+#endif
 #endif
 
         //calculateRATE_PID(&altitudePID,  measuredRate)
@@ -712,7 +716,6 @@ void _1HzTask()
         t_1Hz = micros();
 
 #ifdef serialDebug
-
 #endif
 }
 

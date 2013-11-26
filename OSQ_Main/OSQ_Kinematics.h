@@ -184,6 +184,13 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 
                 //Testing
                 roll_accel = rollKalman.kalmanUpdate(roll_accel);
+                pitch_accel = pitchKalman.kalmanUpdate(pitch_accel);
+                
+                //TODO
+//                Serial.print("Pitch: ");
+//                Serial.print(pitch_accel);
+//                Serial.print(" Covar: ");
+//                Serial.println(pitchKalman.P0_);
                 
                 // Final values
                 kinematics.pitch = kinematics.pitch_gyro;

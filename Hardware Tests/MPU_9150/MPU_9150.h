@@ -304,13 +304,15 @@ void MPU_9150_c :: newEvent(sensors_event_t *event)
         event->type = 1;
         event->timestamp = micros();
         
-        event->acceleration.x = accelData.x / 16384.;
-        event->acceleration.y = accelData.y / 16384.;
-        event->acceleration.z = accelData.z / 16384.;
+        event->acceleration.x = (float)accelData.x / 16384.0;
+        event->acceleration.y = (float)accelData.y / 16384.0;
+        event->acceleration.z = (float)accelData.z / 16384.0;
         
-        event->gyro.x = gyroData.x;
-        event->gyro.y = gyroData.y;
-        event->gyro.z = gyroData.z;
+        Serial.print(event->acceleration.x); Serial.print("   "); Serial.println(accelData.x);
+        
+        event->gyro.x = (float)gyroData.x;
+        event->gyro.y = (float)gyroData.y;
+        event->gyro.z = (float)gyroData.z;
 };
 
 /*=========================================================================
@@ -350,12 +352,9 @@ void MPU_9150_c :: newAccelEvent()
         #endif
         
         // Two's complement and combine hi-lo bytes
-        accelData.x = ((xlo | (xhi << 8)) << 1) >> 1;
+        accelData.x = ((xlo | (xhi << 8)) >> 1);
         accelData.y = ((ylo | (yhi << 8)) << 1) >> 1;
-        accelData.z = ((zlo | (zhi << 8)) << 1) >> 1;
-        
-        Serial.println(accelData.x);
-        
+        accelData.z = ((zlo | (zhi << 8)) << 1) >> 1;        
 };
 
 /*=========================================================================
@@ -398,6 +397,7 @@ void MPU_9150_c :: newGyroEvent()
         gyroData.x = (xlo | (xhi << 8))>>1;
         gyroData.y = (ylo | (yhi << 8))>>1;
         gyroData.z = (zlo | (zhi << 8))>>1;
+        
 };
 
 
