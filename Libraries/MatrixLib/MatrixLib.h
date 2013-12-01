@@ -1,18 +1,19 @@
 /* Matrix library for implementing matrix math with low resource consumption */
-
+/*
+	Author: Brandon Riches
+	Modified: Dec 1st, 2013
+*/
 /**//** Included functions: /**//**/
 // typedef Matrix_t
 // constructor Matrix_t(int nrows, int ncols)
 // destructor ~Matrix_t()
 // void Matrix_t :: set(int row, int col, double value)
+#pragma once
 
 #ifndef OSQ_MATRIXLIB_H_INCLUDED
 #define OSQ_MATRIXLIB_H_INCLUDED
 
-#include <stdlib.h>
-#include <iostream>
 #include <math.h>
-using namespace std;
 
 #if ARDUINO > 100
 	#include "Arduino.h"
@@ -68,6 +69,8 @@ Matrix_t :: ~Matrix_t()
 	------------------------------------*/
 uint8_t matrixMul(Matrix_t* dest, Matrix_t* A, Matrix_t* B);
 uint8_t cholInv(Matrix_t* dest, Matrix_t* A);
+uint8_t matrixAdd(Matrix_t* dest, Matrix_t* A,Matrix_t* B);
+uint8_t matrixTranspose(Matrix_t* dest, Matrix_t* A);
 
 /*=======================================================
 	Main Matrix Methods
@@ -220,12 +223,12 @@ uint8_t matrixTranspose(Matrix_t* dest, Matrix_t* A)
 			dest->pdata[j*A->rows + i] = A->pdata[i*A->rows + j];
 		}
 	}
+	return NO_ERROR;
 
 };
 
 uint8_t matrixAdd(Matrix_t* dest, Matrix_t* A,Matrix_t* B)
 {
-
 	if(A->rows != B->rows)
 		return MATRIX_INPUT_DIM_ERR;
 
@@ -245,6 +248,7 @@ uint8_t matrixAdd(Matrix_t* dest, Matrix_t* A,Matrix_t* B)
 			dest->pdata[i*A->cols + j] = A->pdata[i*A->cols + j] + B->pdata[i*A->cols + j];
 		}
 	}
+	return NO_ERROR;
 
 };
 
