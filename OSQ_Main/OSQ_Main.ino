@@ -38,13 +38,13 @@
 #include "OSQ_PID.h"
 #include "OSQ_EEPROM.h"
 #include "OSQ_Kalman.h"
-#include "OSQ_Queue.h"
 
 #include <Adafruit_GPS.h>         
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <SD.h>
 #include <OSQ_Queue.h>
+#include <MatrixLib.h>
 
 /** Program Specifications **/
 int softwareVersionMajor;

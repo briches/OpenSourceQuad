@@ -33,13 +33,13 @@ void loop()
 {
         sensors_event_t sensorEvent;
         MPU_9150.newEvent(&sensorEvent);
-//        Serial.print("\n Accelerometer");
-//        Serial.print(" X: ");
-//        Serial.print(sensorEvent.acceleration.x);
-//        Serial.print(" Y: ");
-//        Serial.print(sensorEvent.acceleration.y);
-//        Serial.print(" Z: ");
-//        Serial.print(sensorEvent.acceleration.z);
+        Serial.print("\n Accelerometer");
+        Serial.print(" X: ");
+        Serial.print(sensorEvent.acceleration.x);
+        Serial.print(" Y: ");
+        Serial.print(sensorEvent.acceleration.y);
+        Serial.print(" Z: ");
+        Serial.print(sensorEvent.acceleration.z);
         
         delay(10);
 }

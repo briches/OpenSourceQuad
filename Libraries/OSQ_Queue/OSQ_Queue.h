@@ -1,6 +1,5 @@
 #pragma once
 #include "packet.h"
-#include "stdafx.h"
 
 /*
 		Open Source Quad: OSQ_Queue.cpp

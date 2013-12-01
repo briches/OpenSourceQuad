@@ -109,7 +109,7 @@ double Kalman_t :: kalmanUpdate(double z)
         P3_ = epsilon;
 
 	// x
-	x1_ += x2_ * dt;
+	x1_ += x2_ * dt + processNoise * random(-1,1);
 
 	return x1_; // position
 };
@@ -127,3 +127,4 @@ double Kalman_t :: kalmanCovariance(int selection)
 };
 
 #endif // OSQ_KALMAN_H_INCLUDED
+

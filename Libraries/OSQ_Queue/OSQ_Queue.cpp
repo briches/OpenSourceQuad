@@ -1,5 +1,9 @@
 #include "OSQ_Queue.h"
 
+#if ARDUINO > 100
+	#include "Arduino.h"
+#endif
+
 OSQ_Queue::OSQ_Queue()
 {
 	Head = NULL;
@@ -103,13 +107,13 @@ void test_OSQ_Queue()
 
 	MyPacket = set_packet_t(MyPacket, "Hello");
 	MyQueue.push(MyPacket);
-	
+
 	MyPacket = set_packet_t(MyPacket, "world");
 	MyQueue.push(MyPacket);
-		
+
 	MyPacket = set_packet_t(MyPacket, "qwert");
 	MyQueue.push(MyPacket);
-		
+
 	MyPacket = set_packet_t(MyPacket, "yuiop");
 	MyQueue.push(MyPacket);
 
@@ -126,7 +130,7 @@ void test_OSQ_Queue()
 
 	MyPacket = set_packet_t(MyPacket, "again");
 	MyQueue.push(MyPacket);
-	
+
 	MyPacket = set_packet_t(MyPacket, "fucko");
 	MyQueue.push(MyPacket);
 

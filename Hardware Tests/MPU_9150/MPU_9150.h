@@ -308,11 +308,9 @@ void MPU_9150_c :: newEvent(sensors_event_t *event)
         event->acceleration.y = (float)accelData.y / 16384.0;
         event->acceleration.z = (float)accelData.z / 16384.0;
         
-        Serial.print(event->acceleration.x); Serial.print("   "); Serial.println(accelData.x);
-        
-        event->gyro.x = (float)gyroData.x;
-        event->gyro.y = (float)gyroData.y;
-        event->gyro.z = (float)gyroData.z;
+        event->gyro.x = (float)gyroData.x * 250.0 / 16384;
+        event->gyro.y = (float)gyroData.y * 250.0 / 16384;
+        event->gyro.z = (float)gyroData.z * 250.0 / 16384;
 };
 
 /*=========================================================================
@@ -353,8 +351,8 @@ void MPU_9150_c :: newAccelEvent()
         
         // Two's complement and combine hi-lo bytes
         accelData.x = ((xlo | (xhi << 8)) >> 1);
-        accelData.y = ((ylo | (yhi << 8)) << 1) >> 1;
-        accelData.z = ((zlo | (zhi << 8)) << 1) >> 1;        
+        accelData.y = ((ylo | (yhi << 8)) >> 1);
+        accelData.z = ((zlo | (zhi << 8)) >> 1);        
 };
 
 /*=========================================================================

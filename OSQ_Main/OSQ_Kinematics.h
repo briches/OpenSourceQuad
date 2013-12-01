@@ -182,17 +182,6 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 // Check the quadrant of vector
                 nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
                 
-                //Testing
-                roll_accel = rollKalman.kalmanUpdate(roll_accel);
-                pitch_accel = pitchKalman.kalmanUpdate(pitch_accel);
-                
-                //TODO
-//                Serial.print("Pitch: ");
-//                Serial.print(pitch_accel);
-//                Serial.print(" Covar: ");
-//                Serial.println(pitchKalman.P0_);
-                
-                // Final values
                 kinematics.pitch = kinematics.pitch_gyro;
                 kinematics.roll  = -kinematics.roll_gyro;
                 kinematics.yaw   = complementary(kinematics.yaw_mag, 2, yawCoeff);
@@ -201,6 +190,15 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 kinematics.ratePITCH = (kinematics.pitch - kinematics.lastPitch) / elapsed_time;
                 kinematics.rateROLL = kinematics.roll - kinematics.lastRoll / elapsed_time;
                 kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw / elapsed_time;
+                
+                //Testing
+                roll_accel = rollKalman.kalmanUpdate(roll_accel);
+                pitch_accel = pitchKalman.kalmanUpdate(pitch_accel);
+                
+                Serial.print("Pitch: ");
+                Serial.print(pitch_accel);
+                Serial.print(" Covar: ");
+                Serial.println(pitchKalman.P0_);
                 
         }
 };
