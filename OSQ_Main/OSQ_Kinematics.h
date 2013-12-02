@@ -39,7 +39,6 @@
 
 #include "OSQ_SENSORLIB.h"
 #include "OSQ_Motors.h"
-#include "OSQ_Kalman.h"
 #include <Wire.h>
 
 bool startup = true;
