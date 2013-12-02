@@ -54,7 +54,7 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-#define serialDebug        // <- Must be defined to use any of the other debuggers
+//#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
@@ -239,13 +239,13 @@ void scanTelemetry()
 #ifdef NESTED_PID
                 rollPID.rateIntegratedError = 0;
                 pitchPID.rateIntegratedError = 0;
-                kinematics.ratePITCH = 0;
-                kinematics.rateROLL = 0;
+                kinematics.pitchRate = 0;
+                kinematics.rollRate = 0;
 #endif
 
                 kinematics.pitch = 0;
                 kinematics.roll = 0;
-                kinematics.rateROLL = 0;
+                kinematics.rollRate = 0;
 
 #ifdef serialDebug
 #ifdef rx_txDebug
@@ -534,6 +534,8 @@ void setup()
         }
         //Set the timestamp to now so angle doesnt fly out of control
         kinematics.timestamp = micros();
+        kinematics.pitch = 0;
+        kinematics.roll = 0;
         statusLED(1);
         
         /*****************************/
@@ -583,7 +585,7 @@ void setup()
 /*===============================================
  Time keeping for polling
  -----------------------------------------------------------------------*/
-double t_100Hz;
+double t_200Hz;
 double t_70Hz;
 double t_20Hz;
 double t_10Hz;
@@ -593,22 +595,18 @@ double t_1Hz;
  _100HzTask
  Process on a 100Hz clock
  -----------------------------------------------------------------------*/
-void _100HzTask()
+void _200HzTask()
 {
         kinematicEvent(0,&accel,&mag,&gyro);
 
         //double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
-        double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rateROLL);
-        double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
+        double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
+        double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
 
         // TODO: add other PID calculatePID
         motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
 
-
-        // Print data to the SD logFile
-        logData();
-
-        t_100Hz = micros();
+        t_200Hz = micros();
 
 #ifdef serialDebug        // Debug Section
 
@@ -694,6 +692,8 @@ void _10HzTask()
         Serial.println(barometer.altitude);
 #endif
 #endif
+        // Print data to the SD logFile
+        logData();
 
         //calculateRATE_PID(&altitudePID,  measuredRate)
         //TODO: Make sure Altitude PID is working.
@@ -724,10 +724,10 @@ void _1HzTask()
  -----------------------------------------------------------------------*/
 void loop()                          
 {	
-        if(micros() - t_100Hz >= _100HzPeriod)
+        if(micros() - t_200Hz >= _200HzPeriod)
         {
                 statusLED(4);
-                _100HzTask();
+                _200HzTask();
                 statusLED(1);
         }
 

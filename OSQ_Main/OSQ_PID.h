@@ -54,16 +54,16 @@
 #endif
 
 // These ones are pretty good. Keep these.
-#ifdef SINGLE_PID 
-        double ATT_KP = 1.3017;
-        double ATT_KI = 0.87416;
-        double ATT_KD = 0.65077*1.5;
-#endif
 //#ifdef SINGLE_PID 
-//        double ATT_KP = 0.16739;
-//        double ATT_KI = 0.01374*5;
-//        double ATT_KD = 0.44057;
+//        double ATT_KP = 1.3017;
+//        double ATT_KI = 0.87416;
+//        double ATT_KD = 0.65077*1.5;
 //#endif
+#ifdef SINGLE_PID 
+        double ATT_KP = 0.0476508;
+        double ATT_KI = 0.0;
+        double ATT_KD = 0.4054429;
+#endif
 
 
 double altitudekP = 0;

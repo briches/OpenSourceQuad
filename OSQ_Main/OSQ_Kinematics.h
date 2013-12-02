@@ -44,11 +44,10 @@
 
 bool startup = true;
 
-#define Pi  			(3.14159265359F)	// Its pi.
+#define Pi        (3.14159265359F)	// Its pi.
 
 #define ORDER 4
 // Filter uses n = 4, r = 60, Wc = 12.5/50
-
 
 struct fourthOrderData
 {
@@ -68,9 +67,9 @@ struct kinematicData
         yaw,
         phi,        // used for USRF altitude calcs
         
-        ratePITCH,
-        rateROLL,
-        rateYAW,
+        pitchRate,
+        rollRate,
+        yawRate,
         
         lastPitch,
         lastRoll,
@@ -85,10 +84,6 @@ struct kinematicData
         io_wy,
         io_wz,
 
-        pitch_gyro,
-        roll_gyro,
-        yaw_gyro,
-
         yaw_mag;
 
         unsigned long timestamp;
@@ -101,9 +96,8 @@ kinematicData	  kinematics;
 #define ZAXIS	(2)
 
 double computeFourthOrder(double currentInput, struct fourthOrderData *filterParameters);
-double normalize(double x, double y, double z);
-void nan_quad_Check(double num1, double num2, double num3);
-double complementary(double mynum, int select, double coeff);
+void setupFourthOrder();
+void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData);
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
@@ -112,7 +106,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
         sensors_event_t	accel_event, mag_event, gyro_event;
 
-        double 	elapsed_time = 0, t_convert = 1000000;
+        double 	elapsedTime = 0, t_convert = 1000000;
 
         double 	pitch_accel, roll_accel, pitchRollCoeff = 0.5, yawCoeff = 0.9;
 
@@ -133,7 +127,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
                 if(startup)
                 {
-                        kinematics.yaw_gyro = kinematics.yaw_mag;        // Setup heading
+                        kinematics.yaw = kinematics.yaw_mag;        // Setup heading
                         startup = false;
                 }
         }
@@ -152,7 +146,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 double ay = -(accel_event.acceleration.y - kinematics.io_ay);
                 double az = accel_event.acceleration.x - kinematics.io_ax + SENSORS_GRAVITY_STANDARD;
 
-                double wx =  -(gyro_event.gyro.z - kinematics.io_wz);
+                double wx =  (gyro_event.gyro.z - kinematics.io_wz);
                 double wy =  gyro_event.gyro.x - kinematics.io_wx;
                 double wz =  gyro_event.gyro.y - kinematics.io_wy;
 
@@ -161,67 +155,44 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 ay = computeFourthOrder(ay, &fourthOrderYAXIS);
                 az = computeFourthOrder(az, &fourthOrderZAXIS);
 
-                double norm = normalize(ax, ay, az);
-                ax /= norm;
-                ay /= norm;
-                az /= norm;
-
-                elapsed_time = (micros() - kinematics.timestamp) / t_convert;
+                elapsedTime = (micros() - kinematics.timestamp) / t_convert;
                 kinematics.timestamp = micros();
 
-                kinematics.pitch_gyro    += wy * elapsed_time;
-                kinematics.roll_gyro     += wx * elapsed_time;
-                kinematics.yaw_gyro	 += wz * elapsed_time;
-
                 kinematics.phi = atan2( sqrt(ax*ax + ay*ay), az) * 180 / Pi;
-                pitch_accel = atan2( ax, sqrt(ay*ay + az*az)) * 180 / Pi;
-                roll_accel = atan2( ay, sqrt(az*az + az*az)) * 180 / Pi;
                 
-                
-                // Remove pesky NaNs that seem to occur around 0.
-                // Check the quadrant of vector
-                nan_quad_Check(pitch_accel, roll_accel, kinematics.yaw_mag);
-                
-                kinematics.pitch = kinematics.pitch_gyro;
-                kinematics.roll  = -kinematics.roll_gyro;
-                kinematics.yaw   = complementary(kinematics.yaw_mag, 2, yawCoeff);
+                // Complementary filter
+                // Calculates current angles, corrects a bit for gyro drift, if any.
+                complementaryFilter(ax, ay, az, wx, wy, wz, elapsedTime, &kinematics);
                 
                 // Calculate time derivative of attitudes
-                kinematics.ratePITCH = (kinematics.pitch - kinematics.lastPitch) / elapsed_time;
-                kinematics.rateROLL = kinematics.roll - kinematics.lastRoll / elapsed_time;
-                kinematics.rateYAW = kinematics.yaw - kinematics.lastYaw / elapsed_time;
-                
-                //Testing
-                roll_accel = rollKalman.kalmanUpdate(roll_accel);
-                pitch_accel = pitchKalman.kalmanUpdate(pitch_accel);
-                
-                Serial.print("Pitch: ");
-                Serial.print(pitch_accel);
-                Serial.print(" Covar: ");
-                Serial.println(pitchKalman.P0_);
+                kinematics.pitchRate = wy;
+                kinematics.rollRate = wx;
+                kinematics.yawRate = wz;
                 
         }
 };
 
-double complementary(double mynum, int select, double coeff)
+void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
-        if (select == 0)
+        kinData->pitch += wy * elapsedTime;
+        kinData->roll += wx * elapsedTime;
+        kinData->yaw += wz * elapsedTime;
+        
+        kinData->yaw = kinData->yaw * 0.95 + kinData->yaw_mag * 0.05;
+        
+        // Compensate for gyro drift, if the accel isnt completely garbage
+        float magnitudeApprox = abs(ax) + abs(ay) + abs(az);
+        if(magnitudeApprox > 8.81 && magnitudeApprox < 10.81)
         {
-                return coeff * kinematics.pitch_gyro 	+ (1 - coeff) * mynum;
+                double pitchAcc = atan2(ax, az) * 180/ Pi;
+                kinData->pitch = kinData->pitch * 0.98 + 0.02 * pitchAcc;
+                
+                double rollAcc = atan2(ay, az) * 180 / Pi;
+                kinData->roll = kinData->roll * 0.98 + 0.02 * rollAcc;
         }
-        if (select == 1)
-        {
-                return coeff * kinematics.roll_gyro 	+ (1 - coeff) * mynum;
-        }
-        if (select == 2)
-        {
-                return coeff * kinematics.yaw_gyro	+ (1 - coeff) * mynum;
-        }
-        return 0;
 };
 
-double computeFourthOrder(	double currentInput,
-struct fourthOrderData *filterParameters)
+double computeFourthOrder(double currentInput, struct fourthOrderData *filterParameters)
 {
         // cheby2(4,60,12.5/50)
 #define _b0  0.001893594048567
@@ -293,40 +264,6 @@ void setupFourthOrder()
         fourthOrderZAXIS.outputTm2 = -9.8065;
         fourthOrderZAXIS.outputTm3 = -9.8065;
         fourthOrderZAXIS.outputTm4 = -9.8065;
-};
-
-double normalize(double x, double y, double z)
-{
-        return sqrt( x * x + y * y + z * z );
-};
-
-void nan_quad_Check(double num1, double num2, double num3)
-{
-        double *pnum1 = &num1;
-        double *pnum2 = &num2;
-        double *pnum3 = &num3;
-
-        if(isnan(num1))
-        {
-                *pnum1 = 0;
-        }
-        if(isnan(num2))
-        {
-                *pnum2 = 0;
-        }
-        // Check quadrants
-        if (num2 < 0)
-        {
-                *pnum1 = - num1;
-        }
-        if (num2 < 0)
-        {
-                *pnum2 	= - num2;
-        }
-        if (num3 < 0)
-        {
-                *pnum3 += 360;
-        }
 };
 
 

@@ -326,7 +326,7 @@ typedef struct OseppGyroData_s
 	Device settings
 	-----------------------------------------------------------------------*/
 const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
-const int DLPF = 6;                 // 0,1,2,3,4,5,6,7 // See data sheet
+const int DLPF = 3;                 // 0,1,2,3,4,5,6,7 // See data sheet
 const bool HighDef = true;          // Is accel output 2byte or 1byte
 
 
