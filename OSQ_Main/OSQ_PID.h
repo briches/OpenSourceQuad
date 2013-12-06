@@ -54,23 +54,26 @@
 #endif
 
 // These ones are pretty good. Keep these.
-//#ifdef SINGLE_PID 
-//        double ATT_KP = 1.3017;
-//        double ATT_KI = 0.87416;
-//        double ATT_KD = 0.65077*1.5;
-//#endif
 #ifdef SINGLE_PID 
-        double ATT_KP = 0.0476508;
-        double ATT_KI = 0.0;
-        double ATT_KD = 0.4054429;
+        double ATT_KP = 0.248274462678083;
+        double ATT_KI = 0.2;
+        double ATT_KD = 0.394549588034652;
 #endif
+//#ifdef SINGLE_PID 
+//        double ATT_KP = 0.17442;
+//        double ATT_KI = 0.0;
+//        double ATT_KD = 0.7186;
+//#endif
 
 
 double altitudekP = 0;
 double altitudekI = 0;
 double altitudekD = 0;
 
+// Used for PID struct ID
 enum{pitch, roll, yaw, altitude};
+
+// Used for windup guard
 enum{lower, upper};
 
 struct PID_Gain

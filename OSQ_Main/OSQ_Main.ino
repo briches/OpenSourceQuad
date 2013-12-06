@@ -52,7 +52,7 @@ uint32_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // <- Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
@@ -67,7 +67,6 @@ bool receivedStartupCommand = false;
 
 /** Sensor analog pins      **/
 #define USRF_PIN (0x0)        
-
 
 /** SD logging definitions **/
 #define chipSelect  (53)
@@ -310,13 +309,7 @@ void logData()
         {
                 logFile.print(micros());
                 logFile.print(",");
-                logFile.print(kinematics.roll);
-                logFile.print(",");
-                logFile.print(rollPID.output);
-                logFile.print(",");
-                logFile.print(motorSpeeds[motor2]);
-                logFile.print(",");
-                logFile.println(motorSpeeds[motor3]);
+                logFile.print(kinematics.pitch);
         }
         else
         {
@@ -564,16 +557,16 @@ void setup()
 
         motorControl.calibrateESC();
 
-#ifdef serialDebug
-        Serial.println("Initializing Motors");
-#endif
+        #ifdef serialDebug
+                Serial.println("Initializing Motors");
+        #endif
 
         motorControl.startMotors();
 
 
-#ifdef serialDebug
-        Serial.println("Setup Complete");
-#endif
+        #ifdef serialDebug
+                Serial.println("Setup Complete");
+        #endif
 
         statusLED(1);    
         
@@ -603,6 +596,9 @@ void _200HzTask()
 
         // TODO: add other PID calculatePID
         motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
+        
+        // Print data to the SD logFile
+        logData();
 
         t_200Hz = micros();
 
@@ -690,8 +686,6 @@ void _10HzTask()
         Serial.println(barometer.altitude);
 #endif
 #endif
-        // Print data to the SD logFile
-        logData();
 
         //calculateRATE_PID(&altitudePID,  measuredRate)
         //TODO: Make sure Altitude PID is working.
