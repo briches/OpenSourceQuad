@@ -302,7 +302,7 @@ void PID_init()
  logData
  - Writes various data to the flight txt
  -----------------------------------------------------------------------*/
-void logData()
+void logData(double pitchOut)
 {
 
         if (logFile)
@@ -310,6 +310,8 @@ void logData()
                 logFile.print(micros());
                 logFile.print(",");
                 logFile.print(kinematics.pitch);
+                logFile.print(",");
+                logFile.println(pitchOut);
         }
         else
         {
@@ -598,7 +600,7 @@ void _200HzTask()
         motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
         
         // Print data to the SD logFile
-        logData();
+        //logData(pitchOut);
 
         t_200Hz = micros();
 

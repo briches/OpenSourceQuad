@@ -42,8 +42,6 @@
 #include <Wire.h>
 #include <SD.h>
 
-extern File logfile;
-
 bool startup = true;
 
 #define Pi        (3.14159265359F)	// Its pi.
