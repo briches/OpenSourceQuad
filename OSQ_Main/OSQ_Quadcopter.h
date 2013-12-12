@@ -55,7 +55,7 @@
  Polling Rates.
  -----------------------------------------------------------------------*/
 
-#define _200HzPeriod 	(5000)
+#define _100HzPeriod 	(10000)
 #define	_70HzPeriod	(14286)
 #define _20HzPeriod 	(50000)
 #define _10HzPeriod	(100000)
@@ -73,16 +73,17 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
         /**************************************************************************/
         //! @brief Gets the initial offsets in both sensors to accomodate board mount
         /**************************************************************************/
-        int offset_counter = 100;                       // # of data sets to consider when finding offsets
-        int counter = 1;
+        // # of data sets to consider when finding offsets
+        int offset_counter = 100;  
+        int counter = 0;
         double acceldata[3];
         double gyrodata[3];
 
-        while(counter <= offset_counter)
+        while(counter < offset_counter)
         {
                 sensors_event_t accel_event;
-                accel.getEvent(&accel_event);                            // my_updates the accelerometer registers
-                acceldata[0] = accel_event.acceleration.x;
+                accel.getEvent(&accel_event);                            
+                acceldata[0] = accel_event.acceleration.x - SENSORS_GRAVITY_STANDARD; // NOTE: Quick fix! Careful!
                 acceldata[1] = accel_event.acceleration.y;
                 acceldata[2] = accel_event.acceleration.z;
 
@@ -127,7 +128,6 @@ bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, s
         gyro.begin();
         accel.begin();
         mag.begin();
-
 
         getInitialOffsets(kinematics, accel, mag, gyro);
 
@@ -218,5 +218,3 @@ void statusLED(int LED_SEL)
 
 
 #endif // OSQ_QUADCOPTER_H_INCLUDED
-
-

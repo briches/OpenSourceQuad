@@ -120,4 +120,3 @@ double EEPROMreadPIDCoefficients(int selection)
 
 
 #endif // OSQ_EEPROM_H_INCLUDED
-

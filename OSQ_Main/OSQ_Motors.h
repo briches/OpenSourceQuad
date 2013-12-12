@@ -172,7 +172,8 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
         this->passiveMAX	= MAX_COMMAND-100;
-        this->operatingPoint    = 1275;
+        this->operatingPoint    = 1235;
+        commandAllMotors(this->operatingPoint);
 };
 
 void OSQ_MotorControl :: calibrateESC(int numESC)
@@ -286,17 +287,17 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
 double OSQ_MotorControl :: changeOperatingPoint(double opChange)
 {
         operatingPoint += opChange;
-        constrain(operatingPoint, 1250, 1450);
+        constrain(operatingPoint, 1200, 1450);
         return operatingPoint;
 };
 
 void OSQ_MotorControl :: motorDISARM()
 {
         #ifdef USE_4MOTORS
-                motorSpeeds[motor1] = 900;
-                motorSpeeds[motor2] = 900;
-                motorSpeeds[motor3] = 900;
-                motorSpeeds[motor4] = 900;
+                motorSpeeds[motor1] = 875;
+                motorSpeeds[motor2] = 875;
+                motorSpeeds[motor3] = 875;
+                motorSpeeds[motor4] = 875;
         #endif
 
         writeMotors();

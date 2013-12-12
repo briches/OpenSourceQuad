@@ -135,15 +135,15 @@
 	Conversion factors
     -----------------------------------------------------------------------*/
 
-#define AX_SCALE  		(0.15696)
-#define AY_SCALE  		(0.15449)
-#define AZ_SCALE  		(0.9036550534)
+#define AX_SCALE  	(0.12939)
+#define AY_SCALE  	(0.15449)
+#define AZ_SCALE  	(0.9036550534)
 
-#define MXY_SCALE  		(1055)
+#define MXY_SCALE  	(1055)
 #define MZ_SCALE    	(950)
 
-#define SENSORS_GRAVITY_STANDARD 			(9.81369388)
-#define SENSORS_GAUSS_TO_MICROTESLA       	(100)
+#define SENSORS_GRAVITY_STANDARD 	(9.81369388)
+#define SENSORS_GAUSS_TO_MICROTESLA       (100)
 
 /*=========================================================================
     Accelerometer Register Addresses
@@ -708,6 +708,7 @@ void SENSORLIB_accel::getEvent(sensors_event_t *event) {
   /* Read new data */
   read();
 
+// HERE
   event->version   = sizeof(sensors_event_t);
   event->sensor_id = 2;
   event->type      = 1;
@@ -823,9 +824,7 @@ void SENSORLIB_mag::read()
   _magData.x = (xlo | (xhi << 8));
   _magData.y = (ylo | (yhi << 8));
   _magData.z = (zlo | (zhi << 8));
-
-  //Calculate orientation
-  _magData.orientation = 0.0;
+  
 };
 
 

@@ -125,6 +125,3 @@ bool NoWire :: start()
 NoWire receiver;
 
 #endif // OSQ_NOWIRE_H_INCLUDED
-
-
-

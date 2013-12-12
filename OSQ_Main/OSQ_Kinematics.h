@@ -110,13 +110,9 @@ kinematicData	  kinematics;
 // as well as altitudes
 void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro)
 {
-
         sensors_event_t	accel_event, mag_event, gyro_event;
-
         double 	elapsedTime = 0, t_convert = 1000000;
-
         double 	pitch_accel, roll_accel, pitchRollCoeff = 0.5, yawCoeff = 0.9;
-
 
         if(eventType == 1)
         {
@@ -147,11 +143,13 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 kinematics.lastPitch = kinematics.pitch;
                 kinematics.lastRoll = kinematics.roll;
                 kinematics.lastYaw = kinematics.yaw;
+                
+                // 2000 us toc
 
                 /// Store Raw values from the sensor registers, and remove initial offsets
                 double ax = accel_event.acceleration.z - kinematics.io_az;
                 double ay = -(accel_event.acceleration.y - kinematics.io_ay);
-                double az = accel_event.acceleration.x - kinematics.io_ax + SENSORS_GRAVITY_STANDARD;
+                double az = accel_event.acceleration.x - kinematics.io_ax;
 
                 double wx =  (gyro_event.gyro.z - kinematics.io_wz);
                 double wy =  gyro_event.gyro.x - kinematics.io_wx;
@@ -161,6 +159,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 ax = computeFourthOrder(ax, &fourthOrderXAXIS);
                 ay = computeFourthOrder(ay, &fourthOrderYAXIS);
                 az = computeFourthOrder(az, &fourthOrderZAXIS);
+
+                // 2600 us toc
                 
                 elapsedTime = (micros() - kinematics.timestamp) / t_convert;
                 kinematics.timestamp = micros();
@@ -176,13 +176,14 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
                 kinematics.rollRate = wx;
                 kinematics.yawRate = wz;
                 
+                // 3700 us
         }
 };
 
 void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
         // Filter parameter
-        double beta = 1;
+        double beta = 0.98;
         
         // Gyroscope 
         kinData->pitch += wy * elapsedTime;
@@ -193,20 +194,20 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
         kinData->yaw = kinData->yaw * 0.95 + kinData->yaw_mag * 0.05;
         
         // Compensate for gyro drift, if the accel isnt completely garbage
-        double magnitudeApprox = sqrt(abs(ax)*abs(ax) + abs(ay)*abs(ay) + abs(az)*abs(az));
+        double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
         if(magnitudeApprox > 9.31 && magnitudeApprox < 10.51)
         {
                 double pitchAcc = atan2(ax, az) * 180/ Pi;
                 kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
                 
-                double rollAcc = atan2(ay, az) * 180 / Pi;
-                kinData->roll = kinData->roll * 0.98 + 0.02 * rollAcc;
+                double rollAcc = -atan2(ay, az) * 180 / Pi;
+                kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
         }
 };
 
 double computeFourthOrder(double currentInput, struct fourthOrderData *filterParameters)
 {
-        // cheby2(4,60,12.5/50)
+//// cheby2(4,60,12.5/50)
 //#define _b0  0.001893594048567
 //#define _b1 -0.002220262954039
 //#define _b2  0.003389066536478
@@ -218,7 +219,7 @@ double computeFourthOrder(double currentInput, struct fourthOrderData *filterPar
 //#define _a3 -2.444765517272841
 //#define _a4  0.527149895089809
 
-// Cheby2(4,60,5/50);
+ //Cheby2(4,60,5/50);
 #define _b0  0.001066578484441
 #define _b1 -0.003520583754742
 #define _b2  0.004979264107821
@@ -229,6 +230,18 @@ double computeFourthOrder(double currentInput, struct fourthOrderData *filterPar
 #define _a2  5.294313666885127
 #define _a3 -3.321856314439796
 #define _a4  0.782516252991879
+
+//// Cheby2(4,60,2/50);
+//#define _b0  0.000982727171845
+//#define _b1 -0.003809312652692
+//#define _b2  0.005655081072900
+//#define _b3 -0.003809312652692
+//#define _b4  0.000982727171845
+//
+//#define _a1 -3.902568482603157
+//#define _a2  5.712424931235347
+//#define _a3 -3.717010923329100
+//#define _a4  0.907156384808116
 
         double output;
 
@@ -290,7 +303,4 @@ void setupFourthOrder()
         fourthOrderZAXIS.outputTm4 = 9.8065;
 };
 
-
 #endif // KINEMATICS_H_INCLUDED
-
-

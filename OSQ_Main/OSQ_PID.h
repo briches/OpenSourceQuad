@@ -38,7 +38,10 @@
 
 #include <Limits.h>
 
-#define SINGLE_PID
+ // Single PID is much easier to deal with, for now.
+#define SINGLE_PID 
+
+// Probably don't use this. Who really knows
 //#define NESTED_PID
 
 // TODO:
@@ -55,9 +58,9 @@
 
 // These ones are pretty good. Keep these.
 #ifdef SINGLE_PID 
-        double ATT_KP = 0.372736144231165;
-        double ATT_KI = 0.057256185916607;
-        double ATT_KD = 0.538726015550392;
+        double ATT_KP = 3.0376;
+        double ATT_KI = 1.2303;
+        double ATT_KD = 1.1794;
 #endif
 
 double altitudekP = 0;
@@ -190,23 +193,23 @@ void initializePID(struct PID_Manager_t *PID)
 
 	if(PID->ID < altitude)
 	{
-	#ifdef SINGLE_PID
-		PID_GAINS[PID->ID].setP = ATT_KP;
-		PID_GAINS[PID->ID].setI = ATT_KI;
-		PID_GAINS[PID->ID].setD = ATT_KD;
-	#endif
-
-	#ifdef NESTED_PID
-		PID_GAINS[PID->ID].setP = SET_ATT_KP;
-		PID_GAINS[PID->ID].setI = SET_ATT_KI;
-		PID_GAINS[PID->ID].setD = SET_ATT_KD;
-
-		PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
-		PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
-		PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
-
-		PID->rateLastError = 0;
-	#endif
+        	#ifdef SINGLE_PID
+        		PID_GAINS[PID->ID].setP = ATT_KP;
+        		PID_GAINS[PID->ID].setI = ATT_KI;
+        		PID_GAINS[PID->ID].setD = ATT_KD;
+        	#endif
+        
+        	#ifdef NESTED_PID
+        		PID_GAINS[PID->ID].setP = SET_ATT_KP;
+        		PID_GAINS[PID->ID].setI = SET_ATT_KI;
+        		PID_GAINS[PID->ID].setD = SET_ATT_KD;
+        
+        		PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
+        		PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
+        		PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
+        
+        		PID->rateLastError = 0;
+        	#endif
 	}
 	else
 	{
@@ -218,4 +221,3 @@ void initializePID(struct PID_Manager_t *PID)
 };
 
 #endif // OSQ_PID_H_INCLUDED
-

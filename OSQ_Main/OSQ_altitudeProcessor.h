@@ -117,10 +117,4 @@ bool checkUSRF(double hieght)
         return (sensorAltitude <= hieght);
 };
 
-
-
-
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
-
-
-
