@@ -22,8 +22,6 @@
 
 	  Designed specifically to work with the Adafruit LSM303DLHC Breakout
 
-	  These displays use I2C to communicate, 2 pins are required to interface.
-
 	  Adafruit invests time and resources providing this open source code,
 	  please support Adafruit andopen-source hardware by purchasing products
 	  from Adafruit!
@@ -53,14 +51,14 @@
     I2C or TWI addresses
     -----------------------------------------------------------------------*/
 
-#define GYRO_ADDR	   	(0x69)
-#define ACCEL_ADDR  	(0x32 >> 1)
-#define MAG_ADDR  		(0x3C >> 1)
+#define GYRO_ADDR   (0x69)
+#define ACCEL_ADDR  (0x32 >> 1)
+#define MAG_ADDR  (0x3C >> 1)
 
 /*=========================================================================
     CHIP ID
     -----------------------------------------------------------------------*/
-#define LSM303_ID                     (0b11010100)
+#define LSM303_ID   (0b11010100)
 
 /***************************************************************************
 /////////////////////////////////////////////////////////////////////////////
@@ -71,7 +69,7 @@
 /*=========================================================================
     Osepp Gyro Registers
     -----------------------------------------------------------------------*/
-#define WHO_AM_I   		(0x0)
+#define WHO_AM_I   	(0x0)
 #define PRODUCT_ID  	(0x1)
 #define X_OFFS_USRH  	(0xC)// (R/W) User offset of H byte of X gyro (2's complement)
 #define X_OFFS_USRL  	(0xD) // (R/W) User offset of L byte of X gyro (2's complement)
@@ -79,33 +77,33 @@
 #define Y_OFFS_USRL  	(0xF) // (R/W) User offset of L byte of Y gyro (2's complement)
 #define Z_OFFS_USRH  	(0x10) // (R/W) User offset of H byte of Z gyro (2's complement)
 #define Z_OFFS_USRL  	(0x11) // (R/W) User offset of L byte of Z gyro (2's complement)
-#define FIFO_EN  		(0x12) // (R/W)
-#define AUX_VDDIO  		(0x13) //(R/W)
+#define FIFO_EN  	(0x12) // (R/W)
+#define AUX_VDDIO  	(0x13) //(R/W)
 #define AUX_SLV_ADDR  	(0x14) // (R/W)
 #define SMPLRT_DIV  	(0x15) // (R/W) Sample rate divider, divides analog sample rate
 #define DLPF_FS_SYNC  	(0x16)
-#define INT_CFG  		(0x17) // (R/W) Configures interrupt operation
-#define AUX_ADDR 		(0x18) // (R/W)
-#define INT_STATUS 		(0x1A) // (R) Interrupt status
-#define TEMP_OUT_H 		(0x1B) // (R)
-#define TEMP_OUT_L 		(0x1C) // (R)
+#define INT_CFG  	(0x17) // (R/W) Configures interrupt operation
+#define AUX_ADDR 	(0x18) // (R/W)
+#define INT_STATUS 	(0x1A) // (R) Interrupt status
+#define TEMP_OUT_H 	(0x1B) // (R)
+#define TEMP_OUT_L 	(0x1C) // (R)
 #define GYRO_XOUT_H 	(0x1D) // (R) 16 bit x gyro data (2's complement)
 #define GYRO_XOUT_L 	(0x1E)
 #define GYRO_YOUT_H 	(0x1F) // (R) 16 bit y gyro data (2's complement)
 #define GYRO_YOUT_L 	(0x20)
 #define GYRO_ZOUT_H 	(0x21) // (R) 16 bit z gyro data (2's complement)
 #define GYRO_ZOUT_L 	(0x22)
-#define AUX_XOUT_H 		(0x23)
-#define AUX_XOUT_L 		(0x24)
-#define AUX_YOUT_H		(0x25)
-#define AUX_YOUT_L 		(0x26)
-#define AUX_ZOUT_H 		(0x27)
-#define AUX_ZOUT_L 		(0x28)
+#define AUX_XOUT_H 	(0x23)
+#define AUX_XOUT_L 	(0x24)
+#define AUX_YOUT_H	(0x25)
+#define AUX_YOUT_L 	(0x26)
+#define AUX_ZOUT_H 	(0x27)
+#define AUX_ZOUT_L 	(0x28)
 #define FIFO_COUNTH 	(0x3A)
 #define FIFO_COUNTL 	(0x3B)
-#define FIFO_R 			(0x3C)
-#define USER_CTRL 		(0x3D)
-#define PWR_MGM 		(0x3E)
+#define FIFO_R 		(0x3C)
+#define USER_CTRL 	(0x3D)
+#define PWR_MGM 	(0x3E)
 
 /*=========================================================================
     Osepp Gyro Range settings and conversions
@@ -115,15 +113,10 @@
 #define FULL_SCALE_RANGE_1000  	(0x2)
 #define FULL_SCALE_RANGE_2000  	(0x3)
 
-#define SI_CONVERT_250  		(0.0076511)
-#define SI_CONVERT_500  		(0.01524) // WIP
-#define SI_CONVERT_1000  		(0.015259)
-#define SI_CONVERT_2000  		(0.030518)
-
-// These are the drift rates in d/(s*mus)
-#define GYRO_DRIFT_RATE_X   	(-9E-10)
-#define GYRO_DRIFT_RATE_Y    	(3E-10)
-#define GYRO_DRIFT_RATE_Z   	(-3E-11)
+#define SI_CONVERT_250  (0.0076511)
+#define SI_CONVERT_500  (0.01524) // WIP
+#define SI_CONVERT_1000 (0.015259)
+#define SI_CONVERT_2000 (0.030518)
 
 /***************************************************************************
 /////////////////////////////////////////////////////////////////////////////
@@ -149,94 +142,94 @@
     Accelerometer Register Addresses
     -----------------------------------------------------------------------*/
 												// DEFAULT    TYPE
-#define ACCEL_CTRL_REG1_A           (0x20)  	// 00000111   rw
-#define ACCEL_CTRL_REG2_A          	(0x21)  	// 00000000   rw
-#define ACCEL_CTRL_REG3_A          	(0x22)   	// 00000000   rw
-#define ACCEL_CTRL_REG4_A          	(0x23)   	// 00000000   rw
-#define ACCEL_CTRL_REG5_A          	(0x24)   	// 00000000   rw
-#define ACCEL_CTRL_REG6_A          	(0x25)   	// 00000000   rw
-#define ACCEL_REFERENCE_A          	(0x26)   	// 00000000   r
-#define ACCEL_STATUS_REG_A         	(0x27)   	// 00000000   r
-#define ACCEL_OUT_X_L_A            	(0x28)
-#define ACCEL_OUT_X_H_A            	(0x29)
-#define ACCEL_OUT_Y_L_A            	(0x2A)
-#define ACCEL_OUT_Y_H_A            	(0x2B)
-#define ACCEL_OUT_Z_L_A            	(0x2C)
-#define ACCEL_OUT_Z_H_A            	(0x2D)
-#define ACCEL_FIFO_CTRL_REG_A     	(0x2E)
-#define ACCEL_FIFO_SRC_REG_A        (0x2F)
-#define ACCEL_INT1_CFG_A           	(0x30)
-#define ACCEL_INT1_SOURCE_A         (0x31)
-#define ACCEL_INT1_THS_A           	(0x32)
-#define ACCEL_INT1_DURATION_A    	(0x33)
-#define ACCEL_INT2_CFG_A           	(0x34)
-#define ACCEL_INT2_SOURCE_A        	(0x35)
-#define ACCEL_INT2_THS_A           	(0x36)
-#define ACCEL_INT2_DURATION_A    	(0x37)
-#define ACCEL_CLICK_CFG_A          	(0x38)
-#define ACCEL_CLICK_SRC_A          	(0x39)
-#define ACCEL_CLICK_THS_A          	(0x3A)
-#define ACCEL_TIME_LIMIT_A         	(0x3B)
-#define ACCEL_TIME_LATENCY_A       	(0x3C)
-#define ACCEL_TIME_WINDOW_A    		(0x3D)
+#define ACCEL_CTRL_REG1_A          (0x20)  	// 00000111   rw
+#define ACCEL_CTRL_REG2_A          (0x21)  	// 00000000   rw
+#define ACCEL_CTRL_REG3_A          (0x22)   	// 00000000   rw
+#define ACCEL_CTRL_REG4_A          (0x23)   	// 00000000   rw
+#define ACCEL_CTRL_REG5_A          (0x24)   	// 00000000   rw
+#define ACCEL_CTRL_REG6_A          (0x25)   	// 00000000   rw
+#define ACCEL_REFERENCE_A          (0x26)   	// 00000000   r
+#define ACCEL_STATUS_REG_A         (0x27)   	// 00000000   r
+#define ACCEL_OUT_X_L_A            (0x28)
+#define ACCEL_OUT_X_H_A            (0x29)
+#define ACCEL_OUT_Y_L_A            (0x2A)
+#define ACCEL_OUT_Y_H_A            (0x2B)
+#define ACCEL_OUT_Z_L_A            (0x2C)
+#define ACCEL_OUT_Z_H_A            (0x2D)
+#define ACCEL_FIFO_CTRL_REG_A      (0x2E)
+#define ACCEL_FIFO_SRC_REG_A       (0x2F)
+#define ACCEL_INT1_CFG_A           (0x30)
+#define ACCEL_INT1_SOURCE_A        (0x31)
+#define ACCEL_INT1_THS_A           (0x32)
+#define ACCEL_INT1_DURATION_A      (0x33)
+#define ACCEL_INT2_CFG_A           (0x34)
+#define ACCEL_INT2_SOURCE_A        (0x35)
+#define ACCEL_INT2_THS_A           (0x36)
+#define ACCEL_INT2_DURATION_A      (0x37)
+#define ACCEL_CLICK_CFG_A          (0x38)
+#define ACCEL_CLICK_SRC_A          (0x39)
+#define ACCEL_CLICK_THS_A          (0x3A)
+#define ACCEL_TIME_LIMIT_A         (0x3B)
+#define ACCEL_TIME_LATENCY_A       (0x3C)
+#define ACCEL_TIME_WINDOW_A    	   (0x3D)
 
 /*=========================================================================
     Accelerometer Register Settings
     -----------------------------------------------------------------------*/
 // Sets the ODR configuration and the low-pass cut-off frequencies
-#define ACCEL_ODR_50_37				(0x00)
-#define ACCEL_ODR_100_74			(0x01)
-#define ACCEL_ODR_400_292			(0x02)
-#define ACCEL_ODR_1000_780			(0x03)
+#define ACCEL_ODR_50_37		(0x00)
+#define ACCEL_ODR_100_74	(0x01)
+#define ACCEL_ODR_400_292	(0x02)
+#define ACCEL_ODR_1000_780	(0x03)
 
 // Sets the maximum sensing range and sensitivity
-#define ACCEL_FULL_SCALE_2g			(0x00)
-#define ACCEL_FULL_SCALE_4g			(0x01)
-#define ACCEL_FULL_SCALE_8g			(0x02)
+#define ACCEL_FULL_SCALE_2g	(0x00)
+#define ACCEL_FULL_SCALE_4g	(0x01)
+#define ACCEL_FULL_SCALE_8g	(0x02)
 
 /*=========================================================================
     Magnetometer Register Addresses
     -----------------------------------------------------------------------*/
-#define MAG_CRA_REG_M              	(0x00)
-#define MAG_CRB_REG_M              	(0x01)
-#define MAG_MR_REG_M               	(0x02)
-#define MAG_OUT_X_H_M              	(0x03)
-#define MAG_OUT_X_L_M              	(0x04)
-#define MAG_OUT_Z_H_M              	(0x05)
-#define MAG_OUT_Z_L_M              	(0x06)
-#define MAG_OUT_Y_H_M              	(0x07)
-#define MAG_OUT_Y_L_M              	(0x08)
-#define MAG_SR_REG_Mg              	(0x09)
-#define MAG_IRA_REG_M              	(0x0A)
-#define MAG_IRB_REG_M              	(0x0B)
-#define MAG_IRC_REG_M              	(0x0C)
-#define MAG_TEMP_OUT_H_M           	(0x31)
-#define MAG_TEMP_OUT_L_M           	(0x32)
+#define MAG_CRA_REG_M              (0x00)
+#define MAG_CRB_REG_M              (0x01)
+#define MAG_MR_REG_M               (0x02)
+#define MAG_OUT_X_H_M              (0x03)
+#define MAG_OUT_X_L_M              (0x04)
+#define MAG_OUT_Z_H_M              (0x05)
+#define MAG_OUT_Z_L_M              (0x06)
+#define MAG_OUT_Y_H_M              (0x07)
+#define MAG_OUT_Y_L_M              (0x08)
+#define MAG_SR_REG_Mg              (0x09)
+#define MAG_IRA_REG_M              (0x0A)
+#define MAG_IRB_REG_M              (0x0B)
+#define MAG_IRC_REG_M              (0x0C)
+#define MAG_TEMP_OUT_H_M           (0x31)
+#define MAG_TEMP_OUT_L_M           (0x32)
 
 /*=========================================================================
     Magnetometer Register Settings
     -----------------------------------------------------------------------*/
 // Sets the rate at which data is written to the three output registers
-#define MAG_ODR_0_75				(0x00)
-#define MAG_ODR_1_50				(0x01)
-#define MAG_ODR_3_00				(0x02)
-#define MAG_ODR_7_50				(0x03)
-#define MAG_ODR_15_0				(0x04)
-#define MAG_ODR_30_0				(0x05)
-#define MAG_ODR_75_0				(0x06)
+#define MAG_ODR_0_75	(0x00)
+#define MAG_ODR_1_50	(0x01)
+#define MAG_ODR_3_00	(0x02)
+#define MAG_ODR_7_50	(0x03)
+#define MAG_ODR_15_0	(0x04)
+#define MAG_ODR_30_0	(0x05)
+#define MAG_ODR_75_0	(0x06)
 
 /*=========================================================================
     MAGNETOMETER GAIN SETTINGS
     -----------------------------------------------------------------------*/
 typedef enum
 {
-  LSM303_MAGGAIN_1_3                        = 0x20,  // +/- 1.3
-  LSM303_MAGGAIN_1_9                        = 0x40,  // +/- 1.9
-  LSM303_MAGGAIN_2_5                        = 0x60,  // +/- 2.5
-  LSM303_MAGGAIN_4_0                        = 0x80,  // +/- 4.0
-  LSM303_MAGGAIN_4_7                        = 0xA0,  // +/- 4.7
-  LSM303_MAGGAIN_5_6                        = 0xC0,  // +/- 5.6
-  LSM303_MAGGAIN_8_1                        = 0xE0   // +/- 8.1
+  LSM303_MAGGAIN_1_3     = 0x20,  // +/- 1.3
+  LSM303_MAGGAIN_1_9     = 0x40,  // +/- 1.9
+  LSM303_MAGGAIN_2_5     = 0x60,  // +/- 2.5
+  LSM303_MAGGAIN_4_0     = 0x80,  // +/- 4.0
+  LSM303_MAGGAIN_4_7     = 0xA0,  // +/- 4.7
+  LSM303_MAGGAIN_5_6     = 0xC0,  // +/- 5.6
+  LSM303_MAGGAIN_8_1     = 0xE0   // +/- 8.1
 } lsm303MagGain;
 /*=========================================================================
     INTERNAL VECTOR DATA TYPE
@@ -326,8 +319,8 @@ typedef struct OseppGyroData_s
 	Device settings
 	-----------------------------------------------------------------------*/
 const int d_ScaleRange = FULL_SCALE_RANGE_250; // x250,x500,x1000,x2000
-const int DLPF = 3;                 // 0,1,2,3,4,5,6,7 // See data sheet
-const bool HighDef = true;          // Is accel output 2byte or 1byte
+const int DLPF = 2;       // 0,1,2,3,4,5,6 // See data sheet
+const int SMPL_RATE_DIV = 0x04;        // 200 Hz = 1000 Hz / (1 + 4)
 
 
 /* Unified sensor driver for the accelerometer */
@@ -393,7 +386,7 @@ class SENSORLIB_gyro
 };
 
 static float _lsm303Accel_MG_LSB     = 0.001F;   // 1, 2, 4 or 12 mg per lsb
-static float _GYRO_CONVERT_			 = SI_CONVERT_250;
+static float _GYRO_CONVERT_  = SI_CONVERT_250;
 static float _lsm303Mag_Gauss_LSB_XY = 1100.0F;  // Varies with gain
 static float _lsm303Mag_Gauss_LSB_Z  = 980.0F;   // Varies with gain
 
@@ -542,6 +535,8 @@ bool SENSORLIB_gyro::begin()
 	write8(GYRO_ADDR, PWR_MGM, statusCheck);
 
 	write8(GYRO_ADDR, USER_CTRL, B00100000);
+
+        write8(GYRO_ADDR, SMPLRT_DIV, SMPL_RATE_DIV);
 
 	return true;
 };
@@ -692,6 +687,12 @@ bool SENSORLIB_accel::begin()
 
   // Enable the accelerometer
   write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x27);
+  
+  // Enable the internal filter ** May not work **
+  write8(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 0x0);
+  
+  // Block data update, FS Selection
+  write8(ACCEL_ADDR, ACCEL_CTRL_REG4_A, 0x80);
 
   return true;
 };

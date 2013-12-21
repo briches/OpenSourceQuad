@@ -32,7 +32,7 @@
 
 struct gpsdata_t
 {
-	int		fix, quality;	// Is fixed or no
+	int	fix, quality;	// Is fixed or no
 	int    	satellites;		// number of sats
 	double 	altitude,		// in m, apparently. this seems to be fucked
 			angle,			// in deg, based off movement vector

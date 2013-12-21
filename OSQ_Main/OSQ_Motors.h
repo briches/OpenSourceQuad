@@ -63,8 +63,8 @@
 #define PWM_COUNTER_PERIOD	(F_CPU/PRESCALER/PWM_FREQUENCY)
 
 
-#define MIN_COMMAND      	1075     		// the shortest pulse
-#define MAX_COMMAND     	1600     		// the longest pulse
+#define MIN_COMMAND      	1075     // the shortest pulse
+#define MAX_COMMAND     	1600     // the longest pulse
 
 #define _PLUSconfig
 
@@ -172,7 +172,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
         this->passiveMAX	= MAX_COMMAND-100;
-        this->operatingPoint    = 1235;
+        this->operatingPoint    = 1200;
         commandAllMotors(this->operatingPoint);
 };
 

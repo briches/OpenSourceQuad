@@ -52,7 +52,7 @@ uint64_t cycleCount;
 bool receivedStartupCommand = false;
 
 /** Debugging Options **/
-//#define serialDebug        // <- Must be defined to use any of the other debuggers
+#define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
@@ -568,32 +568,29 @@ void setup()
 
         motorControl.startMotors();
 
-
         #ifdef serialDebug
                 Serial.println("Setup Complete");
         #endif
 
-        statusLED(1);    
-        
-        
+        statusLED(1);
 }
 
 /*===============================================
  Time keeping for polling
  -----------------------------------------------------------------------*/
-double t_100Hz;
+double t_200Hz;
 double t_70Hz;
 double t_20Hz;
 double t_10Hz;
 double t_1Hz;
 
 /*=========================================================================
- _100HzTask
- Process on a 100Hz clock
+ _200HzTask
+ Process on a 200Hz clock
  -----------------------------------------------------------------------*/
-void _100HzTask()
+void _200HzTask()
 {
-         kinematicEvent(0,&accel,&mag,&gyro);
+        kinematicEvent(0,&accel,&mag,&gyro);
 
         //double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
         double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
@@ -602,10 +599,7 @@ void _100HzTask()
         // TODO: add other PID calculatePID
         motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
         
-        // Print data to the SD logFile
-        logData();
-        
-        t_100Hz = micros();
+        t_200Hz = micros();
 
         #ifdef serialDebug        // Debug Section
                 #ifdef rollPIDdebug
@@ -653,6 +647,19 @@ void _70HzTask()
 {
         kinematicEvent(1, &accel, &mag, &gyro);
 
+        int roll[2], pitch[2];
+        roll[0] = ((int)kinematics.roll << 8) >> 8;
+        roll[1] = (int)kinematics.roll >> 8;
+        
+        pitch[0] = (((int)kinematics.pitch) << 8) >> 8;
+        pitch[1] = (int)kinematics.pitch >> 8;
+        
+        Serial3.write(0xFF);
+        Serial3.write((unsigned char)roll[0]);
+        Serial3.write((unsigned char)roll[1]);
+        Serial3.write((unsigned char)pitch[0]);
+        Serial3.write((unsigned char)pitch[1]);
+        
         t_70Hz = micros();
 }
 
@@ -663,6 +670,9 @@ void _70HzTask()
 void _20HzTask()
 {
         barometer.updatePTA(); 
+        
+        // Print data to the SD logFile
+        logData();
 
         t_20Hz = micros();
 }
@@ -720,18 +730,18 @@ void _1HzTask()
 void loop()                          
 {	
         // Check if we have enough time to safely do non-critical processes
-        unsigned long priority = micros() - t_100Hz;
+        unsigned long priority = micros() - t_200Hz;
         
         // 100 Hz Process
-        if(priority >= _100HzPeriod)
+        if(priority >= _200HzPeriod)
         {
                 statusLED(4);
-                _100HzTask(); // 4200 us
+                _200HzTask(); // 4200 us
                 statusLED(1);
         }
         
         // 70 Hz process
-        if(micros() - t_70Hz >= _70HzPeriod && priority < _100HzPeriod / 2)
+        if(micros() - t_70Hz >= _70HzPeriod && priority < _200HzPeriod / 2)
         {
                 statusLED(4);
                 _70HzTask(); // 2000 us
@@ -739,7 +749,7 @@ void loop()
         }
 
         // 20 Hz process
-        if(micros() - t_20Hz >= _20HzPeriod && priority < _100HzPeriod / 2)
+        if(micros() - t_20Hz >= _20HzPeriod && priority < _200HzPeriod / 2)
         {
                 statusLED(4);
                 _20HzTask(); // 1500 us
@@ -747,7 +757,7 @@ void loop()
         }
 
         // 10 Hz process
-        if(micros() - t_10Hz  >= _10HzPeriod && priority < _100HzPeriod / 2)
+        if(micros() - t_10Hz  >= _10HzPeriod && priority < _200HzPeriod / 2)
         {
                 statusLED(5);
                 _10HzTask(); // 1500 us
@@ -755,7 +765,7 @@ void loop()
         }
 
         // 1 Hz process
-        if(micros() - t_1Hz  >= _1HzPeriod && priority < _100HzPeriod / 2)
+        if(micros() - t_1Hz  >= _1HzPeriod && priority < _200HzPeriod / 2)
         {
                 statusLED(6);
                 _1HzTask(); // 300 us

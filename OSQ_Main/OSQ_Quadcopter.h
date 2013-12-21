@@ -55,7 +55,7 @@
  Polling Rates.
  -----------------------------------------------------------------------*/
 
-#define _100HzPeriod 	(10000)
+#define _200HzPeriod 	(5000)
 #define	_70HzPeriod	(14286)
 #define _20HzPeriod 	(50000)
 #define _10HzPeriod	(100000)

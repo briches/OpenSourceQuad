@@ -112,7 +112,6 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 {
         sensors_event_t	accel_event, mag_event, gyro_event;
         double 	elapsedTime = 0, t_convert = 1000000;
-        double 	pitch_accel, roll_accel, pitchRollCoeff = 0.5, yawCoeff = 0.9;
 
         if(eventType == 1)
         {
@@ -183,7 +182,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
         // Filter parameter
-        double beta = 0.98;
+        double beta = 1;
         
         // Gyroscope 
         kinData->pitch += wy * elapsedTime;
@@ -195,7 +194,7 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
         
         // Compensate for gyro drift, if the accel isnt completely garbage
         double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
-        if(magnitudeApprox > 9.31 && magnitudeApprox < 10.51)
+        if(magnitudeApprox > 9.71 && magnitudeApprox < 9.91)
         {
                 double pitchAcc = atan2(ax, az) * 180/ Pi;
                 kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;

@@ -57,10 +57,15 @@
 #endif
 
 // These ones are pretty good. Keep these.
-#ifdef SINGLE_PID 
-        double ATT_KP = 3.0376;
-        double ATT_KI = 1.2303;
-        double ATT_KD = 1.1794;
+//#ifdef SINGLE_PID // A bit oscillatory
+//        double ATT_KP = 3.0376;
+//        double ATT_KI = 1.2303;
+//        double ATT_KD = 1.1794;
+//#endif
+#ifdef SINGLE_PID // Slower, but less oscillations
+        double ATT_KP = 0.84569;
+        double ATT_KI = 0.19396;
+        double ATT_KD = 0.78829;
 #endif
 
 double altitudekP = 0;

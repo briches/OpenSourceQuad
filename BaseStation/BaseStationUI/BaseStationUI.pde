@@ -14,6 +14,8 @@ byte flightTime3;
 byte flightTime4;
 boolean connection = false; // Connected to copter, or no.
 
+int roll, pitch;
+
 int rollSetpoint, pitchSetpoint;
 
 // Button states
@@ -111,20 +113,24 @@ void draw()
     text("RIGHT arrow: Roll down", 25, 375);
     text("R : Reset Attitude", 25, 400);
     
-    text("Setpoints: ", 550, 90);
-    text("Pitch: ", 550, 115);
-    text(str(pitchSetpoint), 625, 115);
-    text("Roll: ", 550, 140);
-    text(str(rollSetpoint), 625, 140);
+    text("Attitude: ", 500, 90);
+    
+    text("Pitch Set: ", 500, 115);
+    text(str(pitchSetpoint), 500, 140);
+    text("Pitch Actual: ", 600, 115);
+    text(str(pitch), 600, 140);
+    
+    text("Roll Set: ", 500, 190);
+    text(str(rollSetpoint), 500, 215);
+    text("Roll Actual: ", 600, 190);
+    text(str(roll), 600, 215);
+    
     
     // Display prog time and flight time
     displayTimes();
 
     // Display connection status;
     checkConnection();
-
-    // Display PID parameters
-    //displayPID();
 
     // Check for over buttons
     checkOverButton();
@@ -155,6 +161,29 @@ void serialEvent(Serial myPort)
     {
         connection = true;
         connectTime = millis();
+        
+        if(myPort.available() > 4)
+        {
+            int firstbyte = myPort.read();
+            if(firstbyte == 0xFF)
+            {
+                int roll0 = myPort.read();
+                int roll1 = myPort.read();
+                int pitch0 = myPort.read();
+                int pitch1 = myPort.read();
+                
+                roll = roll0 | (roll1 << 8);
+                if(roll > 10000)
+                {
+                    roll = 65535 - roll;
+                }
+                pitch = pitch0 | (pitch1 << 8);
+                if(pitch > 10000)
+                {
+                    pitch = 65535 - pitch;
+                }
+            }
+        }
     }
 }
 
@@ -303,6 +332,8 @@ void sendtxPacket()
             connectTime = 0;
             pitchSetpoint = 0;
             rollSetpoint = 0;
+            roll = 0;
+            pitch = 0;
             break;
         }
         case 0x0E:
@@ -402,8 +433,10 @@ void displayTimes()
      -----------------------------------------------------------------------------*/
 void checkConnection()
 {
+    if(millis() - connectTime > 5000)
+    {
+        connection = false;
+    }
     text("Connection Status: ", 496, 25);
     text(str(connection), 700, 25);
 }
-
-
