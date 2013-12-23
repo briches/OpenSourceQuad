@@ -4,8 +4,7 @@
 <b>Authors</b>: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
 Started in May of 2013.  <br />
 
-
-[OSQ GUI](https://github.com/IrisAmp/QCGUI)
+Branden [@IrisAmp](https://github.com/IrisAmp) has been doing some work on a [GUI](https://github.com/IrisAmp/QCGUI). I don't know how to use it yet, but it seems good.
 
 <b>Programming the flight controller:</b>  
 ----
