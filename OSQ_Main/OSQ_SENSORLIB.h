@@ -686,7 +686,7 @@ bool SENSORLIB_accel::begin()
   Wire.begin();
 
   // Enable the accelerometer
-  write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x27);
+  write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x37);
   
   // Enable the internal filter ** May not work **
   write8(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 0x0);

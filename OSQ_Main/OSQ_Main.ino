@@ -81,8 +81,7 @@ File logFile;
 bool gotPID = false;
 void scanTelemetry()
 {
-        unsigned char packet[5] = {
-                0xFF, 0x00, 0x00, 0x00, 0x00                };
+        unsigned char packet[5] = {0xFF, 0x00, 0x00, 0x00, 0x00};
         int EEPROMselectionPID;
 
         switch(receiver.ScanForMessages())
@@ -311,9 +310,7 @@ void logData()
 
         if (logFile)
         {
-                logFile.print(micros());
-                logFile.print(",");
-                logFile.println(kinematics.pitchRate);
+            // Log something
         }
         else
         {
@@ -479,7 +476,7 @@ void setup()
         barometer.setSLP(29.908);
         barometer.setOSS(3);
 
-        setupFourthOrder();       // Initialize the fourth order struct
+        setupCheby2();       // Initialize the fourth order struct
 
         #ifdef serialDebug
                 Serial.println("Initializing GPS");
@@ -590,9 +587,8 @@ double t_1Hz;
  -----------------------------------------------------------------------*/
 void _200HzTask()
 {
-        kinematicEvent(0,&accel,&mag,&gyro);
+        kinematicEvent(0,&accel,&mag,&gyro, &logFile);
 
-        //double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.ratePITCH);
         double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
         double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
 
@@ -645,20 +641,20 @@ void _200HzTask()
  -----------------------------------------------------------------------*/
 void _70HzTask()
 {
-        kinematicEvent(1, &accel, &mag, &gyro);
+        kinematicEvent(1, &accel, &mag, &gyro, &logFile);
 
-        int roll[2], pitch[2];
-        roll[0] = ((int)kinematics.roll << 8) >> 8;
-        roll[1] = (int)kinematics.roll >> 8;
-        
-        pitch[0] = (((int)kinematics.pitch) << 8) >> 8;
-        pitch[1] = (int)kinematics.pitch >> 8;
-        
-        Serial3.write(0xFF);
-        Serial3.write((unsigned char)roll[0]);
-        Serial3.write((unsigned char)roll[1]);
-        Serial3.write((unsigned char)pitch[0]);
-        Serial3.write((unsigned char)pitch[1]);
+//        int roll[2], pitch[2];
+//        roll[0] = ((int)kinematics.roll << 8) >> 8;
+//        roll[1] = (int)kinematics.roll >> 8;
+//        
+//        pitch[0] = (((int)kinematics.pitch) << 8) >> 8;
+//        pitch[1] = (int)kinematics.pitch >> 8;
+//        
+//        Serial3.write(0xFF);
+//        Serial3.write((unsigned char)roll[0]);
+//        Serial3.write((unsigned char)roll[1]);
+//        Serial3.write((unsigned char)pitch[0]);
+//        Serial3.write((unsigned char)pitch[1]);
         
         t_70Hz = micros();
 }
