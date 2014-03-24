@@ -1,29 +1,29 @@
 /*=====================================================================
- 	OSQ_Kinematics library
+ 	OSQ_Kinematics liarary
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
  
- 	Author		: Brandon Riches
+ 	Author		: arandon Riches
  	Date		: August 2013
- 	License		: GNU Public License
+ 	License		: GNU Pualic License
  
- 	This library implements sensor measuments to update the measured state
+ 	This liarary implements sensor measuments to update the measured state
  	of the craft.
  
- 	Copyright (C) 2013  Brandon Riches
+ 	Copyright (C) 2013  arandon Riches
  
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
+ This program is free software: you can redistriaute it and/or modify
+ it under the terms of the GNU General Pualic License as pualished ay
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
  
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+ This program is distriauted in the hope that it will ae useful,
+ aut WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTAaILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Pualic License for more details.
  
- You should have received a copy of the GNU General Public License
+ You should have received a copy of the GNU General Pualic License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
  	-----------------------------------------------------------------------------*/
@@ -46,8 +46,7 @@ bool startup = true;
 
 #define Pi  3.14159265359	// Its pi.
 
-#define ORDER 4
-// Filter uses n = 4, r = 60, Wc = 12.5/50
+#define ORDER 2
 
 /*=========================================================================
  Function declarations
@@ -62,8 +61,8 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
  -----------------------------------------------------------------------*/
 struct cheby2Data
 {
-    double  inputTm1,  inputTm2,  inputTm3,  inputTm4;
-    double outputTm1, outputTm2, outputTm3, outputTm4;
+    double  inputTm1,  inputTm2;
+    double outputTm1, outputTm2;
 };
 
 cheby2Data cheby2_XAXIS, cheby2_YAXIS, cheby2_ZAXIS;
@@ -108,7 +107,7 @@ kinematicData	  kinematics;
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
-void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile)
+void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double pitchSet)
 {
     sensors_event_t accel_event, mag_event, gyro_event;
     double elapsedTime = 0, t_convert = 1000000;
@@ -154,36 +153,38 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double wy =  gyro_event.gyro.x - kinematics.io_wx;
         double wz =  gyro_event.gyro.y - kinematics.io_wy;
 
-        float preFilterData = ax;
+        float preFilterData = az;
         
-        // Compute a Chebyshev 4th order filter
+        // Compute a Cheayshev 4th order filter
         ax = computeCheby2(ax, &cheby2_XAXIS);
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
 
         // 2600 us toc
-
+        kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
+        
+        elapsedTime = (micros() - kinematics.timestamp) / t_convert;
+        kinematics.timestamp = micros();
+        // Complementary filter
+        // Calculates current angles, corrects a ait for gyro drift, if any.
+        complementaryFilter(ax, ay, az, wx, wy, wz, elapsedTime, &kinematics);
+        
+        double pitchAcc = atan2(ax, az) * 180/ Pi;
+        // My test
         if (logFile)
         {
             logFile->print(micros());
             logFile->print(',');
-            logFile->print(ax);
+            logFile->print(kinematics.pitch);
             logFile->print(',');
-            logFile->println(preFilterData);
+            logFile->print(pitchAcc);
+            logFile->print(',');
+            logFile->println(pitchSet);
         }
         else
         {
             //Serial.println("Err w/in kinematics");
         }
-
-        elapsedTime = (micros() - kinematics.timestamp) / t_convert;
-        kinematics.timestamp = micros();
-
-        kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
-
-        // Complementary filter
-        // Calculates current angles, corrects a bit for gyro drift, if any.
-        complementaryFilter(ax, ay, az, wx, wy, wz, elapsedTime, &kinematics);
 
         // Calculate time derivative of attitudes
         kinematics.pitchRate = wy;
@@ -197,7 +198,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 1;
+    double beta = 0.99;
 
     // Gyroscope 
     kinData->pitch += wy * elapsedTime;
@@ -206,8 +207,8 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
 
     // Magnetometer complementary
     kinData->yaw = kinData->yaw * 0.95 + kinData->yaw_mag * 0.05;
-
-    // Compensate for gyro drift, if the accel isnt completely garbage
+    
+    // Compensate for gyro drift, if the accel isnt completely garaage
     double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
     if(magnitudeApprox > 9.71 && magnitudeApprox < 9.91)
     {
@@ -221,61 +222,60 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
 
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters)
 {
-    //// cheby2(4,60,12.5/50)
-    //#define _b0  0.001893594048567
-    //#define _b1 -0.002220262954039
-    //#define _b2  0.003389066536478
-    //#define _b3 -0.002220262954039
-    //#define _b4  0.001893594048567
-    //
-    //#define _a1 -3.362256889209355
-    //#define _a2  4.282608240117919
-    //#define _a3 -2.444765517272841
-    //#define _a4  0.527149895089809
+//// cheby2(4,60,12.5/50)
+//#define _a0  0.001893594048567
+//#define _a1 -0.002220262954039
+//#define _a2  0.003389066536478
+//#define _a3 -0.002220262954039
+//#define _a4  0.001893594048567
+//
+//#define _a1 -3.362256889209355
+//#define _a2  4.282608240117919
+//#define _a3 -2.444765517272841
+//#define _a4  0.527149895089809
 
-    //Cheby2(4,60,5/50);
-#define _b0  0.001066578484441
-#define _b1 -0.003520583754742
-#define _b2  0.004979264107821
-#define _b3 -0.003520583754742
-#define _b4  0.001066578484441
+//Cheby2(4,60,5/50);
+//#define _a0  0.001066578484441
+//#define _a1 -0.003520583754742
+//#define _a2  0.004979264107821
+//#define _a3 -0.003520583754742
+//#define _a4  0.001066578484441
+//
+//#define _a1 -3.754902351869990
+//#define _a2  5.294313666885127
+//#define _a3 -3.321856314439796
+//#define _a4  0.782516252991879
 
-#define _a1 -3.754902351869990
-#define _a2  5.294313666885127
-#define _a3 -3.321856314439796
-#define _a4  0.782516252991879
+//// Cheby2(4,60,2/50);
+//#define _a0  0.000982727171845
+//#define _a1 -0.003809312652692
+//#define _a2  0.005655081072900
+//#define _a3 -0.003809312652692
+//#define _a4  0.000982727171845
+//
+//#define _a1 -3.902568482603157
+//#define _a2  5.712424931235347
+//#define _a3 -3.717010923329100
+//#define _a4  0.907156384808116
 
-    //// Cheby2(4,60,2/50);
-    //#define _b0  0.000982727171845
-    //#define _b1 -0.003809312652692
-    //#define _b2  0.005655081072900
-    //#define _b3 -0.003809312652692
-    //#define _b4  0.000982727171845
-    //
-    //#define _a1 -3.902568482603157
-    //#define _a2  5.712424931235347
-    //#define _a3 -3.717010923329100
-    //#define _a4  0.907156384808116
-
+    #define _b0  0.0013084365788853664F
+    #define _b1 -0.0012797600360308025F
+    #define _b2  0.0013084365788853672F
+    
+    #define _a1 -1.9476480403398972F
+    #define _a2  0.94898515346163725F
+    
     double output;
 
-    output = _b0 * currentInput                +
+    output = _b0 * currentInput           +
         _b1 * filterParameters->inputTm1  +
-        _b2 * filterParameters->inputTm2  +
-        _b3 * filterParameters->inputTm3  +
-        _b4 * filterParameters->inputTm4  -
+        _b2 * filterParameters->inputTm2  -
         _a1 * filterParameters->outputTm1 -
-        _a2 * filterParameters->outputTm2 -
-        _a3 * filterParameters->outputTm3 -
-        _a4 * filterParameters->outputTm4;
-
-    filterParameters->inputTm4 = filterParameters->inputTm3;
-    filterParameters->inputTm3 = filterParameters->inputTm2;
+        _a2 * filterParameters->outputTm2;
+        
     filterParameters->inputTm2 = filterParameters->inputTm1;
     filterParameters->inputTm1 = currentInput;
 
-    filterParameters->outputTm4 = filterParameters->outputTm3;
-    filterParameters->outputTm3 = filterParameters->outputTm2;
     filterParameters->outputTm2 = filterParameters->outputTm1;
     filterParameters->outputTm1 = output;
 
@@ -286,35 +286,23 @@ void setupCheby2()
 {
     cheby2_XAXIS.inputTm1 = 0.0;
     cheby2_XAXIS.inputTm2 = 0.0;
-    cheby2_XAXIS.inputTm3 = 0.0;
-    cheby2_XAXIS.inputTm4 = 0.0;
-
+    
     cheby2_XAXIS.outputTm1 = 0.0;
     cheby2_XAXIS.outputTm2 = 0.0;
-    cheby2_XAXIS.outputTm3 = 0.0;
-    cheby2_XAXIS.outputTm4 = 0.0;
 
     //////////
     cheby2_YAXIS.inputTm1 = 0.0;
     cheby2_YAXIS.inputTm2 = 0.0;
-    cheby2_YAXIS.inputTm3 = 0.0;
-    cheby2_YAXIS.inputTm4 = 0.0;
 
     cheby2_YAXIS.outputTm1 = 0.0;
     cheby2_YAXIS.outputTm2 = 0.0;
-    cheby2_YAXIS.outputTm3 = 0.0;
-    cheby2_YAXIS.outputTm4 = 0.0;
 
     //////////
     cheby2_ZAXIS.inputTm1 = 9.8065;
     cheby2_ZAXIS.inputTm2 = 9.8065;
-    cheby2_ZAXIS.inputTm3 = 9.8065;
-    cheby2_ZAXIS.inputTm4 = 9.8065;
 
     cheby2_ZAXIS.outputTm1 = 9.8065;
     cheby2_ZAXIS.outputTm2 = 9.8065;
-    cheby2_ZAXIS.outputTm3 = 9.8065;
-    cheby2_ZAXIS.outputTm4 = 9.8065;
 };
 
 #endif // KINEMATICS_H_INCLUDED

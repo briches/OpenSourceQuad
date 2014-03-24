@@ -39,9 +39,10 @@ void pulseTest()
 void loop()
 {
   Serial.println("********************Begin Motor test********************");
-  Serial.println("Individual test:");
   
-  motorSpeeds[0] = 1500;
+  int control_var = 150;
+  motorSpeeds[0] = 1250 + control_var;
+  motorSpeeds[3] = 1250 - control_var;
   writeMotors();
   
   

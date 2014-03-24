@@ -1,18 +1,19 @@
-function [s] = quadDataAnalyze()
-    clf; clc;
+function [s] = quadFiltAnalyze()
+    clc;clf;
     % Works off the data in the D: drive
     cd 'D:\';
 
     % List available files, pick the file
     s = dir('*.txt');
     file_list = {s.name};
-    selection = menu('Select a file',file_list);
+    
 
     % Open the selected file
     if length(file_list)==1
         filename = s.name;
         fid = fopen(filename,'r');
     else 
+        selection = menu('Select a file',file_list);
         filename = s.name(selection);
         fid = fopen(filename,'r');
     end
@@ -24,15 +25,17 @@ function [s] = quadDataAnalyze()
     % Read the csv data
     csvdata = csvread(filename,sline,0);
     time = csvdata(:,1);
-    dt = (time(2)-time(1))/1000000;
+    dt = getDt(time);
     filt = csvdata(:,2);
     nfilt = csvdata(:,3);
+    set = csvdata(:,4);
 
     % Plot that there data
     figure(9); hold on; grid on;
     plot(time, filt, 'b');
     plot(time, nfilt,'r');
-    legend('Filtered','Unfiltered','Location','SouthEast');
+    plot(time, set, 'k');
+    legend('Gyro+accel','Accel','Setpoint','Location','SouthEast');
     hold off;
     
     figure(10);
@@ -44,6 +47,18 @@ function [s] = quadDataAnalyze()
     
     % Close 'em
     fclose('all');
+    cd 'C:\';
+end
+
+function dt = getDt(time)
+
+deltas = zeros(length(time),1);
+
+for n = 2:length(time)
+    deltas(n-1) = (time(n)-time(n-1))/1000000;
+end
+
+dt = sum(deltas)/length(deltas);
 end
 
 function start = getLine(fid)

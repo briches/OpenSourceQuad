@@ -63,9 +63,9 @@
 //        double ATT_KD = 1.1794;
 //#endif
 #ifdef SINGLE_PID // Slower, but less oscillations
-        double ATT_KP = 0.84569;
+        double ATT_KP = 0.84569*3;
         double ATT_KI = 0.19396;
-        double ATT_KD = 0.78829;
+        double ATT_KD = 0.78829*2;
 #endif
 
 double altitudekP = 0;
@@ -129,12 +129,15 @@ double incrementSetpoint(struct PID_Manager_t *PID, double changeAmount)
         return PID->setTarget;
 };
 
+double setpoint(struct PID_Manager_t *PID, double newSetpoint)
+{
+    PID->setTarget = newSetpoint;
+};
+
 double calculatePID(struct PID_Manager_t *PID, double measuredValue, double measuredRate)
 {
 	// Timestep, seconds
 	double dt = (micros() - PID->lastTimestamp)/1000000.;
-
-
 
 	#ifdef SINGLE_PID
 		double error = measuredValue - PID->setTarget;

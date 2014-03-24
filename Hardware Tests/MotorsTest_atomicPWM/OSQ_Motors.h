@@ -3,28 +3,28 @@
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
- 
+
  	Author		: Brandon Riches
  	Date		: August 2013
  	License		: GNU Public License
- 
+
  	This library is designed to interface with and control brushless motor escs
- 
+
  	Copyright (C) 2013  Brandon Riches
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
  	-----------------------------------------------------------------------------*/
 
 #ifndef OSQ_MOTORS_H_INCLUDED
@@ -36,47 +36,41 @@
 #include "WProgram.h"
 #endif
 
-#define USE_400HZ_ESC
+#define USE_300HZ_PWM 
+#define USE_4MOTORS
 
-#ifdef USE_150HZ_ESC
+#ifdef USE_150HZ_PWM
 #define PWM_FREQUENCY   150
 #endif
 
-#ifdef USE_200HZ_ESC
+#ifdef USE_200HZ_PWM
 #define PWM_FREQUENCY   200
 #endif
 
-#ifdef USE_250HZ_ESC
+#ifdef USE_250HZ_PWM
 #define PWM_FREQUENCY   250
 #endif
 
-#ifdef USE_300HZ_ESC
+#ifdef USE_300HZ_PWM
 #define PWM_FREQUENCY   300
 #endif
 
-#ifdef USE_400HZ_ESC
+#ifdef USE_400HZ_PWM
 #define PWM_FREQUENCY   400
-#endif
-
-#ifdef USE_8KHZ_ESC
-#define PWM_FREQUENCY   8000
 #endif
 
 #define PRESCALER		8
 #define PWM_COUNTER_PERIOD	(F_CPU/PRESCALER/PWM_FREQUENCY)
 
 
-#define MIN_COMMAND      	1075     		// the shortest pulse
-#define MAX_COMMAND     	1600     		// the longest pulse
+#define MIN_COMMAND      	1075     // the shortest pulse
+#define MAX_COMMAND     	1600     // the longest pulse
 
-#define MOTOR1PIN			2				// Front Motor PORTE PE4
-#define MOTOR2PIN			3				// Left Motor  PORTE PE5
-#define MOTOR3PIN			5				// Right Motor PORTE PE3
-#define MOTOR4PIN			6				// Back	Motor  PORTH PH3
-
-#define _PLUSconfig			1
+#define _PLUSconfig
 
 //#define _Xconfig			1
+
+enum {motor1, motor2, motor3, motor4, motor5, motor6, motor7, motor8};
 
 
 //***********************************************/
@@ -85,14 +79,14 @@
  		  1
  		 ||
  		 ||
- ||
+                 ||
  	 	 ||
- /      front        \
- |      usb ^        |
+         /      front        \
+         |      usb ^        |
  2 ======|                   |====== 3
- |                   |
- |                   |
- \___________________/
+         |                   |
+         |                   |
+         \___________________/
  		 ||
  		 ||
  		 ||
@@ -102,8 +96,7 @@
  */
 //***********************************************/
 
-int motorSpeeds[4] = {
-        0, 0, 0, 0};
+int motorSpeeds[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 void initializePWM()
 {
@@ -125,43 +118,50 @@ void initializePWM()
 
 void writeMotors()
 {
-        OCR3B = motorSpeeds[0] * 2;
-        OCR3C = motorSpeeds[1] * 2;
-        OCR3A = motorSpeeds[2] * 2;
-        OCR4A = motorSpeeds[3] * 2;
+        OCR3B = motorSpeeds[motor1] * 2;
+        OCR3C = motorSpeeds[motor2] * 2;
+        OCR3A = motorSpeeds[motor3] * 2;
+        OCR4A = motorSpeeds[motor4] * 2;
 };
 
 void commandAllMotors(int speed)
 {
-        motorSpeeds[0] = speed;
-        motorSpeeds[1] = speed;
-        motorSpeeds[2] = speed;
-        motorSpeeds[3] = speed;
+        motorSpeeds[motor1] = speed;
+        motorSpeeds[motor2] = speed;
+        motorSpeeds[motor3] = speed;
+        motorSpeeds[motor4] = speed;
+        motorSpeeds[motor5] = speed;
+        motorSpeeds[motor6] = speed;
+        motorSpeeds[motor7] = speed;
+        motorSpeeds[motor8] = speed;
+
+        writeMotors();
 };
 
+/** Main Class **/
 class OSQ_MotorControl
 {
-public:
-        OSQ_MotorControl(int num = 4);
-
-        // Function ideas //
-        void calibrateESC(int numESC = 4);
-        void motorDISARM();
-        void startMotors();
-        void updateMotors(double pitchPID,
-        double rollPID,
-        double yawPID = 0.F,
-        double elevPID = 0.F);
-
-
-
-private:
-        bool 	MOTORS_ARMED;
-        bool	ESC_READY;
-        int 	        NUM_MOTORS;
-
-        int 	        passiveMIN;
-        int		passiveMAX;
+        public:
+                OSQ_MotorControl(int num = 4);
+        
+                // Function ideas //
+                void calibrateESC(int numESC = 4);
+                void motorDISARM();
+                void startMotors();
+                void updateMotors(double pitchPID, double rollPID, double yawPID, double elevPID);
+                
+                double changeOperatingPoint(double opChange);
+                
+                double operatingPoint;
+        
+        private:
+                bool 	MOTORS_ARMED;
+                bool	ESC_READY;
+                int 	NUM_MOTORS;
+                
+        
+                int 	passiveMIN;
+                int	passiveMAX;
 
 };
 
@@ -171,7 +171,9 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->MOTORS_ARMED 	= false;
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
-        this->passiveMAX	= MAX_COMMAND;
+        this->passiveMAX	= MAX_COMMAND-100;
+        this->operatingPoint    = 1200;
+        commandAllMotors(this->operatingPoint);
 };
 
 void OSQ_MotorControl :: calibrateESC(int numESC)
@@ -190,100 +192,118 @@ void OSQ_MotorControl :: startMotors()
 {
         if(this->ESC_READY)
         {
-                int dutyCycleTarget = (MIN_COMMAND);
-
-                int DC;
+                #ifdef USE_4MOTORS
                 
-                motorSpeeds[0] = MIN_COMMAND;
-                motorSpeeds[1] = MIN_COMMAND;
-                motorSpeeds[2] = MIN_COMMAND;
-                motorSpeeds[3] = MIN_COMMAND;
-                writeMotors();
-                delay(100);
-
-                // Perform motor sweep
-                for(int i = 0; i<4; i++)
-                {
-                        // Upwards sweep
-                        for (DC = MIN_COMMAND; DC <= MAX_COMMAND; DC+= 10)
+                        for(int DC = 0; DC < MIN_COMMAND; DC += 10)
                         {
-                                motorSpeeds[i] = DC;
+                                motorSpeeds[motor1] = DC;
+                                motorSpeeds[motor2] = DC;
+                                motorSpeeds[motor3] = DC;
+                                motorSpeeds[motor4] = DC;
                                 writeMotors();
-                                delay(10);
+                                delay(20);
                         }
-                        // Down sweep
-                        for (DC = MAX_COMMAND; DC >= MIN_COMMAND; DC-= 10)
-                        {
-                                motorSpeeds[i] = DC;
-                                writeMotors();
-                                delay(10);
-                        }
-                }
-
-                motorSpeeds[0] = MIN_COMMAND+25;
-                motorSpeeds[1] = MIN_COMMAND+25;
-                motorSpeeds[2] = MIN_COMMAND+25;
-                motorSpeeds[3] = MIN_COMMAND+25;
-                writeMotors();
+                        
+                        delay(100);
+                
+                        motorSpeeds[motor1] = MIN_COMMAND+100;
+                        motorSpeeds[motor2] = MIN_COMMAND+100;
+                        motorSpeeds[motor3] = MIN_COMMAND+100;
+                        motorSpeeds[motor4] = MIN_COMMAND+100;
+                        writeMotors();
+                #endif
         }
 };
 
-void OSQ_MotorControl :: updateMotors(	double pitchPID,
-double rollPID,
-double yawPID,
-double elevPID)
+void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, double p_yawPID, double p_elevPID)
 {
+        double PID_scalar = 1;
+        
+        double rollPID = (p_rollPID) / PID_scalar;
+        double pitchPID = (p_pitchPID) / PID_scalar;
+        double yawPID = (p_yawPID) / PID_scalar;
+        double elevPID = (p_elevPID) / PID_scalar;
+        
         if (MOTORS_ARMED)
         {
-#ifdef _PLUSconfig
 
-                // Control angle
-                motorSpeeds[0] 	+= rollPID;
-                motorSpeeds[1] 	-= rollPID;
-                motorSpeeds[2]	+= pitchPID;
-                motorSpeeds[3]	-= pitchPID;
+        #ifdef _PLUSconfig
 
-                // TODO: Yaw, elev PID.
+                #ifdef USE_4MOTORS
+                        // Control pitch/roll
+                        motorSpeeds[motor1] = operatingPoint - pitchPID;
+                        motorSpeeds[motor2] = operatingPoint + rollPID;
+                        motorSpeeds[motor3] = operatingPoint - rollPID;
+                        motorSpeeds[motor4] = operatingPoint + pitchPID;
+                #endif
+
+                #ifdef USE_4MOTORS
+                        // Control elevation
+                        motorSpeeds[motor1] += elevPID;
+                        motorSpeeds[motor2] += elevPID;
+                        motorSpeeds[motor3] += elevPID;
+                        motorSpeeds[motor4] += elevPID;
+                #endif
+                
+                /*
+                #ifdef USE_4MOTORS
+                        // Control yaw
+                        motorSpeeds[motor1] += yawPID;        // CW
+                        motorSpeeds[motor2] += yawPID;
+                        motorSpeeds[motor3] -= yawPID;        // CCW
+                        motorSpeeds[motor4] -= yawPID;
+                #endif
+                */
+
+
 
                 // Restrict duty cycle to max/min
-                motorSpeeds[0] = constrain(	motorSpeeds[0], passiveMIN, passiveMAX);
-                
-                motorSpeeds[1] = constrain(	motorSpeeds[1], passiveMIN, passiveMAX);
-                
-                motorSpeeds[2] = constrain(	motorSpeeds[2], passiveMIN, passiveMAX);
-                
-                motorSpeeds[3] = constrain(	motorSpeeds[3], passiveMIN, passiveMAX);
+                motorSpeeds[motor1] = constrain(motorSpeeds[0], passiveMIN, passiveMAX);
+                motorSpeeds[motor2] = constrain(motorSpeeds[1], passiveMIN, passiveMAX);
+                motorSpeeds[motor3] = constrain(motorSpeeds[2], passiveMIN, passiveMAX);
+                motorSpeeds[motor4] = constrain(motorSpeeds[3], passiveMIN, passiveMAX);
+                motorSpeeds[motor5] = constrain(motorSpeeds[4], passiveMIN, passiveMAX);
+                motorSpeeds[motor6] = constrain(motorSpeeds[5], passiveMIN, passiveMAX);
+                motorSpeeds[motor7] = constrain(motorSpeeds[6], passiveMIN, passiveMAX);
+                motorSpeeds[motor8] = constrain(motorSpeeds[7], passiveMIN, passiveMAX);
 
 
-                writeMotors();	// In OSQ_atomicPWM
-#endif
+                writeMotors();
+        #endif
 
-#ifdef _Xconfig
+        #ifdef _Xconfig
 
 
                 //TODO:
                 // Write motor logic for X config
 
-#endif
+        #endif
         }
 
 
 };
 
+// Used to manually control altitude.
+double OSQ_MotorControl :: changeOperatingPoint(double opChange)
+{
+        operatingPoint += opChange;
+        constrain(operatingPoint, 1200, 1450);
+        return operatingPoint;
+};
+
 void OSQ_MotorControl :: motorDISARM()
 {
-        motorSpeeds[0] = 1000;
-        motorSpeeds[1] = 1000;
-        motorSpeeds[2] = 1000;
-        motorSpeeds[3] = 1000;
+        #ifdef USE_4MOTORS
+                motorSpeeds[motor1] = 875;
+                motorSpeeds[motor2] = 875;
+                motorSpeeds[motor3] = 875;
+                motorSpeeds[motor4] = 875;
+        #endif
+
+        writeMotors();
 
         MOTORS_ARMED = false;
 };
 
 OSQ_MotorControl   		motorControl;
-
-
-
 #endif // FQ_MOTORS_H_INCLUDED
-
-

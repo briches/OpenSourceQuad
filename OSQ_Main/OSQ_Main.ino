@@ -50,6 +50,7 @@ int softwareVersionMinor;
 unsigned int flightNumber;
 uint64_t cycleCount;
 bool receivedStartupCommand = false;
+double startTime;
 
 /** Debugging Options **/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
@@ -459,36 +460,6 @@ void setup()
 
         statusLED(2);
 
-
-        /*****************************/
-        /* Initialize sensors. */
-        /*****************************/
-
-        #ifdef serialDebug
-                Serial.println("Initializing Sensors");
-        #endif
-
-        statusLED(6);
-
-        while(!initSensor(accel, mag,  gyro, &kinematics));
-
-        barometer.readEEPROM();
-        barometer.setSLP(29.908);
-        barometer.setOSS(3);
-
-        setupCheby2();       // Initialize the fourth order struct
-
-        #ifdef serialDebug
-                Serial.println("Initializing GPS");
-        #endif
-
-        GPS.begin(9600);
-        initGPS();
-
-        statusLED(3);
-
-
-
         /*****************************/
         /* Initialize telemetry */
         /*****************************/
@@ -526,10 +497,37 @@ void setup()
                 scanTelemetry();
         }
         //Set the timestamp to now so angle doesnt fly out of control
-        kinematics.timestamp = micros();
+        startTime = micros();
+        kinematics.timestamp = startTime;
         kinematics.pitch = 0;
         kinematics.roll = 0;
         statusLED(1);
+        
+        /*****************************/
+        /* Initialize sensors. */
+        /*****************************/
+
+        #ifdef serialDebug
+                Serial.println("Initializing Sensors");
+        #endif
+        statusLED(6);
+
+        while(!initSensor(accel, mag,  gyro, &kinematics));
+
+        barometer.readEEPROM();
+        barometer.setSLP(29.908);
+        barometer.setOSS(3);
+
+        setupCheby2();       // Initialize the fourth order struct
+
+        #ifdef serialDebug
+                Serial.println("Initializing GPS");
+        #endif
+
+        GPS.begin(9600);
+        initGPS();
+
+        statusLED(3);
         
         /*****************************/
         /* Write some EEPROM config data */
@@ -587,8 +585,14 @@ double t_1Hz;
  -----------------------------------------------------------------------*/
 void _200HzTask()
 {
-        kinematicEvent(0,&accel,&mag,&gyro, &logFile);
+        kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setTarget);
 
+        if(micros() - startTime < 1000000)
+        {
+            setpoint(&rollPID, kinematics.roll);
+            setpoint(&pitchPID, kinematics.pitch);
+        }
+    
         double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
         double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
 
@@ -641,7 +645,7 @@ void _200HzTask()
  -----------------------------------------------------------------------*/
 void _70HzTask()
 {
-        kinematicEvent(1, &accel, &mag, &gyro, &logFile);
+        kinematicEvent(1, &accel, &mag, &gyro, &logFile, pitchPID.setTarget);
 
 //        int roll[2], pitch[2];
 //        roll[0] = ((int)kinematics.roll << 8) >> 8;
