@@ -68,7 +68,7 @@ void setup()
 {
     //Set up the serial port
     println(Serial.list());
-    myPort = new Serial(this, Serial.list()[0], 19200);
+    myPort = new Serial(this, Serial.list()[1], 19200);
     print("Connected to serial port: ");
     println(Serial.list()[0]);
 
@@ -338,12 +338,12 @@ void sendtxPacket()
         }
         case 0x0E:
         {
-            pitchSetpoint = pitchSetpoint + 1;
+            pitchSetpoint = pitchSetpoint + 5;
             break;
         }
         case 0x0F:
         {
-            pitchSetpoint = pitchSetpoint - 1;
+            pitchSetpoint = pitchSetpoint - 5;
             break;
         }
         case 0x10:

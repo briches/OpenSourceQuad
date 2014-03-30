@@ -122,9 +122,10 @@ translate_z = Quad.TDOFA(3);
 phi = 1;
 SIM_ITERATIONS = 100000;
 
-ki = 0;
-kd = 0;
-I = 0;
+ki = 0.19396;
+kd = 0.78829;
+kp = 0.84569;
+Iterm = 0;
 
 angleVsTime = zeros(SIM_ITERATIONS,1);
 prev_time = 0;
@@ -148,10 +149,10 @@ for t = 0:SIM_ITERATIONS
             last_error = phi;
             
             P = kp * phi;
-            I = I + ki * phi * 0.01;
-            D = kd * (phi - last_error) / 0.1;
+            Iterm = Iterm + ki * phi * 0.01;
+            D = kd * (phi - last_error) / 0.01;
 
-            C = P + I + D;
+            C = P + Iterm + D;
             
             M1S = 1350 - C;
             M4S = 1350 + C;

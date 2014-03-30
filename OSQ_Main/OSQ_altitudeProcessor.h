@@ -37,7 +37,7 @@
  #include "WProgram.h"
 #endif
 
-#define Pi  	    (3.14159265359F)	// Its pi.
+#define Pi (3.14159265359F)	// Its pi.
 
 boolean isSetInitialAltitudeBarometer = false;
 boolean isSetInitialAltitudeGPS = false;

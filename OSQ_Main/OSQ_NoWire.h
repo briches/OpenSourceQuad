@@ -49,9 +49,9 @@
  	Communication settings
  	-----------------------------------------------------------------------------*/
 #define MSG_SIZE	(5)			// Number of bytes in each message
-                                                // | Start_Char | Message ID | Data * 3 |
+                                // | Start_Char | Message ID | Data * 3 |
 #define START_CHAR	(0xFF)			// Signifies start of message
-#define timeoutMicros   (500000)                 // Number of microseconds to wait for more data once a message is started
+#define timeoutMicros   (500000)    // Number of microseconds to wait for more data once a message is started
 
 
 /*================================================================================
@@ -60,38 +60,33 @@
 // Create your messages here.
 enum messages  // Customize these.
 {
-
-        disarm = 0x00,
-        autoland = 0x01,
-        start = 0x02,
-        broadcastData = 0x03,
-        increaseOperatingPoint = 0x0C,
-        decreaseOperatingPoint = 0x0D,
-        
-        increasePitch = 0x0E,
-        decreasePitch = 0x0F,
-        increaseRoll = 0x10,
-        decreaseRoll = 0x11,
-        
-        resetPitchRoll = 0xC0,
-        err = -1, // Must have this one
+	disarm = 0x00,
+	autoland = 0x01,
+	start = 0x02,
+	broadcastData = 0x03,
+	increaseOperatingPoint = 0x0C,
+	decreaseOperatingPoint = 0x0D,
+	
+	increasePitch = 0x0E,
+	decreasePitch = 0x0F,
+	increaseRoll = 0x10,
+	decreaseRoll = 0x11,
+	
+	resetPitchRoll = 0xC0,
+	err = -1, // Must have this one
 };
 
-enum {  FIRSTBYTE,
-        M_ID,
-        DATA1,
-        DATA2,
-        DATA3};
+enum {  FIRSTBYTE, M_ID, DATA1, DATA2, DATA3};
 
 class NoWire
 {
-        public:
-                NoWire();
-                int ScanForMessages();
-                bool start();
+	public:
+		NoWire();
+		int ScanForMessages();
+		bool start();
 
-                unsigned char newMessage[MSG_SIZE];
-                long timestamp;
+		unsigned char newMessage[MSG_SIZE];
+		long timestamp;
 };
 
 NoWire :: NoWire() {
@@ -99,27 +94,27 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-        if(Serial3.available() >= MSG_SIZE)
-        {
-                unsigned char firstByte = Serial3.read();
-                if(firstByte == START_CHAR)
-                {
-                        timestamp = micros();
-                        newMessage[FIRSTBYTE] = firstByte;
-                        newMessage[M_ID] = Serial3.read();
-                        newMessage[DATA1] = Serial3.read();
-                        newMessage[DATA2] = Serial3.read();
-                        newMessage[DATA3] = Serial3.read();
-
-                }return newMessage[M_ID];
-        }
-        return err; // Full message not yet recieved;
+	if(Serial3.available() >= MSG_SIZE)
+	{
+		unsigned char firstByte = Serial3.read();
+		if(firstByte == START_CHAR)
+		{
+			timestamp = micros();
+			newMessage[FIRSTBYTE] = firstByte;
+			newMessage[M_ID] = Serial3.read();
+			newMessage[DATA1] = Serial3.read();
+			newMessage[DATA2] = Serial3.read();
+			newMessage[DATA3] = Serial3.read();
+		}
+		return newMessage[M_ID];
+	}
+	return err; // Full message not yet received;
 };
 
 bool NoWire :: start()
 {
-        Serial3.begin(BAUD);
-        return 1;
+	Serial3.begin(BAUD);
+	return 1;
 };
 
 NoWire receiver;

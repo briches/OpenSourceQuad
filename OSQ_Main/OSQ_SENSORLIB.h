@@ -9,7 +9,7 @@
 	License		: GNU Public License
 
 	This library manages the I2C interface with certain sensors, allowing them to
-	easily communicate with the microcontroller.
+	easily communicate with the micro-controller.
 
 	Copyright (C) 2013  Brandon Riches
 
@@ -18,12 +18,12 @@
 
 	The following is the original license information:
 
-	 This is a library for the LSM303 Accelerometer and magnentometer/compass
+	 This is a library for the LSM303 Accelerometer and magnetometer/compass
 
 	  Designed specifically to work with the Adafruit LSM303DLHC Breakout
 
 	  Adafruit invests time and resources providing this open source code,
-	  please support Adafruit andopen-source hardware by purchasing products
+	  please support Adafruit and open-source hardware by purchasing products
 	  from Adafruit!
 
 	  Written by Kevin Townsend for Adafruit Industries.
@@ -536,7 +536,7 @@ bool SENSORLIB_gyro::begin()
 
 	write8(GYRO_ADDR, USER_CTRL, B00100000);
 
-        write8(GYRO_ADDR, SMPLRT_DIV, SMPL_RATE_DIV);
+    write8(GYRO_ADDR, SMPLRT_DIV, SMPL_RATE_DIV);
 
 	return true;
 };

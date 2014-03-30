@@ -38,7 +38,6 @@ function [s] = quadFiltAnalyze()
     % Find the first line of .csv format
     sline = getLine(fid);
     fclose(fid);
-    filename = lower(filename);
 
     % Read the csv data
     csvdata = csvread(filename,sline,0);

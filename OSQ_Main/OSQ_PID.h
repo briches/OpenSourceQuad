@@ -38,34 +38,31 @@
 
 #include <Limits.h>
 
- // Single PID is much easier to deal with, for now.
+// Choose a control scheme. Single uses position feedback only, while nested uses velocity+position feedback.
 #define SINGLE_PID 
-
-// Probably don't use this. Who really knows
 //#define NESTED_PID
 
 // TODO:
 #ifdef NESTED_PID
-        double SET_ATT_KP = 0.1;
-        double SET_ATT_KI = 0.0;
-        double SET_ATT_KD = 0.0;
+	double SET_ATT_KP = 4.20423235009075;
+	double SET_ATT_KI = 0.351024555105888;
+	double SET_ATT_KD = 0.329871791984678;
 
-        double RATE_ATT_KP = 0.88151;
-        double RATE_ATT_KI = 0.15223;
-        double RATE_ATT_KD = 0.85251;
-
+	double RATE_ATT_KP = 0.566803803638004;
+	double RATE_ATT_KI = 0.182870219213294;
+	double RATE_ATT_KD = 0.0128979948656622;
 #endif
 
-// These ones are pretty good. Keep these.
-//#ifdef SINGLE_PID // A bit oscillatory
-//        double ATT_KP = 3.0376;
-//        double ATT_KI = 1.2303;
-//        double ATT_KD = 1.1794;
-//#endif
-#ifdef SINGLE_PID // Slower, but less oscillations
-        double ATT_KP = 0.84569*3;
-        double ATT_KI = 0.19396;
-        double ATT_KD = 0.78829*2;
+// #ifdef SINGLE_PID 
+	// double ATT_KP = 2.533*0.8; 
+	// double ATT_KI = 2.2732*1.5;
+	// double ATT_KD = 0.97744*0.6;
+// #endif
+
+#ifdef SINGLE_PID 
+	double ATT_KP = 2.533; 
+	double ATT_KI = 2.2732*1.5;
+	double ATT_KD = 0.97744*0.6;
 #endif
 
 double altitudekP = 0;
@@ -80,7 +77,6 @@ enum{lower, upper};
 
 struct PID_Gain
 {
-
 	double setP, setI, setD;
 
 	#ifdef NESTED_PID
@@ -146,16 +142,17 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
 		PID->setIntegratedError = constrain(PID->setIntegratedError, -PID->windupGuard, PID->windupGuard);
 
-                // Proportional Response
-                double pTerm = error * PID_GAINS[PID->ID].setP;
-                
-                // Derivative response.
-                double dTerm = (error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt;
+		// Proportional Response
+		double pTerm = error * PID_GAINS[PID->ID].setP;
+		
+		// Derivative response.
+		double dTerm = (error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt;
                 
 		PID->output = PID->setIntegratedError + pTerm + dTerm;
 
 		PID->lastTimestamp = micros();
-                PID->setLastError = error;
+		
+		PID->setLastError = error;
 
 		return PID->output;
 	#endif
@@ -163,29 +160,41 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	#ifdef NESTED_PID
 		double error = measuredValue - PID->setTarget;
 
-		// Exterior PID set loop
+		/*** PID position control ***/
+			// Integral term
 		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
-
 		PID->setIntegratedError = constrain(PID->setIntegratedError, -PID->windupGuard, PID->windupGuard);
 
-		PID->output = 	PID->setIntegratedError +
-						error * PID_GAINS[PID->ID].setP + // P
-						(error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt; // D
+		// Proportional term
+		double pTerm = error * PID_GAINS[PID->ID].setP;
+		
+		// Derivative term
+		double dTerm = (error - PID->setLastError) * PID_GAINS[PID->ID].setD / dt;
+                
+		// Requested velocity for inner speed loop:
+		PID->output = PID->setIntegratedError + pTerm + dTerm;
 
-		// Interior PID rate loop
+		/*** PID speed control ***/
 		double rateError = measuredRate - PID->output;
-
+                
+		// Integral term
 		PID->rateIntegratedError += PID_GAINS[PID->ID].rateI * rateError * dt;
+		PID->rateIntegratedError = constrain(PID->rateIntegratedError, -PID->windupGuard, PID->windupGuard);
 
-		PID->output = 	PID->rateIntegratedError +
-						rateError * PID_GAINS[PID->ID].rateP +
-						(rateError - PID->rateLastError) * PID_GAINS[PID->ID].setD / dt;
+		// Proportional term
+		pTerm = rateError * PID_GAINS[PID->ID].rateP;
+		
+		// Derivative term
+		dTerm = (rateError - PID->rateLastError) * PID_GAINS[PID->ID].rateD / dt;
 
-                PID->output = -PID->output;
+		// Motor output
+		PID->output = PID->rateIntegratedError + pTerm + dTerm;
 
+		PID->output = -PID->output;
+                
 		PID->lastTimestamp = micros();
-                PID->setLastError = error;
-                PID->rateLastError = error;
+		PID->setLastError = error;
+		PID->rateLastError = rateError;
 
 		return PID->output;
 	#endif
@@ -201,23 +210,24 @@ void initializePID(struct PID_Manager_t *PID)
 
 	if(PID->ID < altitude)
 	{
-        	#ifdef SINGLE_PID
-        		PID_GAINS[PID->ID].setP = ATT_KP;
-        		PID_GAINS[PID->ID].setI = ATT_KI;
-        		PID_GAINS[PID->ID].setD = ATT_KD;
-        	#endif
-        
-        	#ifdef NESTED_PID
-        		PID_GAINS[PID->ID].setP = SET_ATT_KP;
-        		PID_GAINS[PID->ID].setI = SET_ATT_KI;
-        		PID_GAINS[PID->ID].setD = SET_ATT_KD;
-        
-        		PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
-        		PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
-        		PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
-        
-        		PID->rateLastError = 0;
-        	#endif
+		#ifdef SINGLE_PID
+			PID_GAINS[PID->ID].setP = ATT_KP;
+			PID_GAINS[PID->ID].setI = ATT_KI;
+			PID_GAINS[PID->ID].setD = ATT_KD;
+		#endif
+	
+		#ifdef NESTED_PID
+			PID_GAINS[PID->ID].setP = SET_ATT_KP;
+			PID_GAINS[PID->ID].setI = SET_ATT_KI;
+			PID_GAINS[PID->ID].setD = SET_ATT_KD;
+	
+			PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
+			PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
+			PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
+	
+			PID->rateLastError = 0;
+				PID->rateIntegratedError = 0;
+		#endif
 	}
 	else
 	{

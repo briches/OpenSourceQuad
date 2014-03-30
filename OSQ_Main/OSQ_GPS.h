@@ -35,16 +35,16 @@ struct gpsdata_t
     int	fix, quality;	// Is fixed or no
     int    	satellites;		// number of sats
     double 	altitude,		// in m, apparently. this seems to be fucked
-    angle,			// in deg, based off movement vector
-    lat,			// in degrees, decimal minutes
-    lon,			// degrees, decimal minutes
-    spd;			// converted to m/s, direction of motion
+    angle,		// in deg, based off movement vector
+    lat,		// in degrees, decimal minutes
+    lon,		// degrees, decimal minutes
+    spd;		// converted to m/s, direction of motion
 
 };
 
-gpsdata_t           GPSDATA;
-SoftwareSerial      GPSSerial(13, 12); // TX, RX GPS pins
-Adafruit_GPS        GPS(&GPSSerial);
+gpsdata_t       GPSDATA;
+SoftwareSerial  GPSSerial(13, 12); // TX, RX GPS pins
+Adafruit_GPS    GPS(&GPSSerial);
 
 /*=========================================================================
  checkGPS()

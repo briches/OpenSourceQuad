@@ -172,7 +172,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
         this->ESC_READY		= false;
         this->passiveMIN	= MIN_COMMAND+25;
         this->passiveMAX	= MAX_COMMAND-100;
-        this->operatingPoint    = 1200;
+        this->operatingPoint    = 1250;
         commandAllMotors(this->operatingPoint);
 };
 
@@ -190,97 +190,93 @@ void OSQ_MotorControl :: calibrateESC(int numESC)
 
 void OSQ_MotorControl :: startMotors()
 {
-        if(this->ESC_READY)
-        {
-                #ifdef USE_4MOTORS
-                
-                        for(int DC = 0; DC < MIN_COMMAND; DC += 10)
-                        {
-                                motorSpeeds[motor1] = DC;
-                                motorSpeeds[motor2] = DC;
-                                motorSpeeds[motor3] = DC;
-                                motorSpeeds[motor4] = DC;
-                                writeMotors();
-                                delay(20);
-                        }
-                        
-                        delay(100);
-                
-                        motorSpeeds[motor1] = MIN_COMMAND+100;
-                        motorSpeeds[motor2] = MIN_COMMAND+100;
-                        motorSpeeds[motor3] = MIN_COMMAND+100;
-                        motorSpeeds[motor4] = MIN_COMMAND+100;
-                        writeMotors();
-                #endif
-        }
+	if(this->ESC_READY)
+	{
+		#ifdef USE_4MOTORS
+		
+			for(int DC = 0; DC < MIN_COMMAND; DC += 10)
+			{
+				motorSpeeds[motor1] = DC;
+				motorSpeeds[motor2] = DC;
+				motorSpeeds[motor3] = DC;
+				motorSpeeds[motor4] = DC;
+				writeMotors();
+				delay(20);
+			}
+			
+			delay(100);
+	
+			motorSpeeds[motor1] = MIN_COMMAND+100;
+			motorSpeeds[motor2] = MIN_COMMAND+100;
+			motorSpeeds[motor3] = MIN_COMMAND+100;
+			motorSpeeds[motor4] = MIN_COMMAND+100;
+			writeMotors();
+		#endif
+	}
 };
 
 void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, double p_yawPID, double p_elevPID)
 {
-        double PID_scalar = 1;
-        
-        double rollPID = (p_rollPID) / PID_scalar;
-        double pitchPID = (p_pitchPID) / PID_scalar;
-        double yawPID = (p_yawPID) / PID_scalar;
-        double elevPID = (p_elevPID) / PID_scalar;
-        
-        if (MOTORS_ARMED)
-        {
+	double PID_scalar = 1;
+	
+	double rollPID = (p_rollPID) / PID_scalar;
+	double pitchPID = (p_pitchPID) / PID_scalar;
+	double yawPID = (p_yawPID) / PID_scalar;
+	double elevPID = (p_elevPID) / PID_scalar;
+	
+	if (MOTORS_ARMED)
+	{
 
-        #ifdef _PLUSconfig
+	#ifdef _PLUSconfig
 
-                #ifdef USE_4MOTORS
-                        // Control pitch/roll
-                        motorSpeeds[motor1] = operatingPoint - pitchPID;
-                        motorSpeeds[motor2] = operatingPoint + rollPID;
-                        motorSpeeds[motor3] = operatingPoint - rollPID;
-                        motorSpeeds[motor4] = operatingPoint + pitchPID;
-                #endif
-
-                #ifdef USE_4MOTORS
-                        // Control elevation
-                        motorSpeeds[motor1] += elevPID;
-                        motorSpeeds[motor2] += elevPID;
-                        motorSpeeds[motor3] += elevPID;
-                        motorSpeeds[motor4] += elevPID;
-                #endif
-                
-                /*
-                #ifdef USE_4MOTORS
-                        // Control yaw
-                        motorSpeeds[motor1] += yawPID;        // CW
-                        motorSpeeds[motor2] += yawPID;
-                        motorSpeeds[motor3] -= yawPID;        // CCW
-                        motorSpeeds[motor4] -= yawPID;
-                #endif
-                */
+		#ifdef USE_4MOTORS
+			// Control pitch/roll
+			motorSpeeds[motor1] = operatingPoint - pitchPID;
+			motorSpeeds[motor2] = operatingPoint + rollPID;
+			motorSpeeds[motor3] = operatingPoint - rollPID;
+			motorSpeeds[motor4] = operatingPoint + pitchPID;
+			
+			// Control elevation
+			motorSpeeds[motor1] += elevPID;
+			motorSpeeds[motor2] += elevPID;
+			motorSpeeds[motor3] += elevPID;
+			motorSpeeds[motor4] += elevPID;
+		#endif
+		
+		/*
+		#ifdef USE_4MOTORS
+			// Control yaw
+			motorSpeeds[motor1] += yawPID;        // CW
+			motorSpeeds[motor2] += yawPID;
+			motorSpeeds[motor3] -= yawPID;        // CCW
+			motorSpeeds[motor4] -= yawPID;
+		#endif
+		*/
 
 
 
-                // Restrict duty cycle to max/min
-                motorSpeeds[motor1] = constrain(motorSpeeds[0], passiveMIN, passiveMAX);
-                motorSpeeds[motor2] = constrain(motorSpeeds[1], passiveMIN, passiveMAX);
-                motorSpeeds[motor3] = constrain(motorSpeeds[2], passiveMIN, passiveMAX);
-                motorSpeeds[motor4] = constrain(motorSpeeds[3], passiveMIN, passiveMAX);
-                motorSpeeds[motor5] = constrain(motorSpeeds[4], passiveMIN, passiveMAX);
-                motorSpeeds[motor6] = constrain(motorSpeeds[5], passiveMIN, passiveMAX);
-                motorSpeeds[motor7] = constrain(motorSpeeds[6], passiveMIN, passiveMAX);
-                motorSpeeds[motor8] = constrain(motorSpeeds[7], passiveMIN, passiveMAX);
+		// Restrict duty cycle to max/min
+		motorSpeeds[motor1] = constrain(motorSpeeds[motor1], passiveMIN, passiveMAX);
+		motorSpeeds[motor2] = constrain(motorSpeeds[motor2], passiveMIN, passiveMAX);
+		motorSpeeds[motor3] = constrain(motorSpeeds[motor3], passiveMIN, passiveMAX);
+		motorSpeeds[motor4] = constrain(motorSpeeds[motor4], passiveMIN, passiveMAX);
+		motorSpeeds[motor5] = constrain(motorSpeeds[motor5], passiveMIN, passiveMAX);
+		motorSpeeds[motor6] = constrain(motorSpeeds[motor6], passiveMIN, passiveMAX);
+		motorSpeeds[motor7] = constrain(motorSpeeds[motor7], passiveMIN, passiveMAX);
+		motorSpeeds[motor8] = constrain(motorSpeeds[motor8], passiveMIN, passiveMAX);
 
 
-                writeMotors();
-        #endif
+		writeMotors();
+	#endif
 
-        #ifdef _Xconfig
-
-
-                //TODO:
-                // Write motor logic for X config
-
-        #endif
-        }
+	#ifdef _Xconfig
 
 
+			//TODO:
+			// Write motor logic for X config
+
+	#endif
+	}
 };
 
 // Used to manually control altitude.
@@ -293,17 +289,17 @@ double OSQ_MotorControl :: changeOperatingPoint(double opChange)
 
 void OSQ_MotorControl :: motorDISARM()
 {
-        #ifdef USE_4MOTORS
-                motorSpeeds[motor1] = 875;
-                motorSpeeds[motor2] = 875;
-                motorSpeeds[motor3] = 875;
-                motorSpeeds[motor4] = 875;
-        #endif
+	#ifdef USE_4MOTORS
+		motorSpeeds[motor1] = 875;
+		motorSpeeds[motor2] = 875;
+		motorSpeeds[motor3] = 875;
+		motorSpeeds[motor4] = 875;
+	#endif
 
-        writeMotors();
+	writeMotors();
 
-        MOTORS_ARMED = false;
+	MOTORS_ARMED = false;
 };
 
-OSQ_MotorControl   		motorControl;
+OSQ_MotorControl   	motorControl;
 #endif // FQ_MOTORS_H_INCLUDED
