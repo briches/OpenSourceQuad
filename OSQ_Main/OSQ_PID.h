@@ -60,7 +60,7 @@
 // #endif
 
 #ifdef SINGLE_PID 
-	double ATT_KP = 2.533; 
+	double ATT_KP = 2.533*0.9; 
 	double ATT_KI = 2.2732*1.5;
 	double ATT_KD = 0.97744*0.6;
 #endif
@@ -90,12 +90,11 @@ typedef struct PID_Manager_t
 	unsigned long lastTimestamp;
 	int ID;
 
-
 	// Set variables
 	double windupGuard;
 	double setIntegratedError;
 	double setLastError;
-	double setTarget;
+	double setpoint;
 	double output;
 
 	#ifdef NESTED_PID
@@ -120,14 +119,14 @@ PID_Manager_t altitudePID(altitude);
 
 double incrementSetpoint(struct PID_Manager_t *PID, double changeAmount)
 {
-        PID->setTarget += changeAmount;
+        PID->setpoint += changeAmount;
         
-        return PID->setTarget;
+        return PID->setpoint;
 };
 
 double setpoint(struct PID_Manager_t *PID, double newSetpoint)
 {
-    PID->setTarget = newSetpoint;
+    PID->setpoint = newSetpoint;
 };
 
 double calculatePID(struct PID_Manager_t *PID, double measuredValue, double measuredRate)
@@ -136,7 +135,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	double dt = (micros() - PID->lastTimestamp)/1000000.;
 
 	#ifdef SINGLE_PID
-		double error = measuredValue - PID->setTarget;
+		double error = measuredValue - PID->setpoint;
 
 		// Integral response
 		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
@@ -158,7 +157,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	#endif
 
 	#ifdef NESTED_PID
-		double error = measuredValue - PID->setTarget;
+		double error = measuredValue - PID->setpoint;
 
 		/*** PID position control ***/
 			// Integral term
@@ -204,7 +203,7 @@ void initializePID(struct PID_Manager_t *PID)
 {
 	PID->windupGuard = INT_MAX;
 	PID->setIntegratedError = 0;
-	PID->setTarget = 0;
+	PID->setpoint = 0;
 	PID->output = 0;
 	PID->setLastError = 0;
 

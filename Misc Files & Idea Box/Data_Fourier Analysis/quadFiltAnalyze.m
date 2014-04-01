@@ -1,27 +1,10 @@
-function [s] = quadFiltAnalyze()
-
-% Do this in the kinematics header somewhere
-% if (logFile)
-%         {
-%             logFile->print(micros());
-%             logFile->print(',');
-%             logFile->print(kinematics.pitch);
-%             logFile->print(',');
-%             logFile->print(pitchAcc);
-%             logFile->print(',');
-%             logFile->println(pitchSet);
-%         }
-%         else
-%         {
-%             //Serial.println("Err w/in kinematics");
-%         }
-
+function [] = quadFiltAnalyze()
     clc; close all;
     % Works off the data in the D: drive
     cd 'D:\';
 
     % List available files, pick the file
-    s = dir('*.txt');
+    s = dir('*.TXT');
     file_list = {s.name};
     
 
@@ -31,14 +14,14 @@ function [s] = quadFiltAnalyze()
         fid = fopen(filename,'r');
     else 
         selection = menu('Select a file',file_list);
-        filename = s.name(selection);
+        filename = s(selection,1).name;
         fid = fopen(filename,'r');
     end
+    analyzefrequency = menu('Run frequency analysis?','No','Yes');
 
     % Find the first line of .csv format
     sline = getLine(fid);
     fclose(fid);
-    filename = lower(filename);
 
     % Read the csv data
     csvdata = csvread(filename,sline,0);
@@ -58,12 +41,14 @@ function [s] = quadFiltAnalyze()
     legend('Gyro+accel','Accel','Setpoint','Location','SouthEast');
     hold off;
     
-    figure(10);
-    [~, ~] = timefreq(filt,dt,1,1,0,1);
-    title('Complementary filtered data');
-    figure(11);
-    [~, ~] = timefreq(nfilt,dt,1,1,0,1);
-    title('Accelerometer data');
+    if (analyzefrequency -1)
+        figure(10);
+        [~, ~] = timefreq(filt,dt,1,1,0,1);
+        title('Complementary filtered data');
+        figure(11);
+        [~, ~] = timefreq(nfilt,dt,1,1,0,1);
+        title('Accelerometer data');
+    end
     
     % Close 'em
     fclose('all');
@@ -89,6 +74,7 @@ function start = getLine(fid)
         if ~isempty(strfind(line,'Runtime data:'))
             start = lc + 3;
             break;
+        else start = 0;
         end
     end
 end

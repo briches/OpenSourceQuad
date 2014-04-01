@@ -358,8 +358,7 @@ void logFileStart()
         statusLED(-1);
         return;
     }
-	Serial.println(logFilename);
-	const char logFilename[12] = 'dusnder.txt';
+	
     // If the file exists, we want to delete it. 
     if (SD.exists(logFilename))
     {
@@ -383,6 +382,20 @@ void logFileStart()
         logFile.println(softwareVersionMinor);
         logFile.print("Flight Number: ");
         logFile.println(flightNumber);
+		logFile.println("Starting PID values: ");
+		#ifdef SINGLE_PID
+		logFile.print("P: "); logFile.print(ATT_KP);
+		logFile.print("I: "); logFile.print(ATT_KI);
+		logFile.print("D: "); logFile.println(ATT_KD);
+		#endif
+		#ifdef NESTED_PID
+		logFile.print("P: "); logFile.print(SET_ATT_KP);
+		logFile.print(" I: "); logFile.print(SET_ATT_KI);
+		logFile.print(" D: "); logFile.print(SET_ATT_KD);
+		logFile.print(" Vel feedforward "); logFile.print(RATE_ATT_KP);
+		logFile.print(" Acc "); logFile.print(RATE_ATT_KI);
+		logFile.print(" Jerk "); logFile.println(RATE_ATT_KD);
+		#endif
         logFile.println("Runtime data: \n\n");
     } 
     else {
@@ -511,6 +524,9 @@ void setup()
         Serial.println("Initializing SD Card");
     #endif
     
+	ltoa(flightNumber,logFilename,10);
+	strcat(logFilename,"log");
+	strcat(logFilename,".txt");
 
     // Open a .txt file for data logging and debugging
     logFileStart();
@@ -600,7 +616,7 @@ double t_1Hz;
  -----------------------------------------------------------------------*/
 void _200HzTask()
 {
-    kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setTarget);
+    kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
     
 //    // Artificially implement a step input of 10 degrees, at t = 10s
 //    static bool haveStepped = false;
@@ -610,6 +626,15 @@ void _200HzTask()
 //        setpoint(&rollPID, kinematics.roll + 10);
 //        setpoint(&pitchPID, kinematics.pitch + 10);
 //    }
+
+	/* Check for safety */
+	if(millis() - startTime < 3000)  
+	{
+		pitchPID.setpoint = kinematics.pitch;
+		rollPID.setpoint = kinematics.roll; 
+	}
+	if(pitchPID.setpoint - kinematics.pitch > 30) pitchPID.setpoint = kinematics.pitch; 
+	if(rollPID.setpoint - kinematics.roll > 30) rollPID.setpoint = kinematics.roll; 
 
     double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
     double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
@@ -632,7 +657,7 @@ void _200HzTask()
             Serial.print("Pitch: ");
             Serial.print(kinematics.pitch);
             Serial.print(" Setpoint: ");
-            Serial.print(pitchPID.setTarget);
+            Serial.print(pitchPID.setpoint);
             Serial.print(" motorOutput: ");
             Serial.println(pitchPID.output);
             Serial.println("");
@@ -665,7 +690,7 @@ void _200HzTask()
  -----------------------------------------------------------------------*/
 void _70HzTask()
 {
-    kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setTarget);
+    kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
 
     t_70Hz = micros();
 }
