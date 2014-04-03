@@ -62,6 +62,7 @@ double startTime;
 //#define sdDebug
 //#define rollPIDdebug
 //#define pitchPIDdebug
+//#define yawPIDdebug
 //#define batteryDebug
 //#define GPSDebug
 
@@ -616,7 +617,7 @@ double t_1Hz;
  -----------------------------------------------------------------------*/
 void _200HzTask()
 {
-    kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
+    kinematicEvent(0,&accel,&mag,&gyro, &logFile, yawPID.setpoint);
     
 //    // Artificially implement a step input of 10 degrees, at t = 10s
 //    static bool haveStepped = false;
@@ -632,15 +633,17 @@ void _200HzTask()
 	{
 		pitchPID.setpoint = kinematics.pitch;
 		rollPID.setpoint = kinematics.roll; 
+		yawPID.setpoint = kinematics.yaw;
 	}
 	if(pitchPID.setpoint - kinematics.pitch > 30) pitchPID.setpoint = kinematics.pitch; 
 	if(rollPID.setpoint - kinematics.roll > 30) rollPID.setpoint = kinematics.roll; 
 
+	// Run PID algorithm
     double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
     double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
-
-    // TODO: add other PID calculatePID
-    motorControl.updateMotors(pitchOut, rollOut, 0., 0.);
+	double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
+	
+    motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.);
 
     t_200Hz = micros();
 
@@ -650,7 +653,7 @@ void _200HzTask()
             Serial.print(kinematics.roll);
             Serial.print(" motorOutput: ");
             Serial.println(rollPID.output);
-            Serial.println("");
+            Serial.println();
         #endif
         
         #ifdef pitchPIDdebug
@@ -660,8 +663,18 @@ void _200HzTask()
             Serial.print(pitchPID.setpoint);
             Serial.print(" motorOutput: ");
             Serial.println(pitchPID.output);
-            Serial.println("");
+            Serial.println();
         #endif
+		
+		#ifdef yawPIDdebug
+			Serial.print("Yaw: ");
+			Serial.print(kinematics.yaw);
+			Serial.print(" Setpoint: ");
+			Serial.print(yawPID.setpoint);
+			Serial.print(" motor output: ");
+			Serial.println(yawPID.output);
+			Serial.println();
+		#endif
         
         #ifdef attitudeDebug
             Serial.print(" Pitch: ");

@@ -44,7 +44,7 @@
 
 bool startup = true;
 
-#define Pi  3.14159265359	// Its pi.
+#define Pi  3.14159265359F	// Its pi.
 
 #define ORDER 2
 
@@ -101,13 +101,15 @@ struct kinematicData
 
 kinematicData	  kinematics;
 
+double xmagMin, xmagMax, ymagMin, ymagMax, zmagMin, zmagMax;
+
 #define XAXIS   (0)
 #define YAXIS	(1)
 #define ZAXIS	(2)
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
-void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double pitchSet)
+void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double yawSet)
 {
     sensors_event_t accel_event, mag_event, gyro_event;
     double elapsedTime = 0, t_convert = 1000000;
@@ -120,11 +122,17 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double my = -(mag_event.magnetic.y);
         double mz = mag_event.magnetic.x;
 
-        double alpha = -kinematics.pitch * Pi/180;
-        double beta = -kinematics.roll * Pi/180;
-
-
-        kinematics.yaw_mag = atan2(cos(beta)*my + sin(beta)*mz, cos(alpha)*mx + sin(alpha)*sin(beta)*my - sin(alpha)*cos(beta)*mz) * 180/Pi;
+        double pitch = kinematics.pitch * Pi/180;
+        double roll = kinematics.roll * Pi/180;
+		
+        double cos_roll = cos(roll);
+		double sin_roll = 1-(cos_roll*cos_roll);
+		double cos_pitch = cos(pitch);
+		double sin_pitch = 1- (cos_pitch*cos_pitch);
+		
+		double headx = mx * cos_pitch + my * sin_roll * sin_pitch + mz * cos_roll * sin_pitch;
+		double heady = my * cos_roll - mz * sin_roll;
+		kinematics.yaw_mag = atan2(-heady, headx) * 180/Pi;
 
         if(startup)
         {
@@ -142,9 +150,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         kinematics.lastRoll = kinematics.roll;
         kinematics.lastYaw = kinematics.yaw;
 
-        // 2000 us toc
-
-        /// Store Raw values from the sensor registers, and remove initial offsets
+        // Store Raw values from the sensor registers, and remove initial offsets
         double ax = accel_event.acceleration.z - kinematics.io_az;
         double ay = -(accel_event.acceleration.y - kinematics.io_ay);
         double az = accel_event.acceleration.x - kinematics.io_ax;
@@ -155,21 +161,19 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 
         float preFilterData = az;
         
-        // Compute a Cheayshev 4th order filter
+        // Compute a Chebyshev 4th order filter
         ax = computeCheby2(ax, &cheby2_XAXIS);
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
         
-        double pitchAcc = atan2(ax, az) * 180/ Pi;
+        // double pitchAcc = atan2(ax,  sqrt(az*az + ay*ay)) * 180/ Pi;
         if (logFile)
         {
             logFile->print(micros());
             logFile->print(',');
-            logFile->print(kinematics.pitch);
+            logFile->print(kinematics.yaw);
             logFile->print(',');
-            logFile->print(pitchAcc);
-            logFile->print(',');
-            logFile->println(pitchSet);
+            logFile->println(yawSet);
         }
         else
         {
@@ -189,7 +193,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         // Calculate time derivative of attitudes
         kinematics.pitchRate = wy;
         kinematics.rollRate = wx;
-        kinematics.yawRate = wz;
+        kinematics.yawRate = -wz; // If you change the above code for the magnetometer, change this.
 
         // 3700 us
     }
@@ -203,20 +207,20 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
     // Gyroscope 
     kinData->pitch += wy * elapsedTime;
     kinData->roll += wx * elapsedTime;
-    kinData->yaw += wz * elapsedTime;
+    kinData->yaw += -wz * elapsedTime; // If you change the above code for the magnetometer, change this.
 
     // Magnetometer complementary
-    kinData->yaw = kinData->yaw * 0.95 + kinData->yaw_mag * 0.05;
+    kinData->yaw = kinData->yaw * 1 + kinData->yaw_mag * 0.0;
     
     // Compensate for gyro drift, if the accel isnt completely garbage
     double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
     if(magnitudeApprox > 9.71 && magnitudeApprox < 9.91)
     {
-        double pitchAcc = atan2(ax, az) * 180/ Pi;
+        double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
         if(abs(pitchAcc - kinData->pitch) < 5)
             kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
 
-        double rollAcc = -atan2(ay, az) * 180 / Pi;
+        double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
         if(abs(rollAcc - kinData->roll) < 5)
             kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
     }

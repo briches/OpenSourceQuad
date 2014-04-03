@@ -87,8 +87,8 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
 			acceldata[1] = accel_event.acceleration.y;
 			acceldata[2] = accel_event.acceleration.z;
 
-			// sensors_event_t gyro_event;
-			// gyro.getEvent(&gyro_event);
+			sensors_event_t gyro_event;
+			gyro.getEvent(&gyro_event);
 			// gyrodata[0] = gyro_event.gyro.x;
 			// gyrodata[1] = gyro_event.gyro.y;
 			// gyrodata[2] = gyro_event.gyro.z;
@@ -97,7 +97,7 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
 			kinematics->io_ay = (kinematics->io_ay + acceldata[1] );
 			kinematics->io_az = (kinematics->io_az + acceldata[2] );
 			// kinematics->io_wx = (kinematics->io_wx + gyrodata[0] );
-			// kinematics->io_wy = (kinematics->io_wy + gyrodata[1] );
+			kinematics->io_wy = (kinematics->io_wy + gyrodata[1] );
 			// kinematics->io_wz = (kinematics->io_wz + gyrodata[2] );
 
 			if ((kinematics->io_ax==0)&&(kinematics->io_ay == 0)&&(kinematics->io_az == 0))
@@ -114,10 +114,10 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
         kinematics->io_ay /= offset_counter;
         kinematics->io_az /= offset_counter;
         // kinematics->io_wx /= offset_counter;
-        // kinematics->io_wy /= offset_counter;
+        kinematics->io_wy /= offset_counter;
         // kinematics->io_wz /= offset_counter;
 		kinematics->io_wx = 0;
-        kinematics->io_wy = 0;
+        // kinematics->io_wy = 0;
         kinematics->io_wz = 0;
 
 };

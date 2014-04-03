@@ -29,15 +29,15 @@ function [] = quadFiltAnalyze()
     dt = getDt(time);
     filt = csvdata(:,2);
     nfilt = csvdata(:,3);
-    set = csvdata(:,4);
+    %set = csvdata(:,4);
     check = (abs(filt - nfilt) < 5);
 
     % Plot that there data
     figure(9); hold on; grid on;
     plot(time, filt, 'b');
     plot(time, nfilt,'r');
-    plot(time, set, 'k');
-    plot(time, check, 'c-');
+    %plot(time, set, 'k');
+    %plot(time, check, 'c-');
     legend('Gyro+accel','Accel','Setpoint','Location','SouthEast');
     hold off;
     

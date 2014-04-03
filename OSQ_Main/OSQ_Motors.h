@@ -230,28 +230,25 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
 	#ifdef _PLUSconfig
 
 		#ifdef USE_4MOTORS
-			// Control pitch/roll
+			/* //Control pitch/roll */
 			motorSpeeds[motor1] = operatingPoint - pitchPID;
 			motorSpeeds[motor2] = operatingPoint + rollPID;
 			motorSpeeds[motor3] = operatingPoint - rollPID;
 			motorSpeeds[motor4] = operatingPoint + pitchPID;
 			
-			// Control elevation
-			motorSpeeds[motor1] += elevPID;
-			motorSpeeds[motor2] += elevPID;
-			motorSpeeds[motor3] += elevPID;
-			motorSpeeds[motor4] += elevPID;
+			/* //Control elevation */
+			operatingPoint += elevPID;
 		#endif
 		
-		/*
+		
 		#ifdef USE_4MOTORS
-			// Control yaw
-			motorSpeeds[motor1] += yawPID;        // CW
-			motorSpeeds[motor2] += yawPID;
-			motorSpeeds[motor3] -= yawPID;        // CCW
-			motorSpeeds[motor4] -= yawPID;
+			/* //Control yaw */
+			// motorSpeeds[motor1] += yawPID;        // CW
+			// motorSpeeds[motor2] -= yawPID;
+			// motorSpeeds[motor3] -= yawPID;        // CCW
+			// motorSpeeds[motor4] += yawPID;
 		#endif
-		*/
+		
 
 
 
