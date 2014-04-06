@@ -71,7 +71,7 @@ void statusLED(int LED_SEL);
 void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro)
 {
         /**************************************************************************/
-        //! @brief Gets the initial offsets in both sensors to accomodate board mount
+        //! Gets the initial offsets in both sensors to accomodate board mount
         /**************************************************************************/
         // # of data sets to consider when finding offsets
         int offset_counter = 1000;  
@@ -125,7 +125,7 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
 bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, struct kinematicData *kinematics)
 {
 	/**************************************************************************/
-	//! @brief Initializes the various sensors and instruments
+	//! Initializes the various sensors and instruments
 	/**************************************************************************/
 	// Same as the gyro initialization, but the accel isnt an ass
 	gyro.begin();

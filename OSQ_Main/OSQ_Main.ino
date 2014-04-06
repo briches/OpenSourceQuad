@@ -2,7 +2,7 @@
  	OSQ_Main
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
-/*================================================================================
+/**================================================================================
  
  	Author		: Brandon Riches
  	Date		: September 2013
@@ -50,7 +50,6 @@ int softwareVersionMinor;
 long int flightNumber;
 uint64_t cycleCount;
 bool receivedStartupCommand = false;
-double startTime;
 
 /** Debugging Options **/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
@@ -61,7 +60,7 @@ double startTime;
 //#define motorsDebug
 //#define sdDebug
 //#define rollPIDdebug
-//#define pitchPIDdebug
+#define pitchPIDdebug
 //#define yawPIDdebug
 //#define batteryDebug
 //#define GPSDebug
@@ -471,9 +470,6 @@ void setup()
     #endif
     statusLED(1);
 
-
-    
-
     /*****************************/
     /* Initialize telemetry */
     /*****************************/
@@ -508,11 +504,7 @@ void setup()
         #endif
         scanTelemetry();
     }
-    //Set the timestamp to now so angle doesnt fly out of control
-    startTime = millis();
-    kinematics.timestamp = startTime;
-    kinematics.pitch = 0;
-    kinematics.roll = 0;
+    
     statusLED(1);
     
     /*****************************/
@@ -598,8 +590,16 @@ void setup()
     #ifdef serialDebug
         Serial.println("Setup Complete");
     #endif
+	
+	
+	//Set the timestamp to now so angle doesnt fly out of control
+    startTime = millis();
+    kinematics.timestamp = startTime;
+    kinematics.pitch = 0;
+    kinematics.roll = 0;
 
     statusLED(1);
+	
 }
 
 /*===============================================
@@ -617,7 +617,7 @@ double t_1Hz;
  -----------------------------------------------------------------------*/
 void _200HzTask()
 {
-    kinematicEvent(0,&accel,&mag,&gyro, &logFile, yawPID.setpoint);
+    kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
     
 //    // Artificially implement a step input of 10 degrees, at t = 10s
 //    static bool haveStepped = false;
@@ -629,14 +629,12 @@ void _200HzTask()
 //    }
 
 	/* Check for safety */
-	if(millis() - startTime < 3000)  
+	if(millis() - startTime < startupPeriod)  // In OSQ_kinematics.h
 	{
 		pitchPID.setpoint = kinematics.pitch;
 		rollPID.setpoint = kinematics.roll; 
 		yawPID.setpoint = kinematics.yaw;
 	}
-	if(pitchPID.setpoint - kinematics.pitch > 30) pitchPID.setpoint = kinematics.pitch; 
-	if(rollPID.setpoint - kinematics.roll > 30) rollPID.setpoint = kinematics.roll; 
 
 	// Run PID algorithm
     double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
@@ -645,7 +643,7 @@ void _200HzTask()
 	
     motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.);
 
-    t_200Hz = micros();
+    t_200Hz = micros(); 
 
     #ifdef serialDebug        // Debug Section
         #ifdef rollPIDdebug
@@ -653,7 +651,7 @@ void _200HzTask()
             Serial.print(kinematics.roll);
             Serial.print(" motorOutput: ");
             Serial.println(rollPID.output);
-            Serial.println();
+            Serial.println(); 
         #endif
         
         #ifdef pitchPIDdebug
@@ -703,8 +701,6 @@ void _200HzTask()
  -----------------------------------------------------------------------*/
 void _70HzTask()
 {
-    kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
-
     t_70Hz = micros();
 }
 
@@ -715,6 +711,8 @@ void _70HzTask()
 void _20HzTask()
 {
     barometer.updatePTA(); 
+	
+	kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
 
     // Print data to the SD logFile
     //logData();

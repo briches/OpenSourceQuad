@@ -43,6 +43,9 @@
 #include <SD.h>
 
 bool startup = true;
+bool startup0 = true;
+unsigned long startTime;
+unsigned long startupPeriod = 3000; // In millis 
 
 #define Pi  3.14159265359F	// Its pi.
 
@@ -109,7 +112,7 @@ double xmagMin, xmagMax, ymagMin, ymagMax, zmagMin, zmagMax;
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
-void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double yawSet)
+void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double pitchSet)
 {
     sensors_event_t accel_event, mag_event, gyro_event;
     double elapsedTime = 0, t_convert = 1000000;
@@ -166,14 +169,16 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
         
-        // double pitchAcc = atan2(ax,  sqrt(az*az + ay*ay)) * 180/ Pi;
+        double pitchAcc = atan2(ax,  sqrt(az*az + ay*ay)) * 180/ Pi;
         if (logFile)
         {
             logFile->print(micros());
             logFile->print(',');
-            logFile->print(kinematics.yaw);
+            logFile->print(kinematics.pitch);
             logFile->print(',');
-            logFile->println(yawSet);
+            logFile->print(pitchAcc);
+			logFile->print(',');
+			logFile->println(pitchSet);
         }
         else
         {
@@ -183,6 +188,11 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         // 2600 us toc
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
         
+		if(startup0) 
+		{
+			kinematics.timestamp = micros();
+			startup0 = false;
+		}
         elapsedTime = (micros() - kinematics.timestamp) / t_convert;
         kinematics.timestamp = micros();
         
@@ -202,7 +212,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 0.99;
+    double beta = 0.98;
+	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
     kinData->pitch += wy * elapsedTime;
@@ -214,7 +225,7 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
     
     // Compensate for gyro drift, if the accel isnt completely garbage
     double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
-    if(magnitudeApprox > 9.71 && magnitudeApprox < 9.91)
+    if(magnitudeApprox > 9.61 && magnitudeApprox < 10.01)
     {
         double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
         if(abs(pitchAcc - kinData->pitch) < 5)
@@ -228,13 +239,29 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
 
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters)
 {
-    // cheby2(2,80,0.30);
-    #define _b0  0.00013626813215046637F
+    /* cheby2(2,80,0.30); */
+    /* #define _b0  0.00013626813215046637F
     #define _b1 -0.0001240169771528433F
     #define _b2  0.00013626813215046664F
     
     #define _a1 -1.982691947625308F
-    #define _a2  0.98284046691245608F
+    #define _a2  0.98284046691245608F */
+	
+	// cheby2(2,60,0.30);
+	/* #define _b0  0.0014710861669895367F
+    #define _b1 -0.00093106311989960087F
+    #define _b2  0.0014710861669895371F
+    
+    #define _a1 -1.9356121723322977F   
+    #define _a2  0.93762328154637709F */
+	
+	// cheby2(2,60,0.17);
+	#define _b0  0.0011299699182447751F
+    #define _b1 -0.0016714841295196944F
+    #define _b2  0.0011299699182447756F
+    
+    #define _a1 -1.9654177551511376F   
+    #define _a2  0.96600621085810745F
     
     double output;
 

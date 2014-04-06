@@ -36,12 +36,12 @@
 #include "WProgram.h"
 #endif
 
-#define nominalvoltage	(3.7)		// Nominal operating voltage
-#define softAlarmVoltage	(3.5)		// Battery voltage low
-#define	criticalAlarmVoltage	(3.33)		// Battery voltage critical
-#define soundAlarmCount		(100)		// For critical alarm; counter increments when below
-#define analogPositivePin	(5)		// Connect red wire to this pin
-#define voltageConversion	(0.2475F)	// From voltage divider
+#define nominalvoltage (3.7)		// Nominal operating voltage
+#define softAlarmVoltage (3.5)		// Battery voltage low
+#define	criticalAlarmVoltage (3.33)		// Battery voltage critical
+#define soundAlarmCount	 (100)		// For critical alarm; counter increments when below
+#define analogPositivePin (5)		// Connect red wire to this pin
+#define voltageConversion (0.2475F)	// From voltage divider
 
 bool softAlarm = false;
 bool criticalAlarm = false;
