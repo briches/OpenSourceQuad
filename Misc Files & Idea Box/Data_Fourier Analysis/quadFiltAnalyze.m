@@ -30,14 +30,12 @@ function [] = quadFiltAnalyze()
     filt = csvdata(:,2);
     nfilt = csvdata(:,3);
     set = csvdata(:,4);
-    check = (abs(filt - nfilt) < 5);
 
     % Plot that there data
     figure(9); hold on; grid on;
-    plot(time, filt, 'b');
-    plot(time, nfilt,'r');
-    plot(time, set, 'k');
-    %plot(time, check, 'c-');
+    plot(time/(1e6), filt, 'b');
+    plot(time/(1e6), nfilt,'r');
+    plot(time/(1e6), set, 'k');
     plot_title = sprintf('Data, sample freq = %f',1/dt);
     title(plot_title);
     legend('Gyro+accel','Accel','Setpoint','Location','SouthEast');

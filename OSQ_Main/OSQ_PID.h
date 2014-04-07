@@ -54,9 +54,9 @@
 #endif
 
 #ifdef SINGLE_PID 
-	double ATT_KP = 2.933;
-	double ATT_KI = 3.2732;
-	double ATT_KD = 1.17744;
+	double ATT_KP = 2.783;
+	double ATT_KI = 3.8232;
+	double ATT_KD = 0.92744;
 #endif
 
 double yawP = 1;

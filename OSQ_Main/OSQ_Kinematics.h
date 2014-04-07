@@ -212,7 +212,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 0.98;
+    double beta = 0.99;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
@@ -225,14 +225,14 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
     
     // Compensate for gyro drift, if the accel isnt completely garbage
     double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
-    if(magnitudeApprox > 9.61 && magnitudeApprox < 10.01)
+    if(magnitudeApprox > 9.51 && magnitudeApprox < 10.11)
     {
         double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
-        if(abs(pitchAcc - kinData->pitch) < 5)
+        if(abs(kinData->pitch) < 30)
             kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
 
         double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
-        if(abs(rollAcc - kinData->roll) < 5)
+        if(abs(kinData->pitch) < 30)
             kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
     }
 };
@@ -256,12 +256,20 @@ double computeCheby2(double currentInput, struct cheby2Data *filterParameters)
     #define _a2  0.93762328154637709F */
 	
 	// cheby2(2,60,0.17);
-	#define _b0  0.0011299699182447751F
-    #define _b1 -0.0016714841295196944F
-    #define _b2  0.0011299699182447756F
+	/* #define _b0  0.0010984781375628096F
+    #define _b1 -0.0017427985863922009F
+    #define _b2  0.0010984781375628101F
     
-    #define _a1 -1.9654177551511376F   
-    #define _a2  0.96600621085810745F
+    #define _a1 -1.9696503519145439F
+    #define _a2  0.97010450960327721F */
+	
+	// Cheby2(2,60,0.12)
+	#define _b0  0.0010397094218302207F
+    #define _b1 -0.0018807330270927338F
+    #define _b2  0.0010397094218302211F
+    
+    #define _a1 -1.9799765924683039F
+    #define _a2  0.98017527828487161F
     
     double output;
 
