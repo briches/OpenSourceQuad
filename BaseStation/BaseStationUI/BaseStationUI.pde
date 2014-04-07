@@ -30,6 +30,10 @@ int[] pGain = new int[3];
 int[] iGain = new int[3];
 int[] dGain = new int[3];
 
+float pMod = 0;
+float iMod = 0;
+float dMod = 0;
+
 // Display parameters
 int[] fillColors = new int[3];
 
@@ -68,7 +72,7 @@ void setup()
 {
     //Set up the serial port
     println(Serial.list());
-    myPort = new Serial(this, Serial.list()[1], 19200);
+    myPort = new Serial(this, Serial.list()[0], 19200);
     print("Connected to serial port: ");
     println(Serial.list()[0]);
 
@@ -103,15 +107,22 @@ void draw()
     
     text("Keyboard Options:        Press ENTER to send", 25, 150);
     text("X : Disarm", 25, 175);
-    text("S : Start", 25, 200);
+    text("G : Start", 25, 200);
     text("B : Broadcast", 25, 225);
-    text("P : Go UP", 25, 250);
-    text("I : Go DOWN", 25, 275);
-    text("UP arrow: Pitch up", 25, 300);
-    text("DOWN arrow: Pitch down", 25, 325);
-    text("LEFT arrow: Roll up", 25, 350);
-    text("RIGHT arrow: Roll down", 25, 375);
+    text("Q : Go UP", 25, 250);
+    text("E : Go DOWN", 25, 275);
+    text("W: Pitch up", 25, 300);
+    text("S: Pitch down", 25, 325);
+    text("A: Roll up", 25, 350);
+    text("D: Roll down", 25, 375);
     text("R : Reset Attitude", 25, 400);
+    
+    text("I: Increase P coeff", 280, 200);
+    text("O: Increase I coeff", 280, 225);
+    text("P: Increase D coeff", 280, 250);
+    text("J: Decrease P coeff", 280, 275);
+    text("K: Decrease I coeff", 280, 300);
+    text("L: Decrease D coeff", 280, 325);
     
     text("Attitude: ", 500, 90);
     
@@ -124,6 +135,14 @@ void draw()
     text(str(rollSetpoint), 500, 215);
     text("Roll Actual: ", 600, 190);
     text(str(roll), 600, 215);
+    
+    text("Current PID modifications", 500, 300);
+    text("P: ",500,325); text(str(pMod),500,350);
+    
+    text("I: ",550,325); text(str(iMod),550,350);
+    
+    text("D: ",600,325); text(str(dMod),600,350);
+    
     
     
     // Display prog time and flight time
@@ -206,10 +225,15 @@ void keyPressed()
             txPacket[2] = byte(0x00);
             txPacket[3] = byte(0x00);
             txPacket[4] = byte(0x00);
+            pMod = 0;
+            iMod = 0;
+            dMod = 0;
+            pitchSetpoint = 0;
+            rollSetpoint = 0;
             sendtxPacket();
             break;
-        case 'S':
-        case 's':
+        case 'G':
+        case 'g':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x02);
             txPacket[2] = byte(0x00);
@@ -226,8 +250,8 @@ void keyPressed()
             txPacket[4] = byte(0x00);
             sendtxPacket();
             break;
-        case 'P':
-        case 'p':
+        case 'Q':
+        case 'q':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x0C);
             txPacket[2] = byte(pGain[2]);
@@ -235,8 +259,8 @@ void keyPressed()
             txPacket[4] = byte(pGain[0]);
             sendtxPacket();
             break;
-        case 'I':
-        case 'i':
+        case 'E':
+        case 'e':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x0D);
             txPacket[2] = byte(iGain[2]);
@@ -247,15 +271,9 @@ void keyPressed()
             
         case ENTER:
             sendtxPacket();
-            
-        default:
-            // Hell yeah
-            break;
-    }
-    switch(keyCode)
-    {
         
-        case UP: // Increase Pitch
+        case 'W': // Increase Pitch
+        case 'w':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x0E);
             txPacket[2] = byte(0);
@@ -264,7 +282,8 @@ void keyPressed()
             sendtxPacket();
             break;
             
-        case DOWN: // Decrease Pitch
+        case 'S': // Decrease Pitch
+        case 's':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x0F);
             txPacket[2] = byte(0);
@@ -273,7 +292,8 @@ void keyPressed()
             sendtxPacket();
             break;
             
-        case LEFT: // increase Roll
+        case 'A': // increase Roll
+        case 'a':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x10);
             txPacket[2] = byte(0);
@@ -282,7 +302,8 @@ void keyPressed()
             sendtxPacket();
             break;
             
-        case RIGHT: // decrease Roll
+        case 'D': // decrease Roll
+        case 'd':
             txPacket[0] = byte(0xFF);
             txPacket[1] = byte(0x11);
             txPacket[2] = byte(0);
@@ -290,6 +311,93 @@ void keyPressed()
             txPacket[4] = byte(0);
             sendtxPacket();
             break;
+        
+        case 'I': // Increase P coeff
+        case 'i':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA1);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            pMod = pMod + 0.05;
+            pMod *= 100;
+            pMod = round(pMod);
+            pMod /= 100;
+            break;
+        
+        case 'O': // Increase I coeff
+        case 'o':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA2);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            iMod = iMod + 0.05;
+            iMod *= 100;
+            iMod = round(iMod);
+            iMod /= 100;
+            break;
+        
+        case 'P': // Increase D coeff
+        case 'p':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA3);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            dMod = dMod + 0.05;
+            dMod *= 100;
+            dMod = round(dMod);
+            dMod /= 100;
+            break;
+        
+        case 'J': // decrease P coeff
+        case 'j':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA4);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            pMod = pMod - 0.05;
+            pMod *= 100;
+            pMod = round(pMod);
+            pMod /= 100;
+            break;
+        
+        case 'K': // decrease I coeff
+        case 'k':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA5);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            iMod = iMod - 0.05;
+            iMod *= 100;
+            iMod = round(iMod);
+            iMod /= 100;
+            break;
+        
+        case 'L': // decrease D coeff
+        case 'l':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0xA6);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            dMod = dMod - 0.05;
+            dMod *= 100;
+            dMod = round(dMod);
+            dMod /= 100;
+            break;
+        
+        default:
+          break;
     }
             
 }

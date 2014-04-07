@@ -55,12 +55,12 @@ bool receivedStartupCommand = false;
 #define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
-//#define rx_txDebug
+#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
 //#define rollPIDdebug
-#define pitchPIDdebug
+//#define pitchPIDdebug
 //#define yawPIDdebug
 //#define batteryDebug
 //#define GPSDebug
@@ -183,6 +183,90 @@ void scanTelemetry()
             #endif
         }
         break;
+		
+	case increaseP:
+		{
+			PID_GAINS[pitch].setP += 0.05;
+			PID_GAINS[roll].setP += 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received increase P: ");
+                            Serial.println(PID_GAINS[pitch].setP);
+                #endif
+            #endif
+		}
+		break;
+		
+	case decreaseP:
+		{
+			PID_GAINS[pitch].setP -= 0.05;
+			PID_GAINS[roll].setP -= 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received decrease P: ");
+                            Serial.println(PID_GAINS[pitch].setP);
+                #endif
+            #endif
+		}
+		break;
+		
+	case increaseI:
+		{
+			PID_GAINS[pitch].setI += 0.05;
+			PID_GAINS[roll].setI += 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received increase I : ");
+                            Serial.println(PID_GAINS[pitch].setI);
+                #endif
+            #endif
+		}
+		break;
+		
+	case decreaseI:
+		{
+			PID_GAINS[pitch].setI -= 0.05;
+			PID_GAINS[roll].setI -= 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received decrease I: ");
+                            Serial.println(PID_GAINS[pitch].setI);
+                #endif
+            #endif
+		}
+		break;
+	
+	case increaseD:
+		{
+			PID_GAINS[pitch].setD += 0.05;
+			PID_GAINS[roll].setD += 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received increase D: ");
+                            Serial.println(PID_GAINS[pitch].setD);
+                #endif
+            #endif
+		}
+		break;
+		
+	case decreaseD:
+		{
+			PID_GAINS[pitch].setD -= 0.05;
+			PID_GAINS[roll].setD -= 0.05;
+			
+			#ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.print("Received decrease D: ");
+                            Serial.println(PID_GAINS[pitch].setD);
+                #endif
+            #endif
+		}
+		break;
 
     case increasePitch:
         {
@@ -612,10 +696,10 @@ double t_10Hz;
 double t_1Hz;
 
 /*=========================================================================
- _200HzTask
+ fastTask
  Process on a 200Hz clock
  -----------------------------------------------------------------------*/
-void _200HzTask()
+void fastTask()
 {
     kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
     
@@ -783,49 +867,64 @@ void _1HzTask()
 void loop()                          
 {	
     // Check if we have enough time to safely do non-critical processes
-    unsigned long priority = micros() - t_200Hz;
+    static bool priority = true;
 	
     // 200 Hz Process
-    if(priority >= _200HzPeriod)
+    if(priority)
     {
         statusLED(4);
-        _200HzTask(); // 4200 us
+        fastTask();
+		priority = false;
         statusLED(1);
+		
+		// if(millis() - startTime > 10000)
+		// {
+			// double x = 1000 * (double)cycleCount/((double)millis() - (double)startTime);
+			// Serial.print("Frequency: "); Serial.println(x);
+			// Serial.print("Elapsed Time: "); Serial.println((double)millis() - (double)startTime);
+			// Serial.print("Number of cycles: "); Serial.println((double)cycleCount);
+		// }
     }
+	else priority = true;
 
     // 70 Hz process
-    if(micros() - t_70Hz >= _70HzPeriod && priority < _200HzPeriod / 2)
+    if(micros() - t_70Hz >= _70HzPeriod && !priority)
     {
         statusLED(4);
         _70HzTask(); // 2000 us
+		priority = true;
         statusLED(1);
     }
 
     // 20 Hz process
-    if(micros() - t_20Hz >= _20HzPeriod && priority < _200HzPeriod / 2)
+    if(micros() - t_20Hz >= _20HzPeriod && !priority)
     {
         statusLED(4);
-        _20HzTask(); // 1500 us
+        _20HzTask();
+		priority = true;
         statusLED(1);
     }
 
     // 10 Hz process
-    if(micros() - t_10Hz  >= _10HzPeriod && priority < _200HzPeriod / 2)
+    if(micros() - t_10Hz  >= _10HzPeriod && !priority)
     {
         statusLED(5);
-        _10HzTask(); // 1500 us
+        _10HzTask();
+		priority = true;
         statusLED(2);
     }
 
     // 1 Hz process
-    if(micros() - t_1Hz  >= _1HzPeriod && priority < _200HzPeriod / 2)
+    if(micros() - t_1Hz  >= _1HzPeriod && !priority)
     {
         statusLED(6);
-        _1HzTask(); // 300 us
+        _1HzTask();
+		priority = true;
         statusLED(3);
     }
 
     scanTelemetry();
+	
 
     // Track the number of elapsed cycles
     cycleCount++;
