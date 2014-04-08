@@ -1,7 +1,7 @@
 <b>OpenSourceQuad</b>
 ==========
 
-<b>Contributors</b>: Brandon Riches, Andrew Coulthard, Branden Yue  <br />
+<b>Author</b>: Brandon Riches<br />
 Started in May of 2013, and always a work in progress! <br />
 
 Feel free to <b>[fork](https://github.com/briches/OpenSourceQuad/fork)</b> the repo and submit a pull request.  
