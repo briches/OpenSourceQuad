@@ -56,8 +56,53 @@ unsigned long startupPeriod = 3000; // In millis
  -----------------------------------------------------------------------*/
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters);
 void setupCheby2();
-void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData);
+void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData);
 
+
+/*=========================================================================
+ Variance calculation class
+ -----------------------------------------------------------------------*/
+#define numValuesOnlineVariance 25
+class variance_t
+{
+	public:
+		double storage[numValuesOnlineVariance];
+		int loc;
+		double value;
+		
+		variance_t(void);
+		
+		void onlineVarianceCalc(double newData);
+	private: 
+};
+
+variance_t :: variance_t(void) {};
+
+void variance_t :: onlineVarianceCalc(double newData)
+{
+	double mean = 0;
+	double M2 = 0;
+	double result = 0;
+	double delta = 0;
+	double x = 0;
+	
+	storage[loc] = newData;
+	loc++;
+	if(loc >= numValuesOnlineVariance) loc = 0;
+	
+	for(int n = 1; n<=numValuesOnlineVariance; n++)
+	{
+		x = storage[n-1];
+		delta = x - mean;
+		mean = mean + delta/n;
+		M2 = M2 + delta*(x - mean);
+	}
+	result = M2/(numValuesOnlineVariance - 1);
+	value = result;
+};
+// Pitch and roll moving variance structures
+variance_t pitchVariance;
+variance_t rollVariance;
 
 /*=========================================================================
  Filter Data Type
@@ -169,7 +214,13 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
         
-        double pitchAcc = atan2(ax,  sqrt(az*az + ay*ay)) * 180/ Pi;
+        double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
+		double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
+		double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
+		
+		pitchVariance.onlineVarianceCalc(pitchAcc);
+		rollVariance.onlineVarianceCalc(rollAcc);
+		
         if (logFile)
         {
             logFile->print(micros());
@@ -198,7 +249,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         
         // Complementary filter
         // Calculates current angles, corrects a bit for gyro drift, if any.
-        complementaryFilter(ax, ay, az, wx, wy, wz, elapsedTime, &kinematics);
+		
+        complementaryFilter(pitchAcc, rollAcc, magnitudeApprox, wx, wy, wz, elapsedTime, &kinematics);
 
         // Calculate time derivative of attitudes
         kinematics.pitchRate = wy;
@@ -209,7 +261,9 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
     }
 };
 
-void complementaryFilter(double ax, double  ay, double  az,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
+
+
+void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
     double beta = 0.99;
@@ -224,15 +278,13 @@ void complementaryFilter(double ax, double  ay, double  az,  double wx, double  
     kinData->yaw = kinData->yaw * 1 + kinData->yaw_mag * 0.0;
     
     // Compensate for gyro drift, if the accel isnt completely garbage
-    double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
+	// and the angle isnt changing quickly.
     if(magnitudeApprox > 9.51 && magnitudeApprox < 10.11)
-    {
-        double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
-        if(abs(kinData->pitch) < 30)
+    {	
+        if(pitchVariance.value < 0.01)
             kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
-
-        double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
-        if(abs(kinData->pitch) < 30)
+			
+        if(rollVariance.value < 0.01)
             kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
     }
 };

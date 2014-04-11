@@ -877,13 +877,13 @@ void loop()
 		priority = false;
         statusLED(1);
 		
-		// if(millis() - startTime > 10000)
-		// {
-			// double x = 1000 * (double)cycleCount/((double)millis() - (double)startTime);
-			// Serial.print("Frequency: "); Serial.println(x);
-			// Serial.print("Elapsed Time: "); Serial.println((double)millis() - (double)startTime);
-			// Serial.print("Number of cycles: "); Serial.println((double)cycleCount);
-		// }
+		/* if(millis() - startTime > 10000)
+		{
+			double x = 1000 * (double)cycleCount/((double)millis() - (double)startTime);
+			Serial.print("Frequency: "); Serial.println(x);
+			Serial.print("Elapsed Time: "); Serial.println((double)millis() - (double)startTime);
+			Serial.print("Number of cycles: "); Serial.println((double)cycleCount);
+		} */
     }
 	else priority = true;
 
