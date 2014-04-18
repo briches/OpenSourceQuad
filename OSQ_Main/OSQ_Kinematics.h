@@ -68,15 +68,25 @@ class variance_t
 	public:
 		double storage[numValuesOnlineVariance];
 		int loc;
+                
+                // The last calculated variance
 		double value;
+                
+                // Number of values to keep
+                int num_vals;
 		
-		variance_t(void);
+                // Constructor
+		variance_t(int number);
 		
+                // Calculate the variance
 		void onlineVarianceCalc(double newData);
-	private: 
+	private:
 };
 
-variance_t :: variance_t(void) {};
+variance_t :: variance_t(int number) 
+{
+    this->num_vals = number;
+};
 
 void variance_t :: onlineVarianceCalc(double newData)
 {
@@ -100,9 +110,10 @@ void variance_t :: onlineVarianceCalc(double newData)
 	result = M2/(numValuesOnlineVariance - 1);
 	value = result;
 };
-// Pitch and roll moving variance structures
-variance_t pitchVariance;
-variance_t rollVariance;
+
+variance_t pitchVariance(25);
+
+variance_t rollVariance(25);
 
 /*=========================================================================
  Filter Data Type
@@ -128,10 +139,6 @@ struct kinematicData
     pitchRate,
     rollRate,
     yawRate,
-
-    lastPitch,
-    lastRoll,
-    lastYaw,
 
     altitude,
 
@@ -174,13 +181,14 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double roll = kinematics.roll * Pi/180;
 		
         double cos_roll = cos(roll);
-		double sin_roll = 1-(cos_roll*cos_roll);
-		double cos_pitch = cos(pitch);
-		double sin_pitch = 1- (cos_pitch*cos_pitch);
+	double sin_roll = 1-(cos_roll*cos_roll);
+	double cos_pitch = cos(pitch);
+	double sin_pitch = 1- (cos_pitch*cos_pitch);
 		
-		double headx = mx * cos_pitch + my * sin_roll * sin_pitch + mz * cos_roll * sin_pitch;
-		double heady = my * cos_roll - mz * sin_roll;
-		kinematics.yaw_mag = atan2(-heady, headx) * 180/Pi;
+	double headx = mx * cos_pitch + my * sin_roll * sin_pitch + mz * cos_roll * sin_pitch;
+	double heady = my * cos_roll - mz * sin_roll;
+
+	kinematics.yaw_mag = atan2(-heady, headx) * 180/Pi;
 
         if(startup)
         {
@@ -194,10 +202,6 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         accel->getEvent(&accel_event);
         gyro->getEvent(&gyro_event);
 
-        kinematics.lastPitch = kinematics.pitch;
-        kinematics.lastRoll = kinematics.roll;
-        kinematics.lastYaw = kinematics.yaw;
-
         // Store Raw values from the sensor registers, and remove initial offsets
         double ax = accel_event.acceleration.z - kinematics.io_az;
         double ay = -(accel_event.acceleration.y - kinematics.io_ay);
@@ -206,21 +210,22 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double wx =  (gyro_event.gyro.z - kinematics.io_wz);
         double wy =  gyro_event.gyro.x - kinematics.io_wx;
         double wz =  gyro_event.gyro.y - kinematics.io_wy;
-
-        float preFilterData = az;
         
-        // Compute a Chebyshev 4th order filter
+        // Compute a Chebyshev LPF on the accelerometer data
         ax = computeCheby2(ax, &cheby2_XAXIS);
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
         
+        // Calculate current pitch and roll from the accelerometer data
         double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
-		double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
-		double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
-		
-		pitchVariance.onlineVarianceCalc(pitchAcc);
-		rollVariance.onlineVarianceCalc(rollAcc);
-		
+	double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
+	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
+	
+        // Calculate the fancy variance of pitch and roll, to see if the accelerometer can be trusted
+	pitchVariance.onlineVarianceCalc(pitchAcc);
+	rollVariance.onlineVarianceCalc(rollAcc);
+	
+        // Log data for debug purposes, will be taken out
         if (logFile)
         {
             logFile->print(micros());
@@ -228,40 +233,38 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
             logFile->print(kinematics.pitch);
             logFile->print(',');
             logFile->print(pitchAcc);
-			logFile->print(',');
-			logFile->println(pitchSet);
+	    logFile->print(',');
+	    logFile->println(pitchSet);
         }
         else
         {
             Serial.println("Err w/in kinematics");
         }
 
-        // 2600 us toc
+        // Phi is used to correct the ultransonic range finder
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
         
-		if(startup0) 
-		{
-			kinematics.timestamp = micros();
-			startup0 = false;
-		}
+        // So we don't get huge timestamps right at the start, set the time difference to zero.
+	if(startup0) 
+	{
+		kinematics.timestamp = micros();
+		startup0 = false;
+	}
+        
+        // Elapsed time since last loop, in seconds
         elapsedTime = (micros() - kinematics.timestamp) / t_convert;
         kinematics.timestamp = micros();
         
         // Complementary filter
         // Calculates current angles, corrects a bit for gyro drift, if any.
-		
         complementaryFilter(pitchAcc, rollAcc, magnitudeApprox, wx, wy, wz, elapsedTime, &kinematics);
 
         // Calculate time derivative of attitudes
         kinematics.pitchRate = wy;
         kinematics.rollRate = wx;
         kinematics.yawRate = -wz; // If you change the above code for the magnetometer, change this.
-
-        // 3700 us
     }
 };
-
-
 
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
@@ -281,10 +284,10 @@ void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeAppr
 	// and the angle isnt changing quickly.
     if(magnitudeApprox > 9.51 && magnitudeApprox < 10.11)
     {	
-        if(pitchVariance.value < 0.01)
+        if(pitchVariance.value < 0.001*pitchVariance.num_vals)
             kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
 			
-        if(rollVariance.value < 0.01)
+        if(rollVariance.value < 0.001*rollVariance.num_vals)
             kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
     }
 };
@@ -315,8 +318,8 @@ double computeCheby2(double currentInput, struct cheby2Data *filterParameters)
     #define _a1 -1.9696503519145439F
     #define _a2  0.97010450960327721F */
 	
-	// Cheby2(2,60,0.12)
-	#define _b0  0.0010397094218302207F
+    // Cheby2(2,60,0.12)
+    #define _b0  0.0010397094218302207F
     #define _b1 -0.0018807330270927338F
     #define _b2  0.0010397094218302211F
     

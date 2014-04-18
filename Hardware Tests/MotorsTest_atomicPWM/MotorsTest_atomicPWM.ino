@@ -6,6 +6,7 @@ OSQ_MotorControl myMotors;
 void setup()
 {
   Serial.begin(115200);
+  delay(5000);
   
   myMotors.calibrateESC();
   myMotors.startMotors();
