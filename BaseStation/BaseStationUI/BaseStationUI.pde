@@ -72,9 +72,9 @@ void setup()
 {
     //Set up the serial port
     println(Serial.list());
-    myPort = new Serial(this, Serial.list()[0], 19200);
+    myPort = new Serial(this, Serial.list()[1], 19200);
     print("Connected to serial port: ");
-    println(Serial.list()[0]);
+    println(Serial.list()[1]);
 
 
     // Set up window

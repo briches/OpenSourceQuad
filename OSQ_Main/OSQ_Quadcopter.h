@@ -81,45 +81,45 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
 
         while(counter < offset_counter)
         {
-			sensors_event_t accel_event;
-			accel.getEvent(&accel_event);                            
-			acceldata[0] = accel_event.acceleration.x - SENSORS_GRAVITY_STANDARD; // NOTE: Quick fix! Careful!
-			acceldata[1] = accel_event.acceleration.y;
-			acceldata[2] = accel_event.acceleration.z;
+		sensors_event_t accel_event;
+		accel.getEvent(&accel_event);
 
-			sensors_event_t gyro_event;
-			gyro.getEvent(&gyro_event);
-			// gyrodata[0] = gyro_event.gyro.x;
-			// gyrodata[1] = gyro_event.gyro.y;
-			// gyrodata[2] = gyro_event.gyro.z;
+		acceldata[0] = accel_event.acceleration.x; // NOTE: Quick fix! Careful!
+		acceldata[1] = accel_event.acceleration.y;
+		acceldata[2] = accel_event.acceleration.z - SENSORS_GRAVITY_STANDARD;
 
-			kinematics->io_ax = (kinematics->io_ax + acceldata[0] ); // Sum
-			kinematics->io_ay = (kinematics->io_ay + acceldata[1] );
-			kinematics->io_az = (kinematics->io_az + acceldata[2] );
-			// kinematics->io_wx = (kinematics->io_wx + gyrodata[0] );
-			kinematics->io_wy = (kinematics->io_wy + gyrodata[1] );
-			// kinematics->io_wz = (kinematics->io_wz + gyrodata[2] );
+		sensors_event_t gyro_event;
+		gyro.getEvent(&gyro_event);
 
-			if ((kinematics->io_ax==0)&&(kinematics->io_ay == 0)&&(kinematics->io_az == 0))
-			{
-				statusLED(-1);						// Critical error, accelerometer is NOT working
-				while(1);
-			}
-			counter = counter + 1 ;
+		gyrodata[0] = gyro_event.gyro.x;
+		gyrodata[1] = gyro_event.gyro.y;
+		gyrodata[2] = gyro_event.gyro.z;
 
-			delay(1);
+		kinematics->io_ax += acceldata[0];
+		kinematics->io_ay += acceldata[1];
+		kinematics->io_az += acceldata[2];
+
+		kinematics->io_wx += gyrodata[0];
+		kinematics->io_wy += gyrodata[1];
+		kinematics->io_wz += gyrodata[2];
+
+		if ((kinematics->io_ax==0)&&(kinematics->io_ay == 0)&&(kinematics->io_az == 0))
+		{
+			statusLED(-1);	 // Critical error, accelerometer is NOT working
+			while(1);
+		}
+
+		counter = counter + 1 ;
+		delay(1);
         }
 
         kinematics->io_ax /= offset_counter;
         kinematics->io_ay /= offset_counter;
         kinematics->io_az /= offset_counter;
-        // kinematics->io_wx /= offset_counter;
+        
+        kinematics->io_wx /= offset_counter;
         kinematics->io_wy /= offset_counter;
-        // kinematics->io_wz /= offset_counter;
-		kinematics->io_wx = 0;
-        // kinematics->io_wy = 0;
-        kinematics->io_wz = 0;
-
+        kinematics->io_wz /= offset_counter;
 };
 
 bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, struct kinematicData *kinematics)
@@ -127,12 +127,11 @@ bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, s
 	/**************************************************************************/
 	//! Initializes the various sensors and instruments
 	/**************************************************************************/
-	// Same as the gyro initialization, but the accel isnt an ass
 	gyro.begin();
 	accel.begin();
 	mag.begin();
 
-	//getInitialOffsets(kinematics, accel, mag, gyro);
+	getInitialOffsets(kinematics, accel, mag, gyro);
 
 	return true;
 };

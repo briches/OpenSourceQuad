@@ -27,7 +27,7 @@
  
  	-----------------------------------------------------------------------------*/
 #include "OSQ_Kinematics.h"
-#include "OSQ_SENSORLIB.h"
+#include "OSQ_IMU.h"
 #include "OSQ_Quadcopter.h"
 #include "OSQ_Motors.h"
 #include "OSQ_BMP085.h"
@@ -53,9 +53,9 @@ bool receivedStartupCommand = false;
 
 /** Debugging Options **/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
-//#define attitudeDebug     
+#define attitudeDebug     
 //#define altitudeDebug
-#define rx_txDebug
+//#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
 //#define sdDebug
@@ -77,7 +77,6 @@ bool receivedStartupCommand = false;
 #define USRF_PIN (0x0)        
 
 /** SD logging definitions **/
-#define chipSelect  (53)
 char logFilename[12];
 File logFile;
 
@@ -153,7 +152,7 @@ void scanTelemetry()
             packet[4] = (unsigned char)((millis() << 24)>>24);
             for(int i = 0; i < 5; i++)
             {
-                Serial3.print(packet[i]);
+                Serial1.print(packet[i]);
             }
         }
         break;
@@ -431,7 +430,7 @@ void logFileStart()
 
     pinMode(SS, OUTPUT);
 
-    if (!SD.begin(chipSelect)) 
+    if (!SD.begin(SS)) 
     {
         #ifdef serialDebug
             #ifdef sdDebug
@@ -794,9 +793,10 @@ void _70HzTask()
  -----------------------------------------------------------------------*/
 void _20HzTask()
 {
-    barometer.updatePTA(); 
-	
-	kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
+    // Pending shipment of hardware
+    //barometer.updatePTA(); 
+
+    kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
 
     // Print data to the SD logFile
     //logData();
@@ -874,7 +874,7 @@ void loop()
     {
         statusLED(4);
         fastTask();
-		priority = false;
+	priority = false;
         statusLED(1);
 		
 		/* if(millis() - startTime > 10000)
@@ -884,8 +884,9 @@ void loop()
 			Serial.print("Elapsed Time: "); Serial.println((double)millis() - (double)startTime);
 			Serial.print("Number of cycles: "); Serial.println((double)cycleCount);
 		} */
+
     }
-	else priority = true;
+    else priority = true;
 
     // 70 Hz process
     if(micros() - t_70Hz >= _70HzPeriod && !priority)

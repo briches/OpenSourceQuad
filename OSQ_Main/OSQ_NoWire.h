@@ -101,17 +101,18 @@ NoWire :: NoWire() {
 
 int NoWire :: ScanForMessages()
 {
-	if(Serial3.available() >= MSG_SIZE)
+	if(Serial1.available() >= MSG_SIZE)
 	{
-		unsigned char firstByte = Serial3.read();
+		unsigned char firstByte = Serial1.read();
 		if(firstByte == START_CHAR)
 		{
 			timestamp = micros();
 			newMessage[FIRSTBYTE] = firstByte;
-			newMessage[M_ID] = Serial3.read();
-			newMessage[DATA1] = Serial3.read();
-			newMessage[DATA2] = Serial3.read();
-			newMessage[DATA3] = Serial3.read();
+			newMessage[M_ID] = Serial1.read();
+			newMessage[DATA1] = Serial1.read();
+			newMessage[DATA2] = Serial1.read();
+			newMessage[DATA3] = Serial1.read();
+                        Serial.println(newMessage[M_ID]);
 		}
 		return newMessage[M_ID];
 	}
@@ -120,7 +121,7 @@ int NoWire :: ScanForMessages()
 
 bool NoWire :: start()
 {
-	Serial3.begin(BAUD);
+	Serial1.begin(BAUD);
 	return 1;
 };
 

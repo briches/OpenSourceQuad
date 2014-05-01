@@ -37,7 +37,7 @@
 #include "WProgram.h"
 #endif
 
-#define SOFTWARE_VERSION_MINOR (85)
+#define SOFTWARE_VERSION_MINOR (90)
 #define SOFTWARE_VERSION_MAJOR (0)
 
 

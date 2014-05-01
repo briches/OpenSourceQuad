@@ -37,7 +37,7 @@
 #include "WProgram.h"
 #endif
 
-#include "OSQ_SENSORLIB.h"
+#include "OSQ_IMU.h"
 #include "OSQ_Motors.h"
 #include <Wire.h>
 #include <SD.h>
@@ -57,63 +57,6 @@ unsigned long startupPeriod = 3000; // In millis
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters);
 void setupCheby2();
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData);
-
-
-/*=========================================================================
- Variance calculation class
- -----------------------------------------------------------------------*/
-#define numValuesOnlineVariance 25
-class variance_t
-{
-	public:
-		double storage[numValuesOnlineVariance];
-		int loc;
-                
-                // The last calculated variance
-		double value;
-                
-                // Number of values to keep
-                int num_vals;
-		
-                // Constructor
-		variance_t(int number);
-		
-                // Calculate the variance
-		void onlineVarianceCalc(double newData);
-	private:
-};
-
-variance_t :: variance_t(int number) 
-{
-    this->num_vals = number;
-};
-
-void variance_t :: onlineVarianceCalc(double newData)
-{
-	double mean = 0;
-	double M2 = 0;
-	double result = 0;
-	double delta = 0;
-	double x = 0;
-	
-	storage[loc] = newData;
-	loc++;
-	if(loc >= numValuesOnlineVariance) loc = 0;
-	
-	for(int n = 1; n<=numValuesOnlineVariance; n++)
-	{
-		x = storage[n-1];
-		delta = x - mean;
-		mean = mean + delta/n;
-		M2 = M2 + delta*(x - mean);
-	}
-	result = M2/(numValuesOnlineVariance - 1);
-	value = result;
-};
-
-variance_t pitchVariance(25);
-
-variance_t rollVariance(25);
 
 /*=========================================================================
  Filter Data Type
@@ -173,9 +116,9 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
     {
         mag->getEvent(&mag_event);
 
-        double mx = mag_event.magnetic.z;
-        double my = -(mag_event.magnetic.y);
-        double mz = mag_event.magnetic.x;
+        double mx = mag_event.magnetic.x;
+        double my = mag_event.magnetic.y;
+        double mz = mag_event.magnetic.z;
 
         double pitch = kinematics.pitch * Pi/180;
         double roll = kinematics.roll * Pi/180;
@@ -202,14 +145,14 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         accel->getEvent(&accel_event);
         gyro->getEvent(&gyro_event);
 
-        // Store Raw values from the sensor registers, and remove initial offsets
-        double ax = accel_event.acceleration.z - kinematics.io_az;
-        double ay = -(accel_event.acceleration.y - kinematics.io_ay);
-        double az = accel_event.acceleration.x - kinematics.io_ax;
+        // Store raw values from sensors, remove initial offsets
+        double ax = accel_event.acceleration.x - kinematics.io_ax;
+        double ay = accel_event.acceleration.y - kinematics.io_ay;
+        double az = accel_event.acceleration.z - kinematics.io_az;
 
-        double wx =  (gyro_event.gyro.z - kinematics.io_wz);
+        double wx =  -(gyro_event.gyro.y - kinematics.io_wy);
         double wy =  gyro_event.gyro.x - kinematics.io_wx;
-        double wz =  gyro_event.gyro.y - kinematics.io_wy;
+        double wz =  gyro_event.gyro.z - kinematics.io_wz;
         
         // Compute a Chebyshev LPF on the accelerometer data
         ax = computeCheby2(ax, &cheby2_XAXIS);
@@ -222,8 +165,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
 	
         // Calculate the fancy variance of pitch and roll, to see if the accelerometer can be trusted
-	pitchVariance.onlineVarianceCalc(pitchAcc);
-	rollVariance.onlineVarianceCalc(rollAcc);
+	//pitchVariance.onlineVarianceCalc(pitchAcc);
+	//rollVariance.onlineVarianceCalc(rollAcc);
 	
         // Log data for debug purposes, will be taken out
         if (logFile)
@@ -269,7 +212,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 0.99;
+    double beta = 1;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
@@ -284,11 +227,9 @@ void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeAppr
 	// and the angle isnt changing quickly.
     if(magnitudeApprox > 9.51 && magnitudeApprox < 10.11)
     {	
-        if(pitchVariance.value < 0.001*pitchVariance.num_vals)
-            kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
+        kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
 			
-        if(rollVariance.value < 0.001*rollVariance.num_vals)
-            kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
+        kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
     }
 };
 
