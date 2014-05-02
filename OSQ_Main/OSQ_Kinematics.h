@@ -150,8 +150,8 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double ay = accel_event.acceleration.y - kinematics.io_ay;
         double az = accel_event.acceleration.z - kinematics.io_az;
 
-        double wx =  -(gyro_event.gyro.y - kinematics.io_wy);
-        double wy =  gyro_event.gyro.x - kinematics.io_wx;
+        double wx =  gyro_event.gyro.x - kinematics.io_wx;
+        double wy =  gyro_event.gyro.y - kinematics.io_wy;
         double wz =  gyro_event.gyro.z - kinematics.io_wz;
         
         // Compute a Chebyshev LPF on the accelerometer data
@@ -163,11 +163,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
 	double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
 	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
-	
-        // Calculate the fancy variance of pitch and roll, to see if the accelerometer can be trusted
-	//pitchVariance.onlineVarianceCalc(pitchAcc);
-	//rollVariance.onlineVarianceCalc(rollAcc);
-	
+		
         // Log data for debug purposes, will be taken out
         if (logFile)
         {
@@ -188,7 +184,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
         
         // So we don't get huge timestamps right at the start, set the time difference to zero.
-	if(startup0) 
+	if(startup0)
 	{
 		kinematics.timestamp = micros();
 		startup0 = false;
@@ -203,22 +199,22 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
         complementaryFilter(pitchAcc, rollAcc, magnitudeApprox, wx, wy, wz, elapsedTime, &kinematics);
 
         // Calculate time derivative of attitudes
-        kinematics.pitchRate = wy;
-        kinematics.rollRate = wx;
-        kinematics.yawRate = -wz; // If you change the above code for the magnetometer, change this.
+        kinematics.pitchRate = wx;
+        kinematics.rollRate = wz;
+        kinematics.yawRate = -wy; // If you change the above code for the magnetometer, change this.
     }
 };
 
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 1;
+    double beta = 0.995;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
-    kinData->pitch += wy * elapsedTime;
-    kinData->roll += wx * elapsedTime;
-    kinData->yaw += -wz * elapsedTime; // If you change the above code for the magnetometer, change this.
+    kinData->pitch += wx * elapsedTime;
+    kinData->roll += wz * elapsedTime;
+    kinData->yaw += -wy * elapsedTime; // If you change the above code for the magnetometer, change this.
 
     // Magnetometer complementary
     kinData->yaw = kinData->yaw * 1 + kinData->yaw_mag * 0.0;
@@ -234,31 +230,7 @@ void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeAppr
 };
 
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters)
-{
-    /* cheby2(2,80,0.30); */
-    /* #define _b0  0.00013626813215046637F
-    #define _b1 -0.0001240169771528433F
-    #define _b2  0.00013626813215046664F
-    
-    #define _a1 -1.982691947625308F
-    #define _a2  0.98284046691245608F */
-	
-	// cheby2(2,60,0.30);
-	/* #define _b0  0.0014710861669895367F
-    #define _b1 -0.00093106311989960087F
-    #define _b2  0.0014710861669895371F
-    
-    #define _a1 -1.9356121723322977F   
-    #define _a2  0.93762328154637709F */
-	
-	// cheby2(2,60,0.17);
-	/* #define _b0  0.0010984781375628096F
-    #define _b1 -0.0017427985863922009F
-    #define _b2  0.0010984781375628101F
-    
-    #define _a1 -1.9696503519145439F
-    #define _a2  0.97010450960327721F */
-	
+{	
     // Cheby2(2,60,0.12)
     #define _b0  0.0010397094218302207F
     #define _b1 -0.0018807330270927338F
@@ -308,4 +280,5 @@ void setupCheby2()
 };
 
 #endif // KINEMATICS_H_INCLUDED
+
 

@@ -118,3 +118,4 @@ bool checkUSRF(double hieght)
 };
 
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+

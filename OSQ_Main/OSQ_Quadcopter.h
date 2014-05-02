@@ -131,8 +131,6 @@ bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, s
 	accel.begin();
 	mag.begin();
 
-	getInitialOffsets(kinematics, accel, mag, gyro);
-
 	return true;
 };
 
@@ -220,3 +218,4 @@ void statusLED(int LED_SEL)
 
 
 #endif // OSQ_QUADCOPTER_H_INCLUDED
+

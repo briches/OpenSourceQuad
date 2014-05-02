@@ -118,9 +118,9 @@ void initializePWM()
 
 void writeMotors()
 {
-        OCR3B = motorSpeeds[motor1] * 2;
-        OCR3C = motorSpeeds[motor2] * 2;
-        OCR3A = motorSpeeds[motor3] * 2;
+        OCR3A = motorSpeeds[motor1] * 2;
+        OCR3B = motorSpeeds[motor2] * 2;
+        OCR3C = motorSpeeds[motor3] * 2;
         OCR4A = motorSpeeds[motor4] * 2;
 };
 
@@ -300,3 +300,4 @@ void OSQ_MotorControl :: motorDISARM()
 
 OSQ_MotorControl   	motorControl;
 #endif // FQ_MOTORS_H_INCLUDED
+

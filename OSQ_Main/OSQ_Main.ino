@@ -70,6 +70,11 @@ bool receivedStartupCommand = false;
 #define LIPO_3s
 //#define 4sLIPO
 
+/// Recalibrate Sensor Offsets
+// Comment this line to use previously calibrated measurements
+//#define newSensorOffsets
+#define usePreviousOffsets
+
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
 
@@ -531,7 +536,30 @@ void setup()
     softwareVersionMinor = EEPROM_read8(software_version_addr);
     softwareVersionMajor = EEPROM_read8(software_version_addr + 1);
     flightNumber = ((EEPROM_read8(flight_number_addr + 1))<<8) | EEPROM_read8(flight_number_addr);
-
+    
+    // Use the previously stored sensor offset values
+    #ifdef usePreviousOffsets
+        sensor_offs_t accelOffsets;
+        sensor_offs_t gyroOffsets;
+        
+        readEEPROMOffsets(0, &accelOffsets);
+        readEEPROMOffsets(1, &gyroOffsets);
+        
+        kinematics.io_ax = accelOffsets.x/1000.;
+        kinematics.io_ay = accelOffsets.y/1000.;
+        kinematics.io_az = accelOffsets.z/1000.;
+        
+        kinematics.io_wx = gyroOffsets.x/1000;
+        kinematics.io_wy = gyroOffsets.y/1000;
+        kinematics.io_wz = gyroOffsets.z/1000;
+        
+        Serial.println(kinematics.io_ax);
+        Serial.println(kinematics.io_ay);
+        Serial.println(kinematics.io_az);
+        Serial.println(kinematics.io_wx);
+        Serial.println(kinematics.io_wy);
+        Serial.println(kinematics.io_wz);
+    #endif
     statusLED(1);
 
     /*****************************/
@@ -600,9 +628,9 @@ void setup()
         Serial.println("Initializing SD Card");
     #endif
     
-	ltoa(flightNumber,logFilename,10);
-	strcat(logFilename,"log");
-	strcat(logFilename,".txt");
+    ltoa(flightNumber,logFilename,10);
+    strcat(logFilename,"log");
+    strcat(logFilename,".txt");
 
     // Open a .txt file for data logging and debugging
     logFileStart();
@@ -621,9 +649,38 @@ void setup()
 
     while(!initSensor(accel, mag,  gyro, &kinematics));
 
-    barometer.readEEPROM();
-    barometer.setSLP(29.908);
-    barometer.setOSS(3);
+    // Get new sensor offsets and write them to the EEPROM
+    #ifdef newSensorOffsets
+        sensor_offs_t accelOffsets;
+        sensor_offs_t gyroOffsets;
+        Serial.println("Getting new sensor offsets...");
+        getInitialOffsets(&kinematics, accel, mag, gyro);
+        
+        accelOffsets.x = (long)(1000*kinematics.io_ax);
+        accelOffsets.y = (long)(1000*kinematics.io_ay);
+        accelOffsets.z = (long)(1000*kinematics.io_az);
+        
+        gyroOffsets.x = (long)(1000*kinematics.io_wx);
+        gyroOffsets.y = (long)(1000*kinematics.io_wy);
+        gyroOffsets.z = (long)(1000*kinematics.io_wz);
+        
+        Serial.println(kinematics.io_ax);
+        Serial.println(kinematics.io_ay);
+        Serial.println(kinematics.io_az);
+        Serial.println(kinematics.io_wx);
+        Serial.println(kinematics.io_wy);
+        Serial.println(kinematics.io_wz);
+        
+        Serial.println("Writing accel offsets to E2PROM");
+        writeEEPROMOffsets(0, &accelOffsets);
+        Serial.println("Writing gyro offsets to E2PROM");
+        writeEEPROMOffsets(1, &gyroOffsets);
+    #endif
+    
+    // Initialize barometric sensor
+//    barometer.readEEPROM();
+//    barometer.setSLP(29.908);
+//    barometer.setOSS(3);
 
     setupCheby2();       // Initialize the fourth order struct
 
@@ -931,4 +988,5 @@ void loop()
     cycleCount++;
 }
 /**! @ END MAIN CONTROL LOOP. @ !**/
+
 

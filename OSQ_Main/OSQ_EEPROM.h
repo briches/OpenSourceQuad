@@ -52,15 +52,18 @@
 #define previous_flight_times_addr (0x100)	// Stores 10 previous flight times, type double, in seconds. Most recent at lower address.
 #define	flight_start_location_addr (0x10A)	// Stores 30 double values for lat/lon/alt, most recent at lower address.
 
-
 /* DATA BLOCK 2*/
 #define _0_04_Hz_waypoints_addr (0x200)	// Stores 320 seconds worth of waypoints (lat/long), with 16 separate waypoints.
 
 /* DATA BLOCK 3*/
 #define pid_coefficient_data_addr (0x300) // Stores saved pid coefficients (2 bytes each) in the following order: xAlt, yAlt, zAlt, xAng, yAng, zAng.
 
+/* DATA BLOCK 4*/
+#define sensors_offsets_addr (0x400)
 
-
+//************************************************/
+//**             Low Level R/W ops             **//
+//************************************************/
 unsigned char EEPROM_read8(unsigned int uiAddress)
 {
     while(EECR && (1<<EEPE));	// Wait for completion of previous write
@@ -87,6 +90,9 @@ void EEPROM_write8(unsigned int uiAddress, unsigned char ucData)
     EECR |= (1<<EEPE);	// Start
 };
 
+//************************************************/
+//**             Flight functions              **//
+//************************************************/
 void writeConfigBlock()
 {
     unsigned char flightNumberH = EEPROM_read8(flight_number_addr + 1);
@@ -117,6 +123,86 @@ double EEPROMreadPIDCoefficients(int selection)
     return( 256 * EEPROM_read8(pid_coefficient_data_addr + 2 * selection ) + EEPROM_read8 (pid_coefficient_data_addr + 1 + 2 * selection ) );
 };
 
+//************************************************/
+//**             Sensor Operations             **//
+//************************************************/
+typedef struct sensor_offs_t
+{
+    // Since these are int, use 1000*(actual offset)
+    long x, y, z;
+};
+
+void readEEPROMOffsets(byte sensorID, sensor_offs_t* offsets)
+{
+    // Get the right address, each sensor needs 12 bytes
+    byte addr = sensors_offsets_addr + sensorID * 12;
+    unsigned char x[4];
+    unsigned char y[4];
+    unsigned char z[4];
+    
+    // Read the offsets
+    for(int i = 0; i<4;i++)
+    {
+        x[i] = EEPROM_read8(addr + i);
+    }
+    addr+=4;
+    for(int i = 0; i<4;i++)
+    {
+        y[i] = EEPROM_read8(addr + i);
+    }
+    addr+=4;
+    for(int i = 0; i<4;i++)
+    {
+        z[i] = EEPROM_read8(addr + i);
+    }
+    
+    // Convert from unsigned chars to long
+    offsets->x = x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24);
+    offsets->y = y[0] | (y[1] << 8) | (y[2] << 16) | (y[3] << 24);
+    offsets->z = z[0] | (z[1] << 8) | (z[2] << 16) | (z[3] << 24);
+};
+
+void writeEEPROMOffsets(byte sensorID, sensor_offs_t* offsets)
+{
+    // Each sensor needs 12 bytes
+    byte addr = sensors_offsets_addr + sensorID * 12;
+    unsigned char x[4];
+    unsigned char y[4];
+    unsigned char z[4];
+    
+    // Decompose the long int into unsigned chars
+    for(int i = 3; i < sizeof(offsets->x); --i)
+    {
+        x[i] = *((unsigned char *)&offsets->x + i);
+    }
+    
+    for(int i = 0; i < sizeof(offsets->y); ++i)
+    {
+        y[i] = *((unsigned char *)&offsets->y + i);
+    }
+    
+    for(int i = 0; i < sizeof(offsets->z); ++i)
+    {
+        z[i] = *((unsigned char *)&offsets->z + i);
+    }
+    
+    
+    // Write the offsets
+    for(int i = 0; i<4;i++)
+    {
+        EEPROM_write8(addr + i, x[i]);
+    }
+    addr+=4;
+    for(int i = 0; i<4;i++)
+    {
+        EEPROM_write8(addr + i, y[i]);
+    }
+    addr+=4;
+    for(int i = 0; i<4;i++)
+    {
+        EEPROM_write8(addr + i, z[i]);
+    }
+};
 
 
 #endif // OSQ_EEPROM_H_INCLUDED

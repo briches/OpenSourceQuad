@@ -54,9 +54,9 @@
 #endif
 
 #ifdef SINGLE_PID 
-	double ATT_KP = 2.783;
+	double ATT_KP = 2.653;
 	double ATT_KI = 3.8232;
-	double ATT_KD = 0.92744;
+	double ATT_KD = 0.82744;
 #endif
 
 double yawP = 1;
@@ -242,3 +242,4 @@ void initializePID(struct PID_Manager_t *PID)
 };
 
 #endif // OSQ_PID_H_INCLUDED
+

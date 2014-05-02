@@ -112,7 +112,6 @@ int NoWire :: ScanForMessages()
 			newMessage[DATA1] = Serial1.read();
 			newMessage[DATA2] = Serial1.read();
 			newMessage[DATA3] = Serial1.read();
-                        Serial.println(newMessage[M_ID]);
 		}
 		return newMessage[M_ID];
 	}
@@ -128,3 +127,4 @@ bool NoWire :: start()
 NoWire receiver;
 
 #endif // OSQ_NOWIRE_H_INCLUDED
+

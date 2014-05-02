@@ -97,7 +97,7 @@
 #define FULL_SCALE_RANGE_1000  	(0x2)
 #define FULL_SCALE_RANGE_2000  	(0x3)
 
-#define SI_CONVERT_250  (0.0076511)
+#define SI_CONVERT_250  (0.0113)
 #define SI_CONVERT_500  (0.01524) // WIP
 #define SI_CONVERT_1000 (0.015259)
 #define SI_CONVERT_2000 (0.030518)
@@ -292,8 +292,8 @@ typedef struct L3G4200D_data_s
 	Device settings
 	-----------------------------------------------------------------------*/
 // Gyro Settings
-const unsigned char dataRate = 1 << 6;
-const unsigned char bandwidth = 2 << 4;
+const unsigned char dataRate = 0 << 6;
+const unsigned char bandwidth = 0 << 4;
 const unsigned char FS_Sel = 0;
 
 
@@ -441,7 +441,7 @@ void SENSORLIB_gyro::read()
   // Read the accelerometer
   Wire.beginTransmission((byte)GYRO_ADDR);
   #if ARDUINO >= 100
-    Wire.write(OUT_X_L);
+    Wire.write(OUT_X_L | (1<<7));
   #else
     Wire.send(OUT_X_L);
   #endif
@@ -487,10 +487,10 @@ bool SENSORLIB_gyro::begin()
 {
 	// Enable I2C
 	Wire.begin();
-        unsigned char ctrl1 = dataRate | bandwidth | 0x0F;
+        unsigned char ctrl1 = dataRate | bandwidth | B1111;
         unsigned char ctrl2 = B0000; // HP Filter
-        unsigned char ctrl4 = 0x80 | (FS_Sel << 4);
-        unsigned char ctrl5 = B10000; // HP Filt en
+        unsigned char ctrl4 = 0xC0 | (FS_Sel << 4) | B010;
+        unsigned char ctrl5 = B00000; // HP Filt en
         
         write8(GYRO_ADDR, CTRL_REG1, ctrl1);
         write8(GYRO_ADDR, CTRL_REG2, ctrl2);
@@ -645,8 +645,7 @@ bool SENSORLIB_accel::begin()
   Wire.begin();
 
   // Enable the accelerometer
-  
-  Serial.println(write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x37));
+  write8(ACCEL_ADDR, ACCEL_CTRL_REG1_A, 0x37);
   
   // Enable the internal filter ** May not work **
   write8(ACCEL_ADDR, ACCEL_CTRL_REG2_A, 0x0);
