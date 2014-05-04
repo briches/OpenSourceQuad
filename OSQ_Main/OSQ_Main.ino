@@ -64,6 +64,7 @@ bool receivedStartupCommand = false;
 //#define rollPIDdebug
 //#define pitchPIDdebug
 //#define yawPIDdebug
+//#define altPIDdebug
 //#define batteryDebug
 //#define GPSDebug
 
@@ -87,7 +88,7 @@ bool receivedStartupCommand = false;
 /*=========================================================================
  Sensor analog pins 
  -----------------------------------------------------------------------*/
-#define USRF_PIN (0x0)        
+#define USRF_PIN (3)        
 
 /*=========================================================================
  SD logging definitions 
@@ -173,12 +174,12 @@ void scanTelemetry()
 
     case increaseOperatingPoint:
         {
-            motorControl.changeOperatingPoint(5);
-
+            motorControl.operatingPoint += 1;
+            
             #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received increase OP: ");
-                            Serial.println(motorControl.operatingPoint);
+                    Serial.print("Received increase operating point: ");
+                    Serial.println(motorControl.operatingPoint);
                 #endif
             #endif
         }
@@ -186,104 +187,131 @@ void scanTelemetry()
 
     case decreaseOperatingPoint:
         {
-            motorControl.changeOperatingPoint(-5);
+            motorControl.operatingPoint -= 1;
 
             #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received decrease OP: ");
-                            Serial.println(motorControl.operatingPoint);
+                    Serial.print("Received decrease operating point: ");
+                    Serial.println(motorControl.operatingPoint);
                 #endif
             #endif
         }
         break;
 		
-	case increaseP:
-		{
-			PID_GAINS[pitch].setP += 0.05;
-			PID_GAINS[roll].setP += 0.05;
+    case increaseP:
+	{
+	    PID_GAINS[pitch].setP += 0.05;
+	    PID_GAINS[roll].setP += 0.05;
 			
-			#ifdef serialDebug
+	    #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received increase P: ");
-                            Serial.println(PID_GAINS[pitch].setP);
+                    Serial.print("Received increase P: ");
+                    Serial.println(PID_GAINS[pitch].setP);
                 #endif
             #endif
-		}
-		break;
+	}
+	break;
+
+    case activateAltitudeHold:
+	{
+	    altitudeHold = true;
+            initializePID(&altitudePID);
+            targetAltitude = kinematics.altitude;
+            
+	    #ifdef serialDebug
+                #ifdef rx_txDebug
+                    Serial.print("Received turn on altitude hold");
+                #endif
+            #endif
+	}
+	break;
+    
+    case deactivateAltitudeHold:
+	{
+	    altitudeHold = false;
+            initializePID(&altitudePID);
+
+	    #ifdef serialDebug
+                #ifdef rx_txDebug
+                    Serial.print("Received turn off altitude hold");
+                #endif
+            #endif
+	}
+	break;
+    
+    case decreaseP:
+	{
+	    PID_GAINS[pitch].setP -= 0.05;
+	    PID_GAINS[roll].setP -= 0.05;
+			
+	    #ifdef serialDebug
+                #ifdef rx_txDebug
+                    Serial.print("Received decrease P: ");
+                    Serial.println(PID_GAINS[pitch].setP);
+                #endif
+            #endif
+	}
+	break;
 		
-	case decreaseP:
-		{
-			PID_GAINS[pitch].setP -= 0.05;
-			PID_GAINS[roll].setP -= 0.05;
-			
-			#ifdef serialDebug
+    case increaseI:
+	{
+    	    PID_GAINS[pitch].setI += 0.05;
+    	    PID_GAINS[roll].setI += 0.05;
+    			
+    	    #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received decrease P: ");
-                            Serial.println(PID_GAINS[pitch].setP);
+                    Serial.print("Received increase I : ");
+                    Serial.println(PID_GAINS[pitch].setI);
                 #endif
             #endif
-		}
-		break;
+	}
+	break;
 		
-	case increaseI:
-		{
-			PID_GAINS[pitch].setI += 0.05;
-			PID_GAINS[roll].setI += 0.05;
-			
-			#ifdef serialDebug
+    case decreaseI:
+        {
+            PID_GAINS[pitch].setI -= 0.05;
+            PID_GAINS[roll].setI -= 0.05;
+    			
+            #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received increase I : ");
-                            Serial.println(PID_GAINS[pitch].setI);
+                    Serial.print("Received decrease I: ");
+                    Serial.println(PID_GAINS[pitch].setI);
                 #endif
             #endif
-		}
-		break;
-		
-	case decreaseI:
-		{
-			PID_GAINS[pitch].setI -= 0.05;
-			PID_GAINS[roll].setI -= 0.05;
-			
-			#ifdef serialDebug
-                #ifdef rx_txDebug
-                            Serial.print("Received decrease I: ");
-                            Serial.println(PID_GAINS[pitch].setI);
-                #endif
-            #endif
-		}
-		break;
+        }
+        break;
 	
-	case increaseD:
-		{
-			PID_GAINS[pitch].setD += 0.05;
-			PID_GAINS[roll].setD += 0.05;
+    case increaseD:
+        {
+            PID_GAINS[pitch].setD += 0.05;
+            PID_GAINS[roll].setD += 0.05;
 			
-			#ifdef serialDebug
+            #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received increase D: ");
-                            Serial.println(PID_GAINS[pitch].setD);
+                    Serial.print("Received increase D: ");
+                    Serial.println(PID_GAINS[pitch].setD);
                 #endif
             #endif
-		}
-		break;
+	}
+	break;
 		
-	case decreaseD:
-		{
-			PID_GAINS[pitch].setD -= 0.05;
-			PID_GAINS[roll].setD -= 0.05;
+    case decreaseD:
+	{
+	    PID_GAINS[pitch].setD -= 0.05;
+	    PID_GAINS[roll].setD -= 0.05;
 			
-			#ifdef serialDebug
+	    #ifdef serialDebug
                 #ifdef rx_txDebug
-                            Serial.print("Received decrease D: ");
-                            Serial.println(PID_GAINS[pitch].setD);
+                    Serial.print("Received decrease D: ");
+                    Serial.println(PID_GAINS[pitch].setD);
                 #endif
             #endif
-		}
-		break;
+	}
+	break;
 
     case increasePitch:
         {
-            double newSetpoint = incrementSetpoint(&pitchPID, 5);
+            double newSetpoint = incrementSetpoint(&pitchPID, 1);
 
             #ifdef serialDebug
                 #ifdef rx_txDebug
@@ -297,7 +325,7 @@ void scanTelemetry()
 
     case decreasePitch:
         {
-            double newSetpoint = incrementSetpoint(&pitchPID, -5);
+            double newSetpoint = incrementSetpoint(&pitchPID, -1);
 
             #ifdef serialDebug
                 #ifdef rx_txDebug
@@ -310,7 +338,7 @@ void scanTelemetry()
 
     case increaseRoll:
         {
-            double newSetpoint = incrementSetpoint(&rollPID, 5);
+            double newSetpoint = incrementSetpoint(&rollPID, 1);
 
             #ifdef serialDebug
                 #ifdef rx_txDebug
@@ -323,7 +351,7 @@ void scanTelemetry()
 
     case decreaseRoll:
         {
-            double newSetpoint = incrementSetpoint(&rollPID, -5);
+            double newSetpoint = incrementSetpoint(&rollPID, -1);
 
             #ifdef serialDebug
                 #ifdef rx_txDebug
@@ -352,11 +380,11 @@ void scanTelemetry()
             kinematics.roll = 0;
             kinematics.rollRate = 0;
 
-    #ifdef serialDebug
-        #ifdef rx_txDebug
-                    Serial.println("Received reset Pitch and Roll command! ");                          
-        #endif
-    #endif
+            #ifdef serialDebug
+                #ifdef rx_txDebug
+                            Serial.println("Received reset Pitch and Roll command! ");                          
+                #endif
+            #endif
 
             break;
         }
@@ -415,13 +443,11 @@ void logData()
         // Log something
         logFile.print(millis());
         logFile.print(',');
-        logFile.print(kinematics.pitch);
+        logFile.print(kinematics.altitude);
         logFile.print(',');
-        logFile.print(kinematics.roll);
+        logFile.print(kinematics.climbRate);
         logFile.print(',');
-        logFile.print(kinematics.yaw);
-        logFile.print(',');
-        logFile.println(kinematics.altitude);
+        logFile.println(altitudePID.setpoint);
     }
     else
     {
@@ -511,18 +537,18 @@ void logFileStart()
  barometerInit
  - Initializes the barometer
  -----------------------------------------------------------------------*/
-int64_t barometerInit()
+long barometerInit()
 {
     // Take 10 readings of altitude to calibrate
-    int64_t initialAltitude, result;
-    int64_t count;
-    for(int i = 0; i<10; i++)
+    long initialAltitude, result;
+    int count;
+    for(int i = 0; i<60; i++)
     {
         barometer.updatePTA();
         delay(35); // Delay 35 ms for ADC
-        if(barometer.altitude != 0)
+        if(barometer.conversionStep == 1)
         {
-            initialAltitude += (int64_t)(100000*barometer.altitude);
+            initialAltitude += 1000*barometer.altitude;
             count++;
         }
     }
@@ -651,6 +677,7 @@ void setup()
         Serial.println("Initializing SD Card");
     #endif
     
+    flightNumber = 1337;
     ltoa(flightNumber,logFilename,10);
     strcat(logFilename,"log");
     strcat(logFilename,".txt");
@@ -705,8 +732,10 @@ void setup()
     barometer.setSLP(30);
     barometer.setOSS(3);
     // Set the initial altitude
-    baroSensor.initial = barometerInit();
-
+    baroSensor.initial = barometerInit() - 0.05 * 1000;
+    
+    for(int i = 0; i < 40; i++) baroSensor.filt[i] = baroSensor.initial;
+    
     /** Initialize accelerometer filter **/
     setupCheby2();
 
@@ -785,20 +814,30 @@ void fastTask()
 {
     kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
     
-    /* Check for safety */
+    /* Startup time */
     if(millis() - startTime < startupPeriod)  // In OSQ_kinematics.h
     {
     	pitchPID.setpoint = kinematics.pitch;
 	rollPID.setpoint = kinematics.roll; 
 	yawPID.setpoint = kinematics.yaw;
+        altitudePID.setpoint = 0;
     }
 
-    // Run PID algorithm
+    // Run PID algorithm on attitude axes
     double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
     double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
     double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
-	
-    motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.);
+    
+    // PID algorithm for altitude
+    double altOut = 0;
+    if(altitudeHold)
+        altOut = calculatePID(&altitudePID, kinematics.climbRate, 0.);   
+    else
+        altOut = 0;
+    
+    /** Update motors with PID outputs **/
+    //motorControl.updateMotors(pitchOut, rollOut, yawOut, altOut);
+    motorControl.updateMotors(0., 0., 0., altOut);
 
     t_200Hz = micros(); 
 
@@ -821,15 +860,26 @@ void fastTask()
             Serial.println();
         #endif
 		
-		#ifdef yawPIDdebug
-			Serial.print("Yaw: ");
-			Serial.print(kinematics.yaw);
-			Serial.print(" Setpoint: ");
-			Serial.print(yawPID.setpoint);
-			Serial.print(" motor output: ");
-			Serial.println(yawPID.output);
-			Serial.println();
-		#endif
+	#ifdef yawPIDdebug
+	    Serial.print("Yaw: ");
+	    Serial.print(kinematics.yaw);
+	    Serial.print(" Setpoint: ");
+	    Serial.print(yawPID.setpoint);
+	    Serial.print(" motor output: ");
+	    Serial.println(yawPID.output);
+    	    Serial.println();
+	#endif
+
+        #ifdef altPIDdebug
+            Serial.print("Alt: ");
+            Serial.print(kinematics.altitude);
+            Serial.print("Rate: ");
+            Serial.print(kinematics.climbRate);
+            Serial.print("Target: ");
+            Serial.print(altitudePID.setpoint);
+            Serial.print("PID out: ");
+            Serial.println(altOut);
+        #endif
         
         #ifdef attitudeDebug
             Serial.print(" Pitch: ");
@@ -873,7 +923,7 @@ void _20HzTask()
     kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
 
     // Print data to the SD logFile
-    //logData();
+    logData();
 
     t_20Hz = micros();
 }
@@ -885,8 +935,20 @@ void _20HzTask()
 void _10HzTask()
 {
     double altUSRF = analogRead(USRF_PIN)*0.01266762;
+    
+    // Integrate the different sensor readings and calculate vertical rate, assuming
+    // a perfect 10Hz loop.
     kinematics.altitude = getAccurateAltitude(GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
-
+    kinematics.climbRate = ((kinematics.altitude - previousAltitude)/0.1 + kinematics.climbRate + kinematics.prevClimbRate)/3;
+    kinematics.prevClimbRate = kinematics.climbRate;
+    
+    if(kinematics.altitude > 1 && !inFlight)
+        inFlight = true;
+    
+    // Setpoint is target rate multiplied by a constant gain
+    double climbGain = 0.05;
+    altitudePID.setpoint = climbGain * (targetAltitude - kinematics.altitude);
+    
     #ifdef serialDebug
         #ifdef altitudeDebug
             Serial.print("Alt: ");
@@ -899,10 +961,6 @@ void _10HzTask()
             Serial.println(GPSDATA.altitude);
         #endif
     #endif
-
-
-    //calculateRATE_PID(&altitudePID,  measuredRate)
-    //TODO: Make sure Altitude PID is working.
 
     //TODO: Make sure GPS is working fully
     checkGPS(); // Check for GPS data fully received, uses ISR

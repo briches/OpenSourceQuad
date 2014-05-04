@@ -65,18 +65,21 @@ enum messages  // Customize these.
 	broadcastData = 0x03,
 	increaseOperatingPoint = 0x0C,
 	decreaseOperatingPoint = 0x0D,
-	
 	increasePitch = 0x0E,
 	decreasePitch = 0x0F,
 	increaseRoll = 0x10,
 	decreaseRoll = 0x11,
-	
+
+	activateAltitudeHold = 0x12,
+        deactivateAltitudeHold = 0x13,
+
 	increaseP = 0xA1,
 	increaseI = 0xA2,
 	increaseD = 0xA3,
 	decreaseP = 0xA4,
 	decreaseI = 0xA5,
 	decreaseD = 0xA6,
+        
 	
 	resetPitchRoll = 0xC0,
 	err = -1, // Must have this one

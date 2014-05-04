@@ -38,15 +38,19 @@
 
 #define Pi (3.14159265359F)	// Its pi.
 
+static double targetAltitude = 0;
 // Keep track just for kicks
+static double latestAltitude = 0;
 static double previousAltitude = 0;
+bool inFlight, altitudeHold;
 
 /*=========================================================================
  Function declarations
  -----------------------------------------------------------------------*/
-void computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor);
+long computeRunningAvg(long currentInput, struct altitudeSensor_t *sensor);
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality);
 void checkRegion(struct altitudeSensor_t *sensor);
+long weightedAvg(struct altitudeSensor_t *sensor1, struct altitudeSensor_t *sensor2, struct altitudeSensor_t *sensor3);
 
 /*=========================================================================
  Altitude sensor data type
@@ -58,38 +62,34 @@ typedef struct altitudeSensor_t
     bool active, useFilt;
     
     // Initial and current altitude estimates
-    int64_t initial, current;
+    long initial, current;
     
     // Upper and lower bounds of the sensors useful range
-    int64_t usefulRange[2];
+    long usefulRange[2];
     
     // Filter paramters
-    int64_t inputTm1, inputTm2, outputTm1, outputTm2;
+    double filt[40];
+    int spot;
     
     // Weight for the weighted average 
-    int64_t confidence;
+    long confidance;
     
-    altitudeSensor_t(int64_t acc, int64_t rangeL, int64_t rangeH, bool filt);
+    altitudeSensor_t(long acc, long rangeL, long rangeH, bool filt);
 };
 // Constructor
-altitudeSensor_t :: altitudeSensor_t(int64_t acc, int64_t rangeL, int64_t rangeH, bool filt)
+altitudeSensor_t :: altitudeSensor_t(long acc, long rangeL, long rangeH, bool filt)
 {
-    this->confidence = acc;
+    this->confidance = acc;
     this->active = true;
     this->usefulRange[0] = rangeL;
     this->usefulRange[1] = rangeH;
-  
-    // Setup the filter
-    this->inputTm1 = this->initial;
-    this->inputTm2 = this->initial;
-    this->outputTm1 = this->initial;
-    this->outputTm2 = this->initial;
+    this->spot = 0;        
 };
 
 // Declaration of the altitude sensors
 altitudeSensor_t baroSensor(1, LONG_MIN, LONG_MAX, true);
 altitudeSensor_t GPSSensor(1, LONG_MIN, LONG_MAX, true);
-altitudeSensor_t USRFSensor(8, 15000, 1000000, false); // 15 cm to 10 m
+altitudeSensor_t USRFSensor(5, 100, 10000, false); // 40 cm to 10 m
 
 /*=========================================================================
  Returns an estimate of the current altitude 
@@ -97,10 +97,10 @@ altitudeSensor_t USRFSensor(8, 15000, 1000000, false); // 15 cm to 10 m
  -----------------------------------------------------------------------*/
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
-    int64_t GPS_ = 100000*GPS;
-    int64_t baro_ = 100000*baro;
-    int64_t USRF_ = 100000*USRF;
-    int64_t phi_ = 100000*phi;
+    long GPS_ = 1000*GPS;
+    long baro_ = 1000*baro;
+    long USRF_ = 1000*USRF;
+    long phi_ = 1000*phi;
     double sensorAltitude = 0; // Actual result
     int measurementCount = 0;
     
@@ -109,30 +109,65 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
     checkRegion(&GPSSensor);
     checkRegion(&baroSensor);
     
-    // Barometer
+    ////// Heads up brandon //////
+    // Todo
+    GPSSensor.active = false; 
+    
+    //******************** Barometer
     if(baroSensor.active)
     {
-        // Filter
-        //computeCheby2(baro_, &baroSensor);
-        baroSensor.current = baro_;
-        // Add result into final estimate
-        sensorAltitude += baroSensor.current - baroSensor.initial;
-        measurementCount++;
+        long avg = computeRunningAvg(baro_, &baroSensor);
+        baroSensor.current = avg - baroSensor.initial;
     }
     else{/* Sadness */}
     
     // USRF
+    if(!inFlight)
+        USRFSensor.active = false;
     if(USRFSensor.active)
     {
-        sensorAltitude += USRF_;
-        measurementCount++;
+        USRFSensor.current = USRF_;
     }
     
-    Serial.println(sensorAltitude);
-    sensorAltitude /= measurementCount;
+    // GPS
+    if(GPSSensor.active)
+    {
+        GPSSensor.current = GPS_ - GPSSensor.initial;
+    }
+    
     // Convert to real altitude and return.
-    return sensorAltitude/100000;
+    previousAltitude = latestAltitude/1000.0;
+    latestAltitude = (double)weightedAvg(&baroSensor, &USRFSensor, &GPSSensor);
+    return latestAltitude/1000.0;
 };
+
+/*=========================================================================
+ void weightedAvg(struct altitudeSensor_t *sensor1, 
+                  struct altitudeSensor_t *sensor2, 
+                  struct altitudeSensor_t *sensor3)
+ Combine the sensor readings according to their confidance
+ -----------------------------------------------------------------------*/
+long weightedAvg(struct altitudeSensor_t *sensor1, struct altitudeSensor_t *sensor2, struct altitudeSensor_t *sensor3)
+{
+    long result, numerator, denominator;
+    
+    if(sensor1->active)
+    {
+        numerator += sensor1->confidance * sensor1->current;
+        denominator += sensor1->confidance;
+    }
+    if(sensor2->active)
+    {
+        numerator += sensor2->confidance * sensor2->current;
+        denominator += sensor2->confidance;
+    }
+    if(sensor3->active)
+    {
+        numerator += sensor3->confidance * sensor3->current;
+        denominator += sensor3->confidance;
+    }
+    return numerator/denominator;
+}
 
 /*=========================================================================
  void checkRegion(struct altitudeSensor_t *sensor)
@@ -140,7 +175,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
  -----------------------------------------------------------------------*/
 void checkRegion(struct altitudeSensor_t *sensor)
 {
-    if(previousAltitude < sensor->usefulRange[0] || previousAltitude > sensor->usefulRange[1])
+    if(latestAltitude < sensor->usefulRange[0] || latestAltitude > sensor->usefulRange[1])
     {
         sensor->active = false;
     }
@@ -148,34 +183,24 @@ void checkRegion(struct altitudeSensor_t *sensor)
 };
 
 /*=========================================================================
- int64_t computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor)
- Filter the current sensor output
+ long computeRunningAvg(long currentInput, struct altitudeSensor_t *sensor)
+ Filter the current sensor output with a simple running avg
  -----------------------------------------------------------------------*/
-void computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor)
+long computeRunningAvg(long currentInput, struct altitudeSensor_t *sensor)
 {	
-    // Cheby2(2,60,0.25)
-    #define _b0  130L // Multiplied by 100 thousand
-    #define _b1 -130L
-    #define _b2  130L
+    double output = 0;
     
-    #define _a1 -194760L
-    #define _a2  94900L
+    sensor->filt[sensor->spot] = currentInput;
+    sensor->spot++;
+    if(sensor->spot >= 40) sensor->spot = 0;
     
-    int64_t output;
-
-    output = _b0 * currentInput           +
-        _b1 * sensor->inputTm1  +
-        _b2 * sensor->inputTm2  -
-        _a1 * sensor->outputTm1 -
-        _a2 * sensor->outputTm2;
-        
-    sensor->inputTm2 = sensor->inputTm1;
-    sensor->inputTm1 = currentInput;
-
-    sensor->outputTm2 = sensor->outputTm1;
-    sensor->outputTm1 = output;
-
-    sensor->current = output;
+    for(int i = 0; i<40; i++)
+    {
+        output += sensor->filt[i];
+    }
+    
+    output = output/40.0;
+    return (long)output;
 };
 
 

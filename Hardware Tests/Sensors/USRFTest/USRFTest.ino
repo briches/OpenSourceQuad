@@ -3,7 +3,7 @@
 #define SCALE   0.01266762
 void setup()
 {
-  Serial.begin(19200);
+  Serial.begin(115200);
 }
 
 void loop()

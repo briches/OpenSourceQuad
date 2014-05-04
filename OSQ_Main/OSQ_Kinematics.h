@@ -83,6 +83,8 @@ struct kinematicData
     yawRate,
 
     altitude,
+    climbRate,
+    prevClimbRate,
 
     io_ax,
     io_ay,
@@ -163,21 +165,21 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 	double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
 	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
 		
-        // Log data for debug purposes, will be taken out
-        if (logFile)
-        {
-            logFile->print(micros());
-            logFile->print(',');
-            logFile->print(kinematics.pitch);
-            logFile->print(',');
-            logFile->print(pitchAcc);
-	    logFile->print(',');
-	    logFile->println(pitchSet);
-        }
-        else
-        {
-            Serial.println("Err w/in kinematics");
-        }
+//        // Log data for debug purposes, will be taken out
+//        if (logFile)
+//        {
+//            logFile->print(micros());
+//            logFile->print(',');
+//            logFile->print(kinematics.pitch);
+//            logFile->print(',');
+//            logFile->print(pitchAcc);
+//	    logFile->print(',');
+//	    logFile->println(pitchSet);
+//        }
+//        else
+//        {
+//            Serial.println("Err w/in kinematics");
+//        }
 
         // Phi is used to correct the ultransonic range finder
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
@@ -207,7 +209,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 0.995;
+    double beta = 0.999;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 

@@ -59,13 +59,13 @@
 	double ATT_KD = 0.57744;
 #endif
 
-double yawP = 1;
-double yawI = 0.0126;
-double yawD = 1; // Attempt 1
+double yawP = 2.5;
+double yawI = 4.32;
+double yawD = 0.5; // Attempt 1
 
-double altitudekP = 0;
-double altitudekI = 0;
-double altitudekD = 0;
+double altitudekP = 2;
+double altitudekI = 0.3;
+double altitudekD = 0.05;
 
 // Used for windup guard
 enum{lower, upper};
@@ -134,7 +134,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	double dt = (micros() - PID->lastTimestamp)/1000000.;
 
 	#ifdef SINGLE_PID
-		double error = measuredValue - PID->setpoint;
+		double error = PID->setpoint - measuredValue;
 
 		// Integral response
 		PID->setIntegratedError += PID_GAINS[PID->ID].setI * error * dt;
@@ -156,7 +156,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 	#endif
 
 	#ifdef NESTED_PID
-		double error = measuredValue - PID->setpoint;
+		double error = PID->setpoint - measuredValue;
 
 		/*** PID position control ***/
 			// Integral term
@@ -173,7 +173,7 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 		PID->output = PID->setIntegratedError + pTerm + dTerm;
 
 		/*** PID speed control ***/
-		double rateError = measuredRate - PID->output;
+		double rateError = PID->output - measuredRate;
                 
 		// Integral term
 		PID->rateIntegratedError += PID_GAINS[PID->ID].rateI * rateError * dt;
@@ -200,45 +200,52 @@ double calculatePID(struct PID_Manager_t *PID, double measuredValue, double meas
 
 void initializePID(struct PID_Manager_t *PID)
 {
-	PID->windupGuard = INT_MAX;
-	PID->setIntegratedError = 0;
-	PID->setpoint = 0;
-	PID->output = 0;
-	PID->setLastError = 0;
-	
-	// If its an angle, we can wrap around 360 degrees
-	if(PID->ID == pitch || PID->ID == roll || PID->ID == yaw) PID->periodic = true;
-	else PID->periodic = false;
-	
-
-	if(PID->ID < altitude)
-	{
-		#ifdef SINGLE_PID
-			PID_GAINS[PID->ID].setP = ATT_KP;
-			PID_GAINS[PID->ID].setI = ATT_KI;
-			PID_GAINS[PID->ID].setD = ATT_KD;
-		#endif
-	
-		#ifdef NESTED_PID
-			PID_GAINS[PID->ID].setP = SET_ATT_KP;
-			PID_GAINS[PID->ID].setI = SET_ATT_KI;
-			PID_GAINS[PID->ID].setD = SET_ATT_KD;
-	
-			PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
-			PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
-			PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
-	
-			PID->rateLastError = 0;
-				PID->rateIntegratedError = 0;
-		#endif
-	}
-	else
-	{
-		PID_GAINS[PID->ID].setP = altitudekP;
-		PID_GAINS[PID->ID].setI = altitudekI;
-		PID_GAINS[PID->ID].setD = altitudekD;
-	}
-
+    PID->windupGuard = INT_MAX;
+    PID->setIntegratedError = 0;
+    PID->setpoint = 0;
+    PID->output = 0;
+    PID->setLastError = 0;
+    	
+    // If its an angle, we can wrap around 360 degrees
+    if(PID->ID == pitch || PID->ID == roll || PID->ID == yaw) PID->periodic = true;
+    else PID->periodic = false;
+    	
+    
+    if(PID->ID == pitch || PID->ID == roll)
+    {
+        #ifdef SINGLE_PID
+            PID_GAINS[PID->ID].setP = ATT_KP;
+            PID_GAINS[PID->ID].setI = ATT_KI;
+            PID_GAINS[PID->ID].setD = ATT_KD;
+        #endif
+    	
+        #ifdef NESTED_PID
+            PID_GAINS[PID->ID].setP = SET_ATT_KP;
+            PID_GAINS[PID->ID].setI = SET_ATT_KI;
+ 	    PID_GAINS[PID->ID].setD = SET_ATT_KD;
+    	
+            PID_GAINS[PID->ID].rateP = RATE_ATT_KP;
+            PID_GAINS[PID->ID].rateI = RATE_ATT_KI;
+            PID_GAINS[PID->ID].rateD = RATE_ATT_KD;
+    	    	
+            PID->rateLastError = 0;
+            PID->rateIntegratedError = 0;
+        #endif
+    }
+    else if(PID->ID == altitude)
+    {
+        PID_GAINS[PID->ID].setP = altitudekP;
+        PID_GAINS[PID->ID].setI = altitudekI;
+        PID_GAINS[PID->ID].setD = altitudekD;
+        PID->windupGuard = 25;
+    }
+    else if(PID->ID == yaw)
+    {
+        PID_GAINS[PID->ID].setP = yawP;
+        PID_GAINS[PID->ID].setI = yawI;
+        PID_GAINS[PID->ID].setD = yawD;
+        PID->windupGuard = 25;
+    }
 };
 
 #endif // OSQ_PID_H_INCLUDED

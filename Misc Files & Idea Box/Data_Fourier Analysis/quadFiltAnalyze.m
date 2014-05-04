@@ -27,26 +27,26 @@ function [] = quadFiltAnalyze()
     csvdata = csvread(filename,sline,0);
     time = csvdata(:,1);
     dt = getDt(time);
-    filt = csvdata(:,2);
-    nfilt = csvdata(:,3);
+    altitude = csvdata(:,2);
+    climbRate = csvdata(:,3);
     set = csvdata(:,4);
 
     % Plot that there data
     figure(9); hold on; grid on;
-    plot(time/(1e6), filt, 'b');
-    plot(time/(1e6), nfilt,'r');
-    plot(time/(1e6), set, 'k');
+    plot(time/(1e3), altitude, 'b');
+    plot(time/(1e3), climbRate,'r');
+    plot(time/(1e3), set, 'k');
     plot_title = sprintf('Data, sample freq = %f',1/dt);
     title(plot_title);
-    legend('Gyro+accel','Accel','Setpoint','Location','SouthEast');
+    legend('altitude','climbRate','Setpoint','Location','SouthEast');
     hold off;
     
     if (analyzefrequency -1)
         figure(10);
-        [~, ~] = timefreq(filt,dt,1,1,0,1);
+        [~, ~] = timefreq(altitude,dt,1,1,0,1);
         title('Complementary filtered data');
         figure(11);
-        [~, ~] = timefreq(nfilt,dt,1,1,0,1);
+        [~, ~] = timefreq(climbRate,dt,1,1,0,1);
         title('Accelerometer data');
     end
     
@@ -60,7 +60,7 @@ function dt = getDt(time)
 deltas = zeros(length(time),1);
 
 for n = 2:length(time)
-    deltas(n-1) = (time(n)-time(n-1))/1000000;
+    deltas(n-1) = (time(n)-time(n-1))/1000;
 end
 
 dt = sum(deltas)/length(deltas);

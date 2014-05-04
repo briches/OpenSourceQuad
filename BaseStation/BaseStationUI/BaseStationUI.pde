@@ -72,9 +72,9 @@ void setup()
 {
     //Set up the serial port
     println(Serial.list());
-    myPort = new Serial(this, Serial.list()[0], 19200);
+    myPort = new Serial(this, Serial.list()[1], 19200);
     print("Connected to serial port: ");
-    println(Serial.list()[0]);
+    println(Serial.list()[1]);
 
 
     // Set up window
@@ -116,6 +116,8 @@ void draw()
     text("A: Roll up", 25, 350);
     text("D: Roll down", 25, 375);
     text("R : Reset Attitude", 25, 400);
+    text("H : Turn ON altitude hold", 25, 450);
+    text("N : Turn OFF altitude hold", 25, 475);
     
     text("I: Increase P coeff", 280, 200);
     text("O: Increase I coeff", 280, 225);
@@ -396,6 +398,26 @@ void keyPressed()
             dMod /= 100;
             break;
         
+        case 'H': // Turn on altitude hold
+        case 'h':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x12);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            break;
+        
+        case 'N': // Turn on altitude hold
+        case 'n':
+            txPacket[0] = byte(0xFF);
+            txPacket[1] = byte(0x13);
+            txPacket[2] = byte(0);
+            txPacket[3] = byte(0);
+            txPacket[4] = byte(0);
+            sendtxPacket();
+            break;
+        
         default:
           break;
     }
@@ -446,12 +468,12 @@ void sendtxPacket()
         }
         case 0x0E:
         {
-            pitchSetpoint = pitchSetpoint + 5;
+            pitchSetpoint = pitchSetpoint + 1;
             break;
         }
         case 0x0F:
         {
-            pitchSetpoint = pitchSetpoint - 5;
+            pitchSetpoint = pitchSetpoint - 1;
             break;
         }
         case 0x10:

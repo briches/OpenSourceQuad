@@ -1,22 +1,22 @@
 /*=====================================================================
-    OSQ_IMU
-    OpenSourceQuad
-    -------------------------------------------------------------------*/
+     OSQ_IMU
+     OpenSourceQuad
+     -------------------------------------------------------------------*/
 /*================================================================================
 
-    Author		: Brandon Riches
-    Date		: August 2013
-    License		: GNU Public License
+     Author		: Brandon Riches
+     Date		: August 2013
+     License		: GNU Public License
 
-    This library manages the I2C interface with certain sensors, allowing them to
-    easily communicate with the micro-controller.
+     This library manages the I2C interface with certain sensors, allowing them to
+     easily communicate with the micro-controller.
 
-    Copyright (C) 2013  Brandon Riches
+     Copyright (C) 2013  Brandon Riches
 
-    NOTE: Most of the methods and code in this library was originally designed by
-    Kevin Townsend for Adafruit Industries. The code was released under the BSD license
+     NOTE: Most of the methods and code in this library was originally designed by
+     Kevin Townsend for Adafruit Industries. The code was released under the BSD license
 
-    The following is the original license information:
+     The following is the original license information:
      _____________________________________________________________________________
 
      This is a library for the LSM303 Accelerometer and magnetometer/compass
