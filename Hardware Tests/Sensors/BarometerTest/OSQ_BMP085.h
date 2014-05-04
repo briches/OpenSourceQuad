@@ -1,32 +1,32 @@
 /*=====================================================================
-     OSQ_BMP085
-     OpenSourceQuad
-     -------------------------------------------------------------------*/
+ 	OSQ_BMP085 library
+ 	OpenSourceQuad
+ 	-------------------------------------------------------------------*/
 /*================================================================================
  
-     Author		: Brandon Riches
-     Date		: August 2013
-     License		: GNU Public License
+ 	Author		: Brandon Riches
+ 	Date		: August 2013
+ 	License		: GNU Public License
  
-     This library interfaces with the BMP085/185 pressure sensor to return temperature
-     calibrated altitude measurements
+ 	This library interfaces with the BMP085 pressure sensor to return temperature
+ 	calibrated altitude measurements.
  
-     Copyright (C) 2013  Brandon Riches
+ 	Copyright (C) 2013  Brandon Riches
  
-     This program is free software: you can redistribute it and/or modify
-     it under the terms of the GNU General Public License as published by
-     the Free Software Foundation, either version 3 of the License, or
-     (at your option) any later version.
-     
-     This program is distributed in the hope that it will be useful,
-     but WITHOUT ANY WARRANTY; without even the implied warranty of
-     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-     GNU General Public License for more details.
-     
-     You should have received a copy of the GNU General Public License
-     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
  
-     -----------------------------------------------------------------------------*/
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ 	-----------------------------------------------------------------------------*/
 #ifndef OSQ_BMP085_H_INCLUDED
 #define OSQ_BMP085_H_INCLUDED
 
@@ -59,17 +59,17 @@ public:
     int conversionStep;
 
     // EEPROM calibration values
-    int16_t 	AC1;
-    int16_t	AC2;
-    int16_t	AC3;
-    uint16_t 	AC4;
-    uint16_t 	AC5;
-    uint16_t	AC6;
-    int16_t	_B1;
-    int16_t	_B2;
-    int16_t	MB;
-    int16_t	MC;
-    int16_t	MD;
+    int16_t 		AC1;
+    int16_t			AC2;
+    int16_t			AC3;
+    uint16_t 		AC4;
+    uint16_t 		AC5;
+    uint16_t		AC6;
+    int16_t			_B1;
+    int16_t			_B2;
+    int16_t			MB;
+    int16_t			MC;
+    int16_t			MD;
 
     // Calculated calibration values
     int32_t X1, X2, X3;
@@ -90,9 +90,9 @@ private:
     uint16_t read16(byte addr);
 };
 
-static uint8_t _oversample_setting_ = 0x00;
-static double  SEA_LEVEL_PRESSURE = 101325.0;
-static bool _EEPROM_read_ = false;
+static uint8_t _oversample_setting_  	= 0x00;
+static double  SEA_LEVEL_PRESSURE		= 101325.0;
+static bool _EEPROM_read_				= false;
 
 BMP085 :: BMP085(void)
 {

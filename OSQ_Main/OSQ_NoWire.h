@@ -3,33 +3,32 @@
  	OpenSourceQuad
  	-------------------------------------------------------------------*/
 /*================================================================================
-
- 	Author		: Brandon Riches
- 	Date		: August 2013
- 	License		: GNU Public License
-
- 	This library is designed to allow easy communication between two
- 	microcontrollers through wireless Serial3s. It should abstract away the serial
- 	communication part of the interation, and leave just the message send/recieve
- 	functionality easily accessible.
-
- 	Copyright (C) 2013  Brandon Riches
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- 	-----------------------------------------------------------------------------*/
-
+ 
+     Author		: Brandon Riches
+     Date		: August 2013
+     License		: GNU Public License
+ 
+     This library is designed to allow easy communication between two
+     microcontrollers through wireless serial protocol. It should abstract away the serial
+     communication part of the interation, and leave just the message send/recieve
+     functionality easily accessible.
+ 
+     Copyright (C) 2013  Brandon Riches
+ 
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+     
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+     
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+     -----------------------------------------------------------------------------*/
 #ifndef OSQ_NOWIRE_H_INCLUDED
 #define OSQ_NOWIRE_H_INCLUDED
 

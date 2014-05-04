@@ -42,15 +42,11 @@
       
 */
 #include <Wire.h>
-#include <OSQ_BMP085.h>
-
-
-BMP085 barometer;
-
+#include "OSQ_BMP085.h"
 
 void setup()
 {
-  Serial.begin(19200);
+  Serial.begin(115200);
   Serial.println("BMP085 Test:");
   
   // Call this function first
@@ -61,7 +57,7 @@ void setup()
   
   // Sea level pressure.
   // Look up daily. Give in inchesHg
-  barometer.setSLP(30.094); 
+  barometer.setSLP(30.15); 
   
   // Set the accuracy and frequency. 
   // Options are 0, 1, 2, 3

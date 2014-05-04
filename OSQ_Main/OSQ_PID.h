@@ -3,29 +3,29 @@
 	OpenSourceQuad
 	-------------------------------------------------------------------*/
 /*================================================================================
-
-	Author		: Brandon Riches
-	Date		: August 2013
-	License		: GNU Public License
-
-	This library implements the standard form PID controller
-
-	Copyright (C) 2013  Brandon Riches
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	-----------------------------------------------------------------------------*/
+ 
+     Author		: Brandon Riches
+     Date		: August 2013
+     License		: GNU Public License
+ 
+     Standard form PID controller for position or position/velocity
+ 
+     Copyright (C) 2013  Brandon Riches
+ 
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+     
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+     
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+     -----------------------------------------------------------------------------*/
 #ifndef OSQ_PID_H_INCLUDED
 #define OSQ_PID_H_INCLUDED
 
@@ -54,9 +54,9 @@
 #endif
 
 #ifdef SINGLE_PID 
-	double ATT_KP = 2.653;
-	double ATT_KI = 3.8232;
-	double ATT_KD = 0.82744;
+	double ATT_KP = 2.553;
+	double ATT_KI = 4.3232;
+	double ATT_KD = 0.57744;
 #endif
 
 double yawP = 1;
@@ -123,7 +123,7 @@ double incrementSetpoint(struct PID_Manager_t *PID, double changeAmount)
         return PID->setpoint;
 };
 
-double setpoint(struct PID_Manager_t *PID, double newSetpoint)
+void setpoint(struct PID_Manager_t *PID, double newSetpoint)
 {
     PID->setpoint = newSetpoint;
 };

@@ -1,35 +1,37 @@
 /*=====================================================================
-	OSQ_IMU
-	OpenSourceQuad
-	-------------------------------------------------------------------*/
+    OSQ_IMU
+    OpenSourceQuad
+    -------------------------------------------------------------------*/
 /*================================================================================
 
-	Author		: Brandon Riches
-	Date		: August 2013
-	License		: GNU Public License
+    Author		: Brandon Riches
+    Date		: August 2013
+    License		: GNU Public License
 
-	This library manages the I2C interface with certain sensors, allowing them to
-	easily communicate with the micro-controller.
+    This library manages the I2C interface with certain sensors, allowing them to
+    easily communicate with the micro-controller.
 
-	Copyright (C) 2013  Brandon Riches
+    Copyright (C) 2013  Brandon Riches
 
-	NOTE: Most of the methods and code in this library was originally designed by
-	Kevin Townsend for Adafruit Industries. The code was released under the BSD license
+    NOTE: Most of the methods and code in this library was originally designed by
+    Kevin Townsend for Adafruit Industries. The code was released under the BSD license
 
-	The following is the original license information:
+    The following is the original license information:
+     _____________________________________________________________________________
 
-	 This is a library for the LSM303 Accelerometer and magnetometer/compass
+     This is a library for the LSM303 Accelerometer and magnetometer/compass
 
-	  Designed specifically to work with the Adafruit LSM303DLHC Breakout
+      Designed specifically to work with the Adafruit LSM303DLHC Breakout
 
-	  Adafruit invests time and resources providing this open source code,
-	  please support Adafruit and open-source hardware by purchasing products
-	  from Adafruit!
+      Adafruit invests time and resources providing this open source code,
+      please support Adafruit and open-source hardware by purchasing products
+      from Adafruit!
 
-	  Written by Kevin Townsend for Adafruit Industries.
-	  BSD license, all text above must be included in any redistribution
+      Written by Kevin Townsend for Adafruit Industries.
+      BSD license, all text above must be included in any redistribution
+      ______________________________________________________________________________
 
-	-----------------------------------------------------------------------------*/
+    -----------------------------------------------------------------------------*/
 
 
 #ifndef OSQ_SENSORLIB_H_INCLUDED

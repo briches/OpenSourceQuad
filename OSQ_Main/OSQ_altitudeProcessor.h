@@ -1,121 +1,185 @@
 /*=====================================================================
- 	OSQ_AltitudeProcessor library
- 	OpenSourceQuad
- 	-------------------------------------------------------------------*/
+     OSQ_AltitudeProcessor
+     OpenSourceQuad
+     -------------------------------------------------------------------*/
 /*================================================================================
-
- 	Author		: Brandon Riches
- 	Date		: August 2013
- 	License		: GNU Public License
-
- 	This library is designed to manage altitude measurement and control algorithms
-
- 	Copyright (C) 2013  Brandon Riches
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- 	-----------------------------------------------------------------------------*/
-
-// Waiting on the Kalman for this one.
+ 
+     Author		: Brandon Riches
+     Date		: August 2013
+     License		: GNU Public License
+ 
+     This library is designed to manage altitude measurement and control algorithms
+ 
+     Copyright (C) 2013  Brandon Riches
+ 
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+     
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+     
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+     -----------------------------------------------------------------------------*/
 #ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 #define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
 
 #if ARDUINO >= 100
- #include "Arduino.h"
+    #include "Arduino.h"
 #else
- #include "WProgram.h"
+    #include "WProgram.h"
 #endif
+#include <Limits.h>
 
 #define Pi (3.14159265359F)	// Its pi.
 
-boolean isSetInitialAltitudeBarometer = false;
-boolean isSetInitialAltitudeGPS = false;
+// Keep track just for kicks
+static double previousAltitude = 0;
 
-double initialAltitudeBarometer = 0;    // From sea level;
-double initialAltitudeGPS = 0;    // From sea level;
-double previousAltitude = 0;
-double sensorAltitude = 0;
-double sensorCovariance = 1;
+/*=========================================================================
+ Function declarations
+ -----------------------------------------------------------------------*/
+void computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor);
+double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality);
+void checkRegion(struct altitudeSensor_t *sensor);
 
+/*=========================================================================
+ Altitude sensor data type
+ Uses interger math for speed
+ -----------------------------------------------------------------------*/
+typedef struct altitudeSensor_t
+{
+    // Is the sensor in its useful range, does it need LPF
+    bool active, useFilt;
+    
+    // Initial and current altitude estimates
+    int64_t initial, current;
+    
+    // Upper and lower bounds of the sensors useful range
+    int64_t usefulRange[2];
+    
+    // Filter paramters
+    int64_t inputTm1, inputTm2, outputTm1, outputTm2;
+    
+    // Weight for the weighted average 
+    int64_t confidence;
+    
+    altitudeSensor_t(int64_t acc, int64_t rangeL, int64_t rangeH, bool filt);
+};
+// Constructor
+altitudeSensor_t :: altitudeSensor_t(int64_t acc, int64_t rangeL, int64_t rangeH, bool filt)
+{
+    this->confidence = acc;
+    this->active = true;
+    this->usefulRange[0] = rangeL;
+    this->usefulRange[1] = rangeH;
+  
+    // Setup the filter
+    this->inputTm1 = this->initial;
+    this->inputTm2 = this->initial;
+    this->outputTm1 = this->initial;
+    this->outputTm2 = this->initial;
+};
 
-void setInitialAltitude(double GPS, double baro);
-bool checkUSRF(double hieght);
+// Declaration of the altitude sensors
+altitudeSensor_t baroSensor(1, LONG_MIN, LONG_MAX, true);
+altitudeSensor_t GPSSensor(1, LONG_MIN, LONG_MAX, true);
+altitudeSensor_t USRFSensor(8, 15000, 1000000, false); // 15 cm to 10 m
 
+/*=========================================================================
+ Returns an estimate of the current altitude 
+ Uses interger math for speed
+ -----------------------------------------------------------------------*/
 double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
 {
-        static int barometerSampleCount = 0;
-        double GPSCovar = 3;        // Assume covariance in GPS            // 1
-        double baroCovar = 1;       // Assume covariance in barometer      // 2
-        double USRFCovar = 0.1;     // Assume covariance in USRF           // 3
-
-        previousAltitude = sensorAltitude;
-
-        // This is a super basic kalman filter.
-        // We only use each sensor if certain conditions are met
-        // Barometer
-        if(isSetInitialAltitudeBarometer)	// Wait at least 150 ms into the loop() to get barometer altitudes
-        {
-                baro -= initialAltitudeBarometer;
-                sensorAltitude = baro;
-                sensorCovariance = baroCovar;
-        }
-
-        else if(baro != 0)
-        {
-                initialAltitudeBarometer += baro;
-                barometerSampleCount++;
-                if(barometerSampleCount == 10)
-                {
-                        isSetInitialAltitudeBarometer = true;
-                        initialAltitudeBarometer /= 10;
-                }
-        }
-
-        // GPS
-        if( (GPS_quality == 1) && (isSetInitialAltitudeGPS) )	// If the GPS is connected on 3axis
-        {
-                GPS -= initialAltitudeGPS;
-                sensorAltitude = (sensorAltitude * GPSCovar + GPS * sensorCovariance) / (sensorCovariance + GPSCovar);
-                sensorCovariance = (sensorCovariance * GPSCovar)/(sensorCovariance + GPSCovar);
-        }
-        else if(GPS_quality == 1)
-        {
-                initialAltitudeGPS = GPS;
-                isSetInitialAltitudeGPS = true;
-        }
-
-        // USRF
-        if(checkUSRF(10.0))	// If under 10 m, use the USRF.
-        {
-                USRF *= cos(phi * Pi / 180);
-                sensorAltitude = (sensorAltitude * USRFCovar + USRF * sensorCovariance) / (sensorCovariance + USRFCovar);
-                sensorCovariance = (sensorCovariance * USRFCovar)/(sensorCovariance + USRFCovar);
-        }
-
-        // Update covariance with "movement step"
-        sensorCovariance += abs(previousAltitude - sensorAltitude);
-
-
-        return sensorAltitude;
-
+    int64_t GPS_ = 100000*GPS;
+    int64_t baro_ = 100000*baro;
+    int64_t USRF_ = 100000*USRF;
+    int64_t phi_ = 100000*phi;
+    double sensorAltitude = 0; // Actual result
+    int measurementCount = 0;
+    
+    // Check active regions
+    checkRegion(&USRFSensor);
+    checkRegion(&GPSSensor);
+    checkRegion(&baroSensor);
+    
+    // Barometer
+    if(baroSensor.active)
+    {
+        // Filter
+        //computeCheby2(baro_, &baroSensor);
+        baroSensor.current = baro_;
+        // Add result into final estimate
+        sensorAltitude += baroSensor.current - baroSensor.initial;
+        measurementCount++;
+    }
+    else{/* Sadness */}
+    
+    // USRF
+    if(USRFSensor.active)
+    {
+        sensorAltitude += USRF_;
+        measurementCount++;
+    }
+    
+    Serial.println(sensorAltitude);
+    sensorAltitude /= measurementCount;
+    // Convert to real altitude and return.
+    return sensorAltitude/100000;
 };
 
-
-bool checkUSRF(double hieght)
+/*=========================================================================
+ void checkRegion(struct altitudeSensor_t *sensor)
+ Check if the sensor's output will be valid
+ -----------------------------------------------------------------------*/
+void checkRegion(struct altitudeSensor_t *sensor)
 {
-        return (sensorAltitude <= hieght);
+    if(previousAltitude < sensor->usefulRange[0] || previousAltitude > sensor->usefulRange[1])
+    {
+        sensor->active = false;
+    }
+    else sensor->active = true;
 };
+
+/*=========================================================================
+ int64_t computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor)
+ Filter the current sensor output
+ -----------------------------------------------------------------------*/
+void computeCheby2(int64_t currentInput, struct altitudeSensor_t *sensor)
+{	
+    // Cheby2(2,60,0.25)
+    #define _b0  130L // Multiplied by 100 thousand
+    #define _b1 -130L
+    #define _b2  130L
+    
+    #define _a1 -194760L
+    #define _a2  94900L
+    
+    int64_t output;
+
+    output = _b0 * currentInput           +
+        _b1 * sensor->inputTm1  +
+        _b2 * sensor->inputTm2  -
+        _a1 * sensor->outputTm1 -
+        _a2 * sensor->outputTm2;
+        
+    sensor->inputTm2 = sensor->inputTm1;
+    sensor->inputTm1 = currentInput;
+
+    sensor->outputTm2 = sensor->outputTm1;
+    sensor->outputTm1 = output;
+
+    sensor->current = output;
+};
+
+
 
 #endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+
 

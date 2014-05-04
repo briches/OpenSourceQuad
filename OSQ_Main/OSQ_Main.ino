@@ -1,31 +1,31 @@
 /*=====================================================================
- 	OSQ_Main
- 	OpenSourceQuad
- 	-------------------------------------------------------------------*/
-/**================================================================================
+     OSQ_Main
+     OpenSourceQuad
+     -------------------------------------------------------------------*/
+/*================================================================================
  
- 	Author		: Brandon Riches
- 	Date		: September 2013
- 	License		: GNU Public License
+     Author		: Brandon Riches
+     Date		: August 2013
+     License		: GNU Public License
+
+     Main file for the OpenSourceQuad flight control firmware
+
+     Copyright (C) 2013  Brandon Riches
+
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+     
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+     
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
- 	Main file for OSQ firmware
- 
- 	Copyright (C) 2013  Brandon Riches
- 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
- 	-----------------------------------------------------------------------------*/
+     -----------------------------------------------------------------------------*/
 #include "OSQ_Kinematics.h"
 #include "OSQ_IMU.h"
 #include "OSQ_Quadcopter.h"
@@ -51,9 +51,11 @@ long int flightNumber;
 uint64_t cycleCount;
 bool receivedStartupCommand = false;
 
-/** Debugging Options **/
+/*=========================================================================
+ Serial debugger options
+ -----------------------------------------------------------------------*/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
-#define attitudeDebug     
+//#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
@@ -65,12 +67,16 @@ bool receivedStartupCommand = false;
 //#define batteryDebug
 //#define GPSDebug
 
-/** Hardware Options **/
-/// Pick a battery
+/*=========================================================================
+ Hardware options
+ -----------------------------------------------------------------------*/
+//** Battery **/
 #define LIPO_3s
 //#define 4sLIPO
 
-/// Recalibrate Sensor Offsets
+/*=========================================================================
+ Attitude offset calibration
+ -----------------------------------------------------------------------*/
 // Comment this line to use previously calibrated measurements
 //#define newSensorOffsets
 #define usePreviousOffsets
@@ -78,13 +84,16 @@ bool receivedStartupCommand = false;
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
 
-/** Sensor analog pins      **/
+/*=========================================================================
+ Sensor analog pins 
+ -----------------------------------------------------------------------*/
 #define USRF_PIN (0x0)        
 
-/** SD logging definitions **/
+/*=========================================================================
+ SD logging definitions 
+ -----------------------------------------------------------------------*/
 char logFilename[12];
 File logFile;
-
 
 /*=========================================================================
  scanTelemetry()
@@ -368,7 +377,6 @@ void processBatteryAlarms()
         motorControl.motorDISARM();
         while(true);
     }
-
 }
 
 /*=========================================================================
@@ -500,7 +508,34 @@ void logFileStart()
 }
 
 /*=========================================================================
- Main Set-up
+ barometerInit
+ - Initializes the barometer
+ -----------------------------------------------------------------------*/
+int64_t barometerInit()
+{
+    // Take 10 readings of altitude to calibrate
+    int64_t initialAltitude, result;
+    int64_t count;
+    for(int i = 0; i<10; i++)
+    {
+        barometer.updatePTA();
+        delay(35); // Delay 35 ms for ADC
+        if(barometer.altitude != 0)
+        {
+            initialAltitude += (int64_t)(100000*barometer.altitude);
+            count++;
+        }
+    }
+    result = initialAltitude / count;
+    return result;
+}
+
+/*=========================================================================
+ -----------------------------------------------------------------------*/
+/*=========================================================================
+ ******************************* Main Setup *******************************
+ -----------------------------------------------------------------------*/
+ /*=========================================================================
  -----------------------------------------------------------------------*/
 void setup()
 { 
@@ -533,10 +568,6 @@ void setup()
 
     statusLED(4);
 
-    softwareVersionMinor = EEPROM_read8(software_version_addr);
-    softwareVersionMajor = EEPROM_read8(software_version_addr + 1);
-    flightNumber = ((EEPROM_read8(flight_number_addr + 1))<<8) | EEPROM_read8(flight_number_addr);
-    
     // Use the previously stored sensor offset values
     #ifdef usePreviousOffsets
         sensor_offs_t accelOffsets;
@@ -553,12 +584,12 @@ void setup()
         kinematics.io_wy = gyroOffsets.y/1000;
         kinematics.io_wz = gyroOffsets.z/1000;
         
-        Serial.println(kinematics.io_ax);
-        Serial.println(kinematics.io_ay);
-        Serial.println(kinematics.io_az);
-        Serial.println(kinematics.io_wx);
-        Serial.println(kinematics.io_wy);
-        Serial.println(kinematics.io_wz);
+//        Serial.println(kinematics.io_ax);
+//        Serial.println(kinematics.io_ay);
+//        Serial.println(kinematics.io_az);
+//        Serial.println(kinematics.io_wx);
+//        Serial.println(kinematics.io_wy);
+//        Serial.println(kinematics.io_wz);
     #endif
     statusLED(1);
 
@@ -568,15 +599,7 @@ void setup()
 
     statusLED(4);
     #ifdef serialDebug
-        Serial.println("------------------------OpenSourceQuad------------------------");
-        Serial.println();
-        Serial.print("Software version: ");               
-        Serial.print(softwareVersionMajor);
-        Serial.print(".");          
-        Serial.println(softwareVersionMinor);
-        Serial.print("Flight number: ");
-        Serial.println(flightNumber);
-        Serial.println();
+        Serial.println("\n------------------------OpenSourceQuad------------------------");
         Serial.println("--------------------------------------------------------------");
     #endif
     statusLED(1);
@@ -677,13 +700,17 @@ void setup()
         writeEEPROMOffsets(1, &gyroOffsets);
     #endif
     
-    // Initialize barometric sensor
-//    barometer.readEEPROM();
-//    barometer.setSLP(29.908);
-//    barometer.setOSS(3);
+    /** Initialize barometric sensor **/
+    barometer.readEEPROM();
+    barometer.setSLP(30);
+    barometer.setOSS(3);
+    // Set the initial altitude
+    baroSensor.initial = barometerInit();
 
-    setupCheby2();       // Initialize the fourth order struct
+    /** Initialize accelerometer filter **/
+    setupCheby2();
 
+    /** Initialize GPS **/
     #ifdef serialDebug
         Serial.println("Initializing GPS");
     #endif
@@ -696,7 +723,7 @@ void setup()
     /*****************************/
     /* Write some EEPROM config data */
     /*****************************/
-    writeConfigBlock();
+    //writeConfigBlock();
 
     /*****************************/
     /* Initialize PID */
@@ -739,10 +766,9 @@ void setup()
     kinematics.roll = 0;
 
     statusLED(1);
-	
 }
 
-/*===============================================
+/*=========================================================================
  Time keeping for polling
  -----------------------------------------------------------------------*/
 double t_200Hz;
@@ -759,27 +785,18 @@ void fastTask()
 {
     kinematicEvent(0,&accel,&mag,&gyro, &logFile, pitchPID.setpoint);
     
-//    // Artificially implement a step input of 10 degrees, at t = 10s
-//    static bool haveStepped = false;
-//    if(millis() - startTime > 10000 && !haveStepped)
-//    {
-//        haveStepped = true;
-//        setpoint(&rollPID, kinematics.roll + 10);
-//        setpoint(&pitchPID, kinematics.pitch + 10);
-//    }
+    /* Check for safety */
+    if(millis() - startTime < startupPeriod)  // In OSQ_kinematics.h
+    {
+    	pitchPID.setpoint = kinematics.pitch;
+	rollPID.setpoint = kinematics.roll; 
+	yawPID.setpoint = kinematics.yaw;
+    }
 
-	/* Check for safety */
-	if(millis() - startTime < startupPeriod)  // In OSQ_kinematics.h
-	{
-		pitchPID.setpoint = kinematics.pitch;
-		rollPID.setpoint = kinematics.roll; 
-		yawPID.setpoint = kinematics.yaw;
-	}
-
-	// Run PID algorithm
+    // Run PID algorithm
     double rollOut = calculatePID(&rollPID, kinematics.roll, kinematics.rollRate);
     double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
-	double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
+    double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
 	
     motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.);
 
@@ -851,7 +868,7 @@ void _70HzTask()
 void _20HzTask()
 {
     // Pending shipment of hardware
-    //barometer.updatePTA(); 
+    barometer.updatePTA(); 
 
     kinematicEvent(1, &accel, &mag, &gyro, &logFile, rollPID.setpoint);
 
@@ -868,18 +885,18 @@ void _20HzTask()
 void _10HzTask()
 {
     double altUSRF = analogRead(USRF_PIN)*0.01266762;
-    kinematics.altitude = getAccurateAltitude(  GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
+    kinematics.altitude = getAccurateAltitude(GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
 
     #ifdef serialDebug
         #ifdef altitudeDebug
-            Serial.print(" Altitude: ");
+            Serial.print("Alt: ");
             Serial.print(kinematics.altitude);
             Serial.print(" USRF: ");
             Serial.print(altUSRF);
+            Serial.print(" Baro: ");
+            Serial.print(barometer.altitude);
             Serial.print(" GPS: ");
-            Serial.print(GPSDATA.altitude);
-            Serial.print(" Barometer: ");
-            Serial.println(barometer.altitude);
+            Serial.println(GPSDATA.altitude);
         #endif
     #endif
 
@@ -918,30 +935,24 @@ void _1HzTask()
     #endif
 }
 
-/**=========================================================================
- MAIN CONTROL LOOP
+/*=========================================================================
+ -----------------------------------------------------------------------*/
+/*=========================================================================
+ ******************************* Main Loop *******************************
+ -----------------------------------------------------------------------*/
+ /*=========================================================================
  -----------------------------------------------------------------------*/
 void loop()                          
 {	
     // Check if we have enough time to safely do non-critical processes
     static bool priority = true;
-	
-    // 200 Hz Process
+
     if(priority)
     {
         statusLED(4);
         fastTask();
 	priority = false;
         statusLED(1);
-		
-		/* if(millis() - startTime > 10000)
-		{
-			double x = 1000 * (double)cycleCount/((double)millis() - (double)startTime);
-			Serial.print("Frequency: "); Serial.println(x);
-			Serial.print("Elapsed Time: "); Serial.println((double)millis() - (double)startTime);
-			Serial.print("Number of cycles: "); Serial.println((double)cycleCount);
-		} */
-
     }
     else priority = true;
 
@@ -982,7 +993,6 @@ void loop()
     }
 
     scanTelemetry();
-	
 
     // Track the number of elapsed cycles
     cycleCount++;
