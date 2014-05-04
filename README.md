@@ -2,12 +2,12 @@
 ==========
 
 <b>Author</b>: Brandon Riches<br />
+
 Started in May of 2013, and always a work in progress! <br />
 
 Feel free to <b>[fork](https://github.com/briches/OpenSourceQuad/fork)</b> the repo and submit a pull request.  
 
 Released under the GNU Public License  
-
 
 <b>Programming the flight controller:</b>  
 ----
@@ -36,8 +36,8 @@ Description
 
 Quadcopter flight firmware! 
 
-Our end goal is to create future proof, easy-to-use 
-and customizable firmware for any flight configuration ( which is quite the lofty goal, but we're working on it).
+The end goal is to create future proof, easy-to-use 
+and customizable firmware for any flight configuration ( which is quite the lofty goal, but I'm working on it).
 <br /><br />
 
 
