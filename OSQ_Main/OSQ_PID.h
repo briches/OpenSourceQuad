@@ -64,8 +64,8 @@ double yawI = 4.32;
 double yawD = 0.5; // Attempt 1
 
 double altitudekP = 2;
-double altitudekI = 0.3;
-double altitudekD = 0.05;
+double altitudekI = 0.0;
+double altitudekD = 2;
 
 // Used for windup guard
 enum{lower, upper};

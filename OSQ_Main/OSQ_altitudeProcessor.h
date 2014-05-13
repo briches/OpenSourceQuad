@@ -48,7 +48,7 @@ bool inFlight, altitudeHold;
  Function declarations
  -----------------------------------------------------------------------*/
 long computeRunningAvg(long currentInput, struct altitudeSensor_t *sensor);
-double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality);
+double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality, double maxChange);
 void checkRegion(struct altitudeSensor_t *sensor);
 long weightedAvg(struct altitudeSensor_t *sensor1, struct altitudeSensor_t *sensor2, struct altitudeSensor_t *sensor3);
 
@@ -95,12 +95,13 @@ altitudeSensor_t USRFSensor(5, 100, 10000, false); // 40 cm to 10 m
  Returns an estimate of the current altitude 
  Uses interger math for speed
  -----------------------------------------------------------------------*/
-double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality)
+double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int GPS_quality, double maxChange)
 {
     long GPS_ = 1000*GPS;
     long baro_ = 1000*baro;
     long USRF_ = 1000*USRF;
     long phi_ = 1000*phi;
+    long maxChange_ = 1000*maxChange;
     double sensorAltitude = 0; // Actual result
     int measurementCount = 0;
     
@@ -122,8 +123,12 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
     else{/* Sadness */}
     
     // USRF
+    if(maxChange_ < USRF_ - USRFSensor.current)
+        USRFSensor.active = false;
     if(!inFlight)
         USRFSensor.active = false;
+    else if(inFlight)
+        USRFSensor.active = true;
     if(USRFSensor.active)
     {
         USRFSensor.current = USRF_;

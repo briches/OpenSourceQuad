@@ -55,7 +55,7 @@ bool receivedStartupCommand = false;
  Serial debugger options
  -----------------------------------------------------------------------*/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
-//#define attitudeDebug     
+#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
@@ -79,8 +79,8 @@ bool receivedStartupCommand = false;
  Attitude offset calibration
  -----------------------------------------------------------------------*/
 // Comment this line to use previously calibrated measurements
-//#define newSensorOffsets
-#define usePreviousOffsets
+#define newSensorOffsets
+//#define usePreviousOffsets
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -828,16 +828,8 @@ void fastTask()
     double pitchOut = calculatePID(&pitchPID, kinematics.pitch, kinematics.pitchRate);
     double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
     
-    // PID algorithm for altitude
-    double altOut = 0;
-    if(altitudeHold)
-        altOut = calculatePID(&altitudePID, kinematics.climbRate, 0.);   
-    else
-        altOut = 0;
-    
     /** Update motors with PID outputs **/
-    //motorControl.updateMotors(pitchOut, rollOut, yawOut, altOut);
-    motorControl.updateMotors(0., 0., 0., altOut);
+    //motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.0);
 
     t_200Hz = micros(); 
 
@@ -869,17 +861,6 @@ void fastTask()
 	    Serial.println(yawPID.output);
     	    Serial.println();
 	#endif
-
-        #ifdef altPIDdebug
-            Serial.print("Alt: ");
-            Serial.print(kinematics.altitude);
-            Serial.print("Rate: ");
-            Serial.print(kinematics.climbRate);
-            Serial.print("Target: ");
-            Serial.print(altitudePID.setpoint);
-            Serial.print("PID out: ");
-            Serial.println(altOut);
-        #endif
         
         #ifdef attitudeDebug
             Serial.print(" Pitch: ");
@@ -935,19 +916,31 @@ void _20HzTask()
 void _10HzTask()
 {
     double altUSRF = analogRead(USRF_PIN)*0.01266762;
+    double maxAllowedChange;
     
     // Integrate the different sensor readings and calculate vertical rate, assuming
     // a perfect 10Hz loop.
-    kinematics.altitude = getAccurateAltitude(GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality);
+    maxAllowedChange = 2 * kinematics.prevClimbRate / 0.1; // Twice the distance we would have moved previously.
+    kinematics.altitude = getAccurateAltitude(GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality, maxAllowedChange);
     kinematics.climbRate = ((kinematics.altitude - previousAltitude)/0.1 + kinematics.climbRate + kinematics.prevClimbRate)/3;
     kinematics.prevClimbRate = kinematics.climbRate;
     
-    if(kinematics.altitude > 1 && !inFlight)
+    if(kinematics.altitude > 1 && !inFlight || altitudeHold)
         inFlight = true;
     
     // Setpoint is target rate multiplied by a constant gain
-    double climbGain = 0.05;
+    double climbGain = 0.5;
     altitudePID.setpoint = climbGain * (targetAltitude - kinematics.altitude);
+    
+    /// PID algorithm for altitude
+    double altOut = 0;
+    if(altitudeHold)
+        altOut = calculatePID(&altitudePID, kinematics.climbRate, 0.);   
+    else
+        altOut = 0;
+    
+    // Update motors with altitude hold output
+    motorControl.updateMotors(0., 0., 0., altOut);
     
     #ifdef serialDebug
         #ifdef altitudeDebug
@@ -959,6 +952,17 @@ void _10HzTask()
             Serial.print(barometer.altitude);
             Serial.print(" GPS: ");
             Serial.println(GPSDATA.altitude);
+        #endif
+        
+        #ifdef altPIDdebug
+            Serial.print("Alt: ");
+            Serial.print(kinematics.altitude);
+            Serial.print("Rate: ");
+            Serial.print(kinematics.climbRate);
+            Serial.print("Target: ");
+            Serial.print(altitudePID.setpoint);
+            Serial.print("PID out: ");
+            Serial.println(altOut);
         #endif
     #endif
 

@@ -1,0 +1,20 @@
+
+
+Problems with V3.0
+1. Board is pretty large - Made 7x7 cm
+2. Trace width inconsistant
+3. 3V3 Reg incorrectly routed
+4. Servo leads incorrectly routed
+5. Capacitor on 1.8V reg output
+6. Barometeric sensor, make adaptable between BMP180 and BMP085
+7. Include power connections on board!!
+
+V3.1
+Layers
+Top. Normal Traces w/ GND Plane
+Route2. Normal Traces w/ GND Plane
+Route15. AGND Plane, no traces!
+Bottom. +Vbatt Plane
+
+Need to route GND planes around power connections
+ - allow adequate spacing

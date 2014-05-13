@@ -209,7 +209,7 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
 {
     // Filter parameter
-    double beta = 0.999;
+    double beta = 0.99;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
