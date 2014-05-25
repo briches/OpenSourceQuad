@@ -10,13 +10,14 @@ function [] = quadFiltAnalyze()
 
     % Open the selected file
     if length(file_list) < 2
-        filename = s.name;
         fid = fopen(filename,'r');
     else 
         selection = menu('Select a file',file_list);
         filename = s(selection,1).name;
         fid = fopen(filename,'r');
     end
+    filename = s.name;
+      
     analyzefrequency = menu('Run frequency analysis?','No','Yes');
 
     % Find the first line of .csv format

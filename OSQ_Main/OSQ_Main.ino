@@ -55,7 +55,7 @@ bool receivedStartupCommand = false;
  Serial debugger options
  -----------------------------------------------------------------------*/
 #define serialDebug        // <- Must be defined to use any of the other debuggers
-#define attitudeDebug     
+//#define attitudeDebug     
 //#define altitudeDebug
 //#define rx_txDebug
 //#define autoBroadcast
@@ -79,8 +79,8 @@ bool receivedStartupCommand = false;
  Attitude offset calibration
  -----------------------------------------------------------------------*/
 // Comment this line to use previously calibrated measurements
-#define newSensorOffsets
-//#define usePreviousOffsets
+//#define newSensorOffsets
+#define usePreviousOffsets
 
 /** Math related definitions **/
 #define Pi (3.14159265359F) // Its pi.
@@ -829,7 +829,7 @@ void fastTask()
     double yawOut = calculatePID(&yawPID, kinematics.yaw, kinematics.yawRate);
     
     /** Update motors with PID outputs **/
-    //motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.0);
+    motorControl.updateMotors(pitchOut, rollOut, yawOut, 0.0);
 
     t_200Hz = micros(); 
 
