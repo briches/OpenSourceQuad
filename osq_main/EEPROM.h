@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_EEPROM
+     EEPROM
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -29,8 +29,8 @@
  
      -----------------------------------------------------------------------------*/
 
-#ifndef OSQ_EEPROM_H_INCLUDED
-#define OSQ_EEPROM_H_INCLUDED
+#ifndef EEPROM_H_INCLUDED
+#define EEPROM_H_INCLUDED
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -205,5 +205,5 @@ void writeEEPROMOffsets(byte sensorID, sensor_offs_t* offsets)
 };
 
 
-#endif // OSQ_EEPROM_H_INCLUDED
+#endif // EEPROM_H_INCLUDED
 

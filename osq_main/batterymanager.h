@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_BatteryMonitor
+     BatteryMonitor
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -26,8 +26,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_BATTERYMONITOR_H_INCLUDED
-#define OSQ_BATTERYMONITOR_H_INCLUDED
+#ifndef BATTERYMONITOR_H_INCLUDED
+#define BATTERYMONITOR_H_INCLUDED
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -130,15 +130,20 @@ void monitorVoltage()
         }
         initialized = true;
     }
-
+    
+    double total = analogRead(2) * 3.0 * 5.0 / 1023.0;
+    
+    battery.storageArray[0][battery.arrayLocation[0]] = analogRead(0) * (5.0/1023.0);
+    battery.storageArray[1][battery.arrayLocation[1]] = analogRead(1) * 2 * (5.0/1023.0) - battery.storageArray[0][battery.arrayLocation[0]];
+    battery.storageArray[2][battery.arrayLocation[2]] = analogRead(2) * 3 * (5.0/1023.0) - battery.storageArray[1][battery.arrayLocation[1]] - battery.storageArray[0][battery.arrayLocation[0]];
+    
     for(int cell = 0; cell < 3; cell++)
     {
-        battery.storageArray[cell][battery.arrayLocation[cell]] = analogRead(cell + 1) * (5.0/1023.0); // Read voltage
         battery.voltage[cell] = filterVoltage(cell);	// Running average filter the voltage
         checkAlarm(cell);	// Check for low voltage
     }
 };
 
-#endif // OSQ_BATTERYMONITOR_H_INCLUDED
+#endif // BATTERYMONITOR_H_INCLUDED
 
 

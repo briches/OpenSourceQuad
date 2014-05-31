@@ -1,7 +1,7 @@
 /*======================================================================
- 	NoWire library
- 	OpenSourceQuad
- 	-------------------------------------------------------------------*/
+     NoWire library
+     OpenSourceQuad
+     -------------------------------------------------------------------*/
 /*================================================================================
  
      Author		: Brandon Riches
@@ -29,8 +29,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_NOWIRE_H_INCLUDED
-#define OSQ_NOWIRE_H_INCLUDED
+#ifndef NOWIRE_H_INCLUDED
+#define NOWIRE_H_INCLUDED
 
 #if (ARDUINO >= 100)
 #include "Arduino.h"
@@ -128,5 +128,5 @@ bool NoWire :: start()
 
 NoWire receiver;
 
-#endif // OSQ_NOWIRE_H_INCLUDED
+#endif // NOWIRE_H_INCLUDED
 

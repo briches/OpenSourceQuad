@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_AltitudeProcessor
+     AltitudeProcessor
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -26,8 +26,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_ALTITUDEPROCESSOR_H_INCLUDED
-#define OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+#ifndef ALTITUDEPROCESSOR_H_INCLUDED
+#define ALTITUDEPROCESSOR_H_INCLUDED
 
 #if ARDUINO >= 100
     #include "Arduino.h"
@@ -210,6 +210,6 @@ long computeRunningAvg(long currentInput, struct altitudeSensor_t *sensor)
 
 
 
-#endif // OSQ_ALTITUDEPROCESSOR_H_INCLUDED
+#endif // ALTITUDEPROCESSOR_H_INCLUDED
 
 

@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_GPS
+     GPS
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -27,8 +27,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_GPS_H_INCLUDED
-#define OSQ_GPS_H_INCLUDED
+#ifndef GPS_H_INCLUDED
+#define GPS_H_INCLUDED
 
 #include <SoftwareSerial.h>
 #include <Adafruit_GPS.h>
@@ -105,6 +105,6 @@ SIGNAL(TIMER0_COMPA_vect)
 }
 
 
-#endif // OSQ_GPS_H_INCLUDED
+#endif // GPS_H_INCLUDED
 
 

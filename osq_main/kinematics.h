@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_Kinematics liarary
+     Kinematics liarary
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -27,8 +27,8 @@
  
      -----------------------------------------------------------------------------*/
 
-#ifndef OSQ_KINEMATICS_H_INCLUDED
-#define OSQ_KINEMATICS_H_INCLUDED
+#ifndef KINEMATICS_H_INCLUDED
+#define KINEMATICS_H_INCLUDED
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -36,8 +36,8 @@
 #include "WProgram.h"
 #endif
 
-#include "OSQ_IMU.h"
-#include "OSQ_Motors.h"
+#include "IMU.h"
+#include "Motors.h"
 #include <Wire.h>
 #include <SD.h>
 
@@ -108,7 +108,7 @@ double xmagMin, xmagMax, ymagMin, ymagMax, zmagMin, zmagMax;
 
 // Kinematic events include yaw, pitch and roll calculations
 // as well as altitudes
-void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB_mag *mag, class SENSORLIB_gyro *gyro, class File *logFile, double pitchSet)
+void kinematicEvent(int eventType, class IMU_accel *accel, class IMU_mag *mag, class IMU_gyro *gyro, class File *logFile, double pitchSet)
 {
     sensors_event_t accel_event, mag_event, gyro_event;
     double elapsedTime = 0, t_convert = 1000000;
@@ -165,21 +165,21 @@ void kinematicEvent(int eventType, class SENSORLIB_accel *accel, class SENSORLIB
 	double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
 	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
 		
-//        // Log data for debug purposes, will be taken out
-//        if (logFile)
-//        {
-//            logFile->print(micros());
-//            logFile->print(',');
-//            logFile->print(kinematics.pitch);
-//            logFile->print(',');
-//            logFile->print(pitchAcc);
-//	    logFile->print(',');
-//	    logFile->println(pitchSet);
-//        }
-//        else
-//        {
-//            Serial.println("Err w/in kinematics");
-//        }
+        // Log data for debug purposes, will be taken out
+        if (logFile)
+        {
+            logFile->print(micros());
+            logFile->print(',');
+            logFile->print(ax);
+            logFile->print(',');
+            logFile->print(ay);
+	    logFile->print(',');
+	    logFile->println(az);
+        }
+        else
+        {
+            Serial.println("Err w/in kinematics");
+        }
 
         // Phi is used to correct the ultransonic range finder
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;

@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_IMU
+     IMU
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -34,8 +34,8 @@
     -----------------------------------------------------------------------------*/
 
 
-#ifndef OSQ_SENSORLIB_H_INCLUDED
-#define OSQ_SENSORLIB_H_INCLUDED
+#ifndef IMU_H_INCLUDED
+#define IMU_H_INCLUDED
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -300,11 +300,11 @@ const unsigned char FS_Sel = 0;
 
 
 /* Unified sensor driver for the accelerometer */
-class SENSORLIB_accel
+class IMU_accel
 {
 	public:
 
-		SENSORLIB_accel(int32_t sensorID = -1);
+		IMU_accel(int32_t sensorID = -1);
 		bool begin(void);
 		void getEvent(sensors_event_t*);
 
@@ -320,12 +320,12 @@ class SENSORLIB_accel
 };
 
 /* Unified sensor driver for the magnetometer */
-class SENSORLIB_mag
+class IMU_mag
 {
 	public:
 
 
-		SENSORLIB_mag(int32_t sensorID = -1);
+		IMU_mag(int32_t sensorID = -1);
 		bool begin(void);
 		void setMagGain(lsm303MagGain gain);
 		void getEvent(sensors_event_t*);
@@ -342,11 +342,11 @@ class SENSORLIB_mag
 		void read(void);
 };
 
-class SENSORLIB_gyro
+class IMU_gyro
 {
 	public:
 
-		SENSORLIB_gyro(int32_t sensorID = -1);
+		IMU_gyro(int32_t sensorID = -1);
 		bool begin(void);
 		void getEvent(sensors_event_t*);
 
@@ -382,7 +382,7 @@ static float _lsm303Mag_Gauss_LSB_Z  = 980.0F;   // Varies with gain
     @brief  Instantiates a new  class
 */
 /**************************************************************************/
-SENSORLIB_gyro::SENSORLIB_gyro(int32_t sensorID) {
+IMU_gyro::IMU_gyro(int32_t sensorID) {
   _sensorID = sensorID;
 }
 
@@ -392,7 +392,7 @@ SENSORLIB_gyro::SENSORLIB_gyro(int32_t sensorID) {
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-byte SENSORLIB_gyro::write8(byte address, byte reg, byte value)
+byte IMU_gyro::write8(byte address, byte reg, byte value)
 {
   Wire.beginTransmission(address);
   #if ARDUINO >= 100
@@ -411,7 +411,7 @@ byte SENSORLIB_gyro::write8(byte address, byte reg, byte value)
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-byte SENSORLIB_gyro::read8(byte address, byte reg)
+byte IMU_gyro::read8(byte address, byte reg)
 {
   byte value;
 
@@ -438,7 +438,7 @@ byte SENSORLIB_gyro::read8(byte address, byte reg)
     @brief  Reads the raw data from the gyro sensor
 */
 /**************************************************************************/
-void SENSORLIB_gyro::read()
+void IMU_gyro::read()
 {
   // Read the accelerometer
   Wire.beginTransmission((byte)GYRO_ADDR);
@@ -485,7 +485,7 @@ void SENSORLIB_gyro::read()
     @brief  Setup the HW
 */
 /**************************************************************************/
-bool SENSORLIB_gyro::begin()
+bool IMU_gyro::begin()
 {
 	// Enable I2C
 	Wire.begin();
@@ -507,7 +507,7 @@ bool SENSORLIB_gyro::begin()
     @brief  Gets the most recent sensor event
 */
 /**************************************************************************/
-void SENSORLIB_gyro::getEvent(sensors_event_t *event) {
+void IMU_gyro::getEvent(sensors_event_t *event) {
   /* Clear the event */
   memset(event, 0, sizeof(sensors_event_t));
 
@@ -539,7 +539,7 @@ void SENSORLIB_gyro::getEvent(sensors_event_t *event) {
     @brief  Instantiates a new Adafruit_LSM303 class
 */
 /**************************************************************************/
-SENSORLIB_accel::SENSORLIB_accel(int32_t sensorID) {
+IMU_accel::IMU_accel(int32_t sensorID) {
   _sensorID = sensorID;
 }
 
@@ -549,7 +549,7 @@ SENSORLIB_accel::SENSORLIB_accel(int32_t sensorID) {
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-byte SENSORLIB_accel::write8(byte address, byte reg, byte value)
+byte IMU_accel::write8(byte address, byte reg, byte value)
 {
   Wire.beginTransmission(address);
   #if ARDUINO >= 100
@@ -567,7 +567,7 @@ byte SENSORLIB_accel::write8(byte address, byte reg, byte value)
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-byte SENSORLIB_accel::read8(byte address, byte reg)
+byte IMU_accel::read8(byte address, byte reg)
 {
   byte value;
 
@@ -594,7 +594,7 @@ byte SENSORLIB_accel::read8(byte address, byte reg)
     @brief  Reads the raw data from the sensor
 */
 /**************************************************************************/
-void SENSORLIB_accel::read()
+void IMU_accel::read()
 {
   // Read the accelerometer
   Wire.beginTransmission((byte)ACCEL_ADDR);
@@ -641,7 +641,7 @@ void SENSORLIB_accel::read()
     @brief  Setups the HW
 */
 /**************************************************************************/
-bool SENSORLIB_accel::begin()
+bool IMU_accel::begin()
 {
   // Enable I2C
   Wire.begin();
@@ -663,7 +663,7 @@ bool SENSORLIB_accel::begin()
     @brief  Gets the most recent sensor event
 */
 /**************************************************************************/
-void SENSORLIB_accel::getEvent(sensors_event_t *event) {
+void IMU_accel::getEvent(sensors_event_t *event) {
   /* Clear the event */
   memset(event, 0, sizeof(sensors_event_t));
 
@@ -696,7 +696,7 @@ void SENSORLIB_accel::getEvent(sensors_event_t *event) {
     @brief  Instantiates a new Adafruit_LSM303 class
 */
 /**************************************************************************/
-SENSORLIB_mag::SENSORLIB_mag(int32_t sensorID) {
+IMU_mag::IMU_mag(int32_t sensorID) {
   _sensorID = sensorID;
 }
 
@@ -705,7 +705,7 @@ SENSORLIB_mag::SENSORLIB_mag(int32_t sensorID) {
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-void SENSORLIB_mag::write8(byte address, byte reg, byte value)
+void IMU_mag::write8(byte address, byte reg, byte value)
 {
   Wire.beginTransmission(address);
   #if ARDUINO >= 100
@@ -723,7 +723,7 @@ void SENSORLIB_mag::write8(byte address, byte reg, byte value)
     @brief  Abstract away platform differences in Arduino wire library
 */
 /**************************************************************************/
-byte SENSORLIB_mag::read8(byte address, byte reg)
+byte IMU_mag::read8(byte address, byte reg)
 {
   byte value;
 
@@ -750,7 +750,7 @@ byte SENSORLIB_mag::read8(byte address, byte reg)
     @brief  Reads the raw data from the sensor
 */
 /**************************************************************************/
-void SENSORLIB_mag::read()
+void IMU_mag::read()
 {
   // Read the magnetometer
   Wire.beginTransmission((byte)MAG_ADDR);
@@ -799,7 +799,7 @@ void SENSORLIB_mag::read()
     @brief  Setups the HW
 */
 /**************************************************************************/
-bool SENSORLIB_mag::begin()
+bool IMU_mag::begin()
 {
   // Enable I2C
   Wire.begin();
@@ -818,7 +818,7 @@ bool SENSORLIB_mag::begin()
     @brief  Sets the magnetometer's gain
 */
 /**************************************************************************/
-void SENSORLIB_mag::setMagGain(lsm303MagGain gain)
+void IMU_mag::setMagGain(lsm303MagGain gain)
 {
   write8(MAG_ADDR, MAG_CRB_REG_M, gain);
 
@@ -861,8 +861,8 @@ void SENSORLIB_mag::setMagGain(lsm303MagGain gain)
 /*!
     @brief  Gets the most recent sensor event
 */
-/**************************************************************************/
-void SENSORLIB_mag::getEvent(sensors_event_t *event) {
+/*************************************************************************/
+void IMU_mag::getEvent(sensors_event_t *event) {
   /* Clear the event */
   memset(event, 0, sizeof(sensors_event_t));
 
@@ -878,9 +878,9 @@ void SENSORLIB_mag::getEvent(sensors_event_t *event) {
   event->magnetic.z = _magData.z / _lsm303Mag_Gauss_LSB_Z * SENSORS_GAUSS_TO_MICROTESLA;
 };
 
-SENSORLIB_accel   	accel;
-SENSORLIB_mag	        mag;
-SENSORLIB_gyro          gyro;
+IMU_accel   	accel;
+IMU_mag	        mag;
+IMU_gyro          gyro;
 
 #endif
 

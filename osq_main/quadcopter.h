@@ -1,14 +1,14 @@
 /*=====================================================================
- 	OSQ_Quadcopter library
- 	OpenSourceQuad
- 	-------------------------------------------------------------------*/
+     Quadcopter library
+     OpenSourceQuad
+     -------------------------------------------------------------------*/
 /*================================================================================
  
      Author		: Brandon Riches
      Date		: August 2013
      License		: GNU Public License
  
-     Outdated library, has some basic functions related to LEDS and sensor calibration
+     Outdated library, has some basic functions related to LEDs and sensor calibration
  
      Copyright (C) 2013  Brandon Riches
  
@@ -26,8 +26,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_QUADCOPTER_H_INCLUDED
-#define OSQ_QUADCOPTER_H_INCLUDED
+#ifndef QUADCOPTER_H_INCLUDED
+#define QUADCOPTER_H_INCLUDED
 
 
 #if (ARDUINO >= 100)
@@ -67,7 +67,7 @@
 
 void statusLED(int LED_SEL);
 
-void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro)
+void getInitialOffsets( struct kinematicData *kinematics, IMU_accel accel, IMU_mag mag, IMU_gyro gyro)
 {
         /**************************************************************************/
         //! Gets the initial offsets in both sensors to accomodate board mount
@@ -121,7 +121,7 @@ void getInitialOffsets( struct kinematicData *kinematics, SENSORLIB_accel accel,
         kinematics->io_wz /= offset_counter;
 };
 
-bool initSensor(SENSORLIB_accel accel, SENSORLIB_mag mag, SENSORLIB_gyro gyro, struct kinematicData *kinematics)
+bool initSensor(IMU_accel accel, IMU_mag mag, IMU_gyro gyro, struct kinematicData *kinematics)
 {
 	/**************************************************************************/
 	//! Initializes the various sensors and instruments
@@ -216,5 +216,5 @@ void statusLED(int LED_SEL)
 };
 
 
-#endif // OSQ_QUADCOPTER_H_INCLUDED
+#endif // QUADCOPTER_H_INCLUDED
 

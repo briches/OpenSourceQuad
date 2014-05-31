@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_BMP085
+     BMP085
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -27,8 +27,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_BMP085_H_INCLUDED
-#define OSQ_BMP085_H_INCLUDED
+#ifndef BMP085_H_INCLUDED
+#define BMP085_H_INCLUDED
 
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -328,6 +328,6 @@ uint8_t BMP085 :: read8(byte reg)
 
 BMP085                  barometer;
 
-#endif // OSQ_BMP085_H_INCLUDED
+#endif // BMP085_H_INCLUDED
 
 

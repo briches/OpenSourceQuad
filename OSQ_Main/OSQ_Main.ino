@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_Main
+     osq_main
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -26,17 +26,17 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#include "OSQ_Kinematics.h"
-#include "OSQ_IMU.h"
-#include "OSQ_Quadcopter.h"
-#include "OSQ_Motors.h"
-#include "OSQ_BMP085.h"
-#include "OSQ_NoWire.h"
-#include "OSQ_GPS.h"
-#include "OSQ_AltitudeProcessor.h"
-#include "OSQ_BatteryMonitor.h"
-#include "OSQ_PID.h"
-#include "OSQ_EEPROM.h"
+#include "kinematics.h"
+#include "IMU.h"
+#include "quadcopter.h"
+#include "motors.h"
+#include "BMP085.h"
+#include "nowire.h"
+#include "GPS.h"
+#include "altitudeprocessor.h"
+#include "batterymanager.h"
+#include "PID.h"
+#include "EEPROM.h"
 
 #include <Adafruit_GPS.h>         
 #include <SoftwareSerial.h>
@@ -65,7 +65,7 @@ bool receivedStartupCommand = false;
 //#define pitchPIDdebug
 //#define yawPIDdebug
 //#define altPIDdebug
-//#define batteryDebug
+#define batteryDebug
 //#define GPSDebug
 
 /*=========================================================================
@@ -979,7 +979,7 @@ void _10HzTask()
 void _1HzTask()
 {
     monitorVoltage();
-    //processBatteryAlarms();
+    processBatteryAlarms();
     getGPS_Data();
     t_1Hz = micros();
 
@@ -988,7 +988,10 @@ void _1HzTask()
             Serial.print("Voltages: ");
             Serial.print(battery.voltage[0]); Serial.print(",");
             Serial.print(battery.voltage[1]); Serial.print(",");
-            Serial.println(battery.voltage[2]);
+            Serial.print(battery.voltage[2]);
+            Serial.print(" Alarms: ");
+            Serial.print(" Soft = "); Serial.print(softAlarm);
+            Serial.print(" Critical = "); Serial.println(criticalAlarm);
         #endif
         
         #ifdef GPSDebug

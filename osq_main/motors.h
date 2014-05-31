@@ -1,5 +1,5 @@
 /*=====================================================================
-     OSQ_Motors library
+     Motors library
      OpenSourceQuad
      -------------------------------------------------------------------*/
 /*================================================================================
@@ -28,8 +28,8 @@
      
      -----------------------------------------------------------------------------*/
 
-#ifndef OSQ_MOTORS_H_INCLUDED
-#define OSQ_MOTORS_H_INCLUDED
+#ifndef MOTORS_H_INCLUDED
+#define MOTORS_H_INCLUDED
 
 #if ARDUINO >= 100
     #include "Arduino.h"
@@ -117,10 +117,10 @@ void commandAllMotors(int speed)
 };
 
 /** Main Class **/
-class OSQ_MotorControl
+class MotorControl
 {
     public:
-        OSQ_MotorControl(int num = 4);
+        MotorControl(int num = 4);
     
         // Function ideas //
         void calibrateESC(int numESC = 4);
@@ -143,7 +143,7 @@ class OSQ_MotorControl
 
 };
 
-OSQ_MotorControl :: OSQ_MotorControl(int num)
+MotorControl :: MotorControl(int num)
 {
     this->NUM_MOTORS 	= num;
     this->MOTORS_ARMED 	= false;
@@ -154,7 +154,7 @@ OSQ_MotorControl :: OSQ_MotorControl(int num)
     commandAllMotors(this->operatingPoint);
 };
 
-void OSQ_MotorControl :: calibrateESC(int numESC)
+void MotorControl :: calibrateESC(int numESC)
 {
     initializePWM();
 
@@ -166,7 +166,7 @@ void OSQ_MotorControl :: calibrateESC(int numESC)
     this->ESC_READY = true;
 };
 
-void OSQ_MotorControl :: startMotors()
+void MotorControl :: startMotors()
 {
     if(this->ESC_READY)
     {
@@ -192,7 +192,7 @@ void OSQ_MotorControl :: startMotors()
     }
 };
 
-void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, double p_yawPID, double p_elevPID)
+void MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, double p_yawPID, double p_elevPID)
 {
     double PID_scalar = 1;
 
@@ -244,14 +244,14 @@ void OSQ_MotorControl :: updateMotors(double p_pitchPID, double p_rollPID, doubl
 };
 
 // Used to manually control altitude.
-double OSQ_MotorControl :: changeOperatingPoint(double opChange)
+double MotorControl :: changeOperatingPoint(double opChange)
 {
     operatingPoint += opChange;
     constrain(operatingPoint, 1200, 1450);
     return operatingPoint;
 };
 
-void OSQ_MotorControl :: motorDISARM()
+void MotorControl :: motorDISARM()
 {
     #ifdef USE_4MOTORS
         motorSpeeds[motor1] = 875;
@@ -265,7 +265,7 @@ void OSQ_MotorControl :: motorDISARM()
     MOTORS_ARMED = false;
 };
 
-OSQ_MotorControl motorControl;
+MotorControl motorControl;
 #endif // FQ_MOTORS_H_INCLUDED
 
 

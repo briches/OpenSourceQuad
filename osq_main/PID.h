@@ -1,7 +1,7 @@
 /*=====================================================================
-	OSQ_PID library
-	OpenSourceQuad
-	-------------------------------------------------------------------*/
+    PID library
+    OpenSourceQuad
+    -------------------------------------------------------------------*/
 /*================================================================================
  
      Author		: Brandon Riches
@@ -26,8 +26,8 @@
      along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
      -----------------------------------------------------------------------------*/
-#ifndef OSQ_PID_H_INCLUDED
-#define OSQ_PID_H_INCLUDED
+#ifndef PID_H_INCLUDED
+#define PID_H_INCLUDED
 
 
 #if ARDUINO >= 100
@@ -248,5 +248,5 @@ void initializePID(struct PID_Manager_t *PID)
     }
 };
 
-#endif // OSQ_PID_H_INCLUDED
+#endif // PID_H_INCLUDED
 
