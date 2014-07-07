@@ -89,7 +89,7 @@ altitudeSensor_t :: altitudeSensor_t(long acc, long rangeL, long rangeH, bool fi
 // Declaration of the altitude sensors
 altitudeSensor_t baroSensor(1, LONG_MIN, LONG_MAX, true);
 altitudeSensor_t GPSSensor(1, LONG_MIN, LONG_MAX, true);
-altitudeSensor_t USRFSensor(5, 100, 10000, false); // 40 cm to 10 m
+altitudeSensor_t USRFSensor(3, 300, 10000, false);
 
 /*=========================================================================
  Returns an estimate of the current altitude 
@@ -123,7 +123,7 @@ double getAccurateAltitude(double GPS, double baro, double USRF, double phi, int
     else{/* Sadness */}
     
     // USRF
-    if(maxChange_ < USRF_ - USRFSensor.current)
+    if(maxChange_ < abs(USRF_ - USRFSensor.current))
         USRFSensor.active = false;
     if(!inFlight)
         USRFSensor.active = false;

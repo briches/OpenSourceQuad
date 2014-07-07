@@ -215,6 +215,25 @@ void statusLED(int LED_SEL)
 	}
 };
 
+void heartbeat()
+{
+    static int mag = 10;
+    static int dir = 1;
+    static unsigned long timestamp = 0;
+    int pin = 9;
+    
+    if(millis() - timestamp > 5)
+    {
+        
+        if( (mag + 2*dir) >= 255 || (mag+2*dir) <= 1)
+            dir *= -1;
+        mag += 2*dir;
+        timestamp = millis();
+    }
+    
+    analogWrite(pin,mag);
+};
+
 
 #endif // QUADCOPTER_H_INCLUDED
 

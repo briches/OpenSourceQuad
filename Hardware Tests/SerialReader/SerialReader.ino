@@ -1,8 +1,8 @@
 
 void setup()
 {
-    Serial3.begin(38400);
-    Serial.begin(38400);
+    Serial3.begin(115200);
+    Serial.begin(115200);
 }
 
 void loop()

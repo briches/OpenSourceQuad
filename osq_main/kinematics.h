@@ -55,7 +55,7 @@ unsigned long startupPeriod = 3000; // In millis
  -----------------------------------------------------------------------*/
 double computeCheby2(double currentInput, struct cheby2Data *filterParameters);
 void setupCheby2();
-void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData);
+void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double dt, struct kinematicData *kinData);
 
 /*=========================================================================
  Filter Data Type
@@ -76,11 +76,17 @@ struct kinematicData
     double pitch,
     roll,
     yaw,
-    phi,        // used for USRF altitude calcs
-
+    phi,
+    
+    gpitch, 
+    groll,
+    gyaw,
+    
     pitchRate,
     rollRate,
     yawRate,
+    
+    vx, vy,
 
     altitude,
     climbRate,
@@ -111,7 +117,7 @@ double xmagMin, xmagMax, ymagMin, ymagMax, zmagMin, zmagMax;
 void kinematicEvent(int eventType, class IMU_accel *accel, class IMU_mag *mag, class IMU_gyro *gyro, class File *logFile, double pitchSet)
 {
     sensors_event_t accel_event, mag_event, gyro_event;
-    double elapsedTime = 0, t_convert = 1000000;
+    double dt = 0, t_convert = 1000000;
 
     if(eventType == 1)
     {
@@ -160,29 +166,38 @@ void kinematicEvent(int eventType, class IMU_accel *accel, class IMU_mag *mag, c
         ay = computeCheby2(ay, &cheby2_YAXIS);
         az = computeCheby2(az, &cheby2_ZAXIS);
         
-        // Calculate current pitch and roll from the accelerometer data
+        // Calculate current pitch and roll from the accelerometer data (quad coords)
         double magnitudeApprox = sqrt(ax*ax + ay*ay + az*az);
 	double rollAcc = -atan2(ay, sqrt(az*az + ax*ax)) * 180 / Pi;
 	double pitchAcc = atan2(ax, sqrt(az*az + ay*ay)) * 180/ Pi;
-		
-        // Log data for debug purposes, will be taken out
-        if (logFile)
-        {
-            logFile->print(micros());
-            logFile->print(',');
-            logFile->print(ax);
-            logFile->print(',');
-            logFile->print(ay);
-	    logFile->print(',');
-	    logFile->println(az);
-        }
-        else
-        {
-            Serial.println("Err w/in kinematics");
-        }
-
-        // Phi is used to correct the ultransonic range finder
         kinematics.phi = atan2(sqrt(ax*ax + ay*ay), az) * 180 / Pi;
+        
+        // X and y acceleration with respect to the earth coordinates
+        double axref = ax*cos(kinematics.pitch) - SENSORS_GRAVITY_STANDARD * sin(kinematics.pitch);
+        double ayref = ay*cos(kinematics.roll) - SENSORS_GRAVITY_STANDARD * sin(kinematics.roll);
+        
+        // Log data for debug purposes, will be taken out
+//        if (logFile)
+//        {
+//            logFile->print(micros());
+//            logFile->print(',');
+//            logFile->print(kinematics.vx);
+//            logFile->print(',');
+//            logFile->print(kinematics.vy);
+//            logFile->print(',');
+//            logFile->print(kinematics.gpitch);
+//            logFile->print(',');
+//            logFile->print(kinematics.groll);
+//            logFile->print(',');
+//            logFile->print(pitchAcc);
+//            logFile->print(',');
+//            logFile->println(rollAcc);
+//            
+//        }
+//        else
+//        {
+//            Serial.println("Err w/in kinematics");
+//        }
         
         // So we don't get huge timestamps right at the start, set the time difference to zero.
 	if(startup0)
@@ -192,12 +207,16 @@ void kinematicEvent(int eventType, class IMU_accel *accel, class IMU_mag *mag, c
 	}
         
         // Elapsed time since last loop, in seconds
-        elapsedTime = (micros() - kinematics.timestamp) / t_convert;
+        dt = (micros() - kinematics.timestamp) / t_convert;
         kinematics.timestamp = micros();
+        
+        // Calculate x and y velocity wrt earth coordinate system
+        kinematics.vx += axref * dt;
+        kinematics.vy += ayref * dt;
         
         // Complementary filter
         // Calculates current angles, corrects a bit for gyro drift, if any.
-        complementaryFilter(pitchAcc, rollAcc, magnitudeApprox, wx, wy, wz, elapsedTime, &kinematics);
+        complementaryFilter(pitchAcc, rollAcc, magnitudeApprox, wx, wy, wz, dt, &kinematics);
 
         // Calculate time derivative of attitudes
         kinematics.pitchRate = wx;
@@ -206,27 +225,27 @@ void kinematicEvent(int eventType, class IMU_accel *accel, class IMU_mag *mag, c
     }
 };
 
-void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double elapsedTime, struct kinematicData *kinData)
+void complementaryFilter(double pitchAcc, double  rollAcc, double  magnitudeApprox,  double wx, double  wy,  double wz, double dt, struct kinematicData *kinData)
 {
     // Filter parameter
     double beta = 0.99;
 	if(millis() - startTime < startupPeriod) beta = 0;
 
     // Gyroscope 
-    kinData->pitch += wx * elapsedTime;
-    kinData->roll += wz * elapsedTime;
-    kinData->yaw += -wy * elapsedTime; // If you change the above code for the magnetometer, change this.
+    kinData->gpitch += wx * dt;
+    kinData->groll += wz * dt;
+    kinData->gyaw += -wy * dt; // If you change the above code for the magnetometer, change this.
 
     // Magnetometer complementary
-    kinData->yaw = kinData->yaw * 1 + kinData->yaw_mag * 0.0;
+    kinData->yaw = kinData->gyaw * 1 + kinData->yaw_mag * 0.0;
     
     // Compensate for gyro drift, if the accel isnt completely garbage
 	// and the angle isnt changing quickly.
     if(magnitudeApprox > 9.51 && magnitudeApprox < 10.11)
     {	
-        kinData->pitch = kinData->pitch * beta + (1-beta) * pitchAcc;
+        kinData->pitch = kinData->gpitch * beta + (1-beta) * pitchAcc;
 			
-        kinData->roll = kinData->roll * beta + (1-beta) * rollAcc;
+        kinData->roll = kinData->groll * beta + (1-beta) * rollAcc;
     }
 };
 

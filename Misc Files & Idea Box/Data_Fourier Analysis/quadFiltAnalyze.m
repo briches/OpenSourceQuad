@@ -1,7 +1,7 @@
 function [] = quadFiltAnalyze()
     clc; close all;
     % Works off the data in the D: drive
-    cd 'D:\';
+    cd 'E:\';
 
     % List available files, pick the file
     s = dir('*.TXT');
@@ -29,17 +29,19 @@ function [] = quadFiltAnalyze()
     time = csvdata(:,1);
     dt = getDt(time);
     altitude = csvdata(:,2);
-    climbRate = csvdata(:,3);
-    set = csvdata(:,4);
+    targetAltitude = csvdata(:,3);
+    rate = csvdata(:,4);
+    pidOut = csvdata(:,5);
+    pidSetpoint = csvdata(:,6);
 
     % Plot that there data
     figure(9); hold on; grid on;
-    plot(time/(1e3), altitude, 'b');
-    plot(time/(1e3), climbRate,'r');
-    plot(time/(1e3), set, 'k');
+    plot(time/(1e6), altitude, 'b');
+    plot(time/(1e6), targetAltitude,'r');
+    plot(time/(1e6), pidSetpoint, 'g');
     plot_title = sprintf('Data, sample freq = %f',1/dt);
     title(plot_title);
-    legend('altitude','climbRate','Setpoint','Location','SouthEast');
+    legend('altitude','target','pid setpoint','Location','SouthEast');
     hold off;
     
     if (analyzefrequency -1)
@@ -47,7 +49,7 @@ function [] = quadFiltAnalyze()
         [~, ~] = timefreq(altitude,dt,1,1,0,1);
         title('Complementary filtered data');
         figure(11);
-        [~, ~] = timefreq(climbRate,dt,1,1,0,1);
+        [~, ~] = timefreq(targetAltitude,dt,1,1,0,1);
         title('Accelerometer data');
     end
     
@@ -61,7 +63,7 @@ function dt = getDt(time)
 deltas = zeros(length(time),1);
 
 for n = 2:length(time)
-    deltas(n-1) = (time(n)-time(n-1))/1000;
+    deltas(n-1) = (time(n)-time(n-1))/1000000;
 end
 
 dt = sum(deltas)/length(deltas);

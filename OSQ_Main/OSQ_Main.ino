@@ -57,15 +57,15 @@ bool receivedStartupCommand = false;
 #define serialDebug        // <- Must be defined to use any of the other debuggers
 //#define attitudeDebug     
 //#define altitudeDebug
-//#define rx_txDebug
+#define rx_txDebug
 //#define autoBroadcast
 //#define motorsDebug
-//#define sdDebug
+#define sdDebug
 //#define rollPIDdebug
 //#define pitchPIDdebug
 //#define yawPIDdebug
 //#define altPIDdebug
-#define batteryDebug
+//#define batteryDebug
 //#define GPSDebug
 
 /*=========================================================================
@@ -445,7 +445,11 @@ void logData()
         logFile.print(',');
         logFile.print(kinematics.altitude);
         logFile.print(',');
+        logFile.print(targetAltitude);
+        logFile.print(',');
         logFile.print(kinematics.climbRate);
+        logFile.print(',');
+        logFile.print(altitudePID.output);
         logFile.print(',');
         logFile.println(altitudePID.setpoint);
     }
@@ -662,6 +666,7 @@ void setup()
 				Serial.println("Waiting for start command...");
 			}
         #endif
+        heartbeat();
         scanTelemetry();
     }
     
@@ -670,8 +675,6 @@ void setup()
     /*****************************/
     /* Initialize data file. */
     /*****************************/
-
-    statusLED(5);
 
     #ifdef serialDebug
         Serial.println("Initializing SD Card");
@@ -686,7 +689,6 @@ void setup()
     logFileStart();
     logFile = SD.open(logFilename, FILE_WRITE);
 
-    statusLED(2);
 
     /*****************************/
     /* Initialize sensors. */
@@ -921,11 +923,14 @@ void _10HzTask()
     // Integrate the different sensor readings and calculate vertical rate, assuming
     // a perfect 10Hz loop.
     maxAllowedChange = 2 * kinematics.prevClimbRate / 0.1; // Twice the distance we would have moved previously.
+    // Get the new altitude estimate based on all the available sensors
     kinematics.altitude = getAccurateAltitude(GPSDATA.altitude, barometer.altitude, altUSRF, kinematics.phi, GPSDATA.quality, maxAllowedChange);
-    kinematics.climbRate = ((kinematics.altitude - previousAltitude)/0.1 + kinematics.climbRate + kinematics.prevClimbRate)/3;
     kinematics.prevClimbRate = kinematics.climbRate;
+    // A quick 3 term running average on the climb rate. Should help to deal with crazy rangefinder readings
+    kinematics.climbRate = ((kinematics.altitude - previousAltitude)/0.1 + kinematics.climbRate + kinematics.prevClimbRate)/3;
     
-    if(kinematics.altitude > 1 && !inFlight || altitudeHold)
+    
+    if(kinematics.altitude > 0.5 && !inFlight || altitudeHold)
         inFlight = true;
     
     // Setpoint is target rate multiplied by a constant gain
@@ -1026,7 +1031,7 @@ void loop()
     {
         statusLED(4);
         _70HzTask(); // 2000 us
-		priority = true;
+	priority = true;
         statusLED(1);
     }
 
@@ -1035,7 +1040,7 @@ void loop()
     {
         statusLED(4);
         _20HzTask();
-		priority = true;
+	priority = true;
         statusLED(1);
     }
 
@@ -1044,7 +1049,7 @@ void loop()
     {
         statusLED(5);
         _10HzTask();
-		priority = true;
+	priority = true;
         statusLED(2);
     }
 
@@ -1053,11 +1058,12 @@ void loop()
     {
         statusLED(6);
         _1HzTask();
-		priority = true;
+	priority = true;
         statusLED(3);
     }
 
     scanTelemetry();
+    heartbeat();
 
     // Track the number of elapsed cycles
     cycleCount++;

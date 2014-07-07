@@ -42,7 +42,9 @@
 #define SINGLE_PID 
 //#define NESTED_PID
 
-// TODO: WIP
+/*=========================================================================
+ Pitch and roll
+ -----------------------------------------------------------------------*/
 #ifdef NESTED_PID
 	double SET_ATT_KP = 4.20423235009075;
 	double SET_ATT_KI = 0.351024555105888;
@@ -59,13 +61,19 @@
 	double ATT_KD = 0.57744;
 #endif
 
+/*=========================================================================
+ Yaw
+ -----------------------------------------------------------------------*/
 double yawP = 2.5;
 double yawI = 4.32;
-double yawD = 0.5; // Attempt 1
+double yawD = 0.5; 
 
+/*=========================================================================
+ Altitude
+ -----------------------------------------------------------------------*/
 double altitudekP = 2;
-double altitudekI = 0.0;
-double altitudekD = 2;
+double altitudekI = 10;
+double altitudekD = 0;
 
 // Used for windup guard
 enum{lower, upper};
